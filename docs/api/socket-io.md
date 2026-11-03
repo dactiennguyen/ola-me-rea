@@ -39,7 +39,7 @@ Hook bắt ở `Encoder.encodeAsString` (chiều ra) và `Decoder.decodeString` 
 | OUT | `new message` | 1-1: `{mess, displayName, photoURL, photoURL2, userID, send, read, messageID, isSticker, replyID, replyText, isVip, isImage, isGift, isAudio, fcmTokenNguoiNhan}`<br>phòng: `{deviceID, mess, name, userID, photoURL2, send, id, isVip, level}` |
 | IN | `user joined` / `user left` | `{username, numUsers}` |
 | IN | `new message` | `{username, message:{…}}` — cùng shape object người gửi emit |
-| IN | `new message` (kênh `Olame`) | `{message:{uid, displayName, type, contenType, relateID, privacy}}` — thông báo hệ thống |
+| IN | `new message` (kênh `Olame`) | Thông báo/broadcast hệ thống. Các biến thể `type` đã thấy:<br>• `{message:{uid, displayName, type, contenType, relateID, privacy}}`<br>• `type:"hightlight"` (broadcast công khai, hiển thị dạng nổi bật): `{message:{type:"hightlight", uid, displayName, photoURL, content, isVip}}` — bắt ngày 2026-11-03 |
 
 ## Quan sát từ phiên test
 

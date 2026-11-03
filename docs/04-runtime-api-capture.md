@@ -104,3 +104,29 @@ Xem [api/con-thieu.md](api/con-thieu.md). Tóm tắt phần liên quan trực ti
 
 - Chưa log **response body** — cần hook onLeave của `fetch` (trả về `Future`) hoặc `ResponseInterceptor`.
 - Chưa giải mã `FormData` trên luồng thật (upload ảnh/voice).
+
+## 7. Phiên xác minh bổ sung — 2026-11-03 (lần 2)
+
+Chạy lại logger qua **ADB wifi** (`192.168.2.3:5555`, cùng máy vật lý), attach spawn và điều khiển UI bằng `adb input` + screenshot:
+
+```bash
+frida -U -f com.olaachat -l work/scripts/ola_api_logger.js --runtime=v8 -q -t 1800 > work/runtime_capture_session.log 2>&1
+```
+
+Tài khoản test **khác phiên gốc** (hiển thị "Phong nguyen", đăng nhập bằng **email/mật khẩu**), nên UID/deviceID khác — giữ nguyên quy ước che dữ liệu (§ trên). Mục tiêu: xác minh lại các luồng, không thêm endpoint mới.
+
+| Luồng đã thao tác | Request bắt được | Khớp inventory |
+|---|---|---|
+| Khởi động | getTimes, updateLastSeen, check_update_app, checkUV2, getCoins, getLastMessage2, getNotificationsCount, getNotiCountLove, getContactV3, updatePost(token) + 2 socket connect (`roomNo=Olame`, `roomNo=<uid>`) | ✓ |
+| **Đăng nhập email** | `POST /napi/users/sync` (1 call backend) rồi lặp lại batch khởi động | ✓ (xác nhận nhánh Email → sync, không chỉ Google/Apple) |
+| Mở hội thoại 1-1 (lấy tin nhắn) | getUserInfoForChatV2, getLastMessage2 + `SIO-OUT add user` | ✓ |
+| Xem hồ sơ user | getUserInfoV7, shouldLoadFeed, getPostByUserV7; rời hồ sơ → `napi/users/addViewProfile` (gửi theo lô) | ✓ |
+| Gửi tin 1-1 (từ nút **Nhắn tin** trong hồ sơ) | `SIO-OUT typing`/`stop typing` → `new message` → addLastMessage5 + `napi/general/send-notification` | ✓ |
+| Khám phá (3 tab) | getExploreOnlineV6 (`condition:2`), getExplore3 (`condition:1`), getExploreAvatarV4; response schema đúng như [api/luong-kham-pha.md](api/luong-kham-pha.md) | ✓ |
+| Phòng chat | danh sách phòng = **tĩnh** (mã tỉnh); vào phòng Hồ Chí Minh (`roomID:"79"`): addUserToRoom + getMessageByRoom + checkBlockChat + `SIO add user`; **thành viên online** = apiAddToRoomV4; gửi tin = `new message` + apiAddMessageRoom2 | ✓ |
+
+Tổng **46 request HTTP / 39 endpoint distinct**, toàn bộ nằm trong [api/endpoint-runtime.md](api/endpoint-runtime.md) — phiên này **không phát sinh endpoint mới**.
+
+Bổ sung nhỏ: kênh socket `Olame` phát `new message` với `type:"hightlight"` (broadcast công khai) — đã thêm biến thể vào [api/socket-io.md](api/socket-io.md).
+
+**Tác dụng phụ**: gửi 1 tin `hi` tới hội thoại 1-1 có sẵn và 1 tin `hi` vào phòng Hồ Chí Minh (79); ghi 2 lượt xem hồ sơ (addViewProfile). Không follow / like / tặng quà / nạp xu / đăng bài.

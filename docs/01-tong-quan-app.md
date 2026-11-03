@@ -1,7 +1,6 @@
 # 01 — Tổng quan app Ola (olaachat)
 
-> Phạm vi: phân tích tĩnh APK và một phiên quan sát có kiểm soát trên thiết bị root. Plaintext request đã bắt được bằng hook tầng Dart — xem [04-runtime-api-capture](04-runtime-api-capture.md) và thư mục [api/](api/README.md).
-> Mỗi kết luận ghi rõ là **[Quan sát]** (thấy trực tiếp trong artifact) hay **[Suy luận]** (đoán từ tên/chuỗi).
+> Đây là một dự án nghiên cứu/điều tra app Ola (com.olaachat) trên máy của bạn. 
 
 ## 1. Danh tính artifact
 
