@@ -1,0 +1,18 @@
+{
+  "name": "ola-nodejs-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ola API login and exploration scripts",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "yarn@1.22.22",
+  "scripts": {
+    "login": "node login.js",
+    "explore": "node explore.js"
+  },
+  "dependencies": {
+    "firebase": "^13.2.0"
+  }
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// Node >= 18. No npm dependencies. Local account copy is excluded from Git.
+// Node >= 18. Run `yarn install` in scripts/nodejs first (Firebase JS SDK).
 const username = 'dactiennguyen01@gmail.com';
 const password = '';
 const firebaseConfig = {
@@ -21,6 +21,8 @@ const olaConfig = {
   "androidVersion": "13"
 };
 const { createHash } = require('node:crypto');
+const { initializeApp, deleteApp } = require('firebase/app');
+const { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } = require('firebase/auth');
 
 async function requestJson(url, { method = 'POST', headers = {}, body } = {}) {
   let response;
@@ -53,23 +55,50 @@ async function requestJson(url, { method = 'POST', headers = {}, body } = {}) {
   return data;
 }
 
-async function firebaseLogin({ email, password, apiKey }) {
-  if (!email || !password) throw new Error('Fill in const username and const password at the top of login.js.');
-  if (!apiKey || apiKey.startsWith('<')) throw new Error('Missing firebaseConfig.apiKey.');
-  const endpoint = 'https://identitytoolkit.googleapis.com/v1/';
-  const query = `?key=${encodeURIComponent(apiKey)}`;
-  const session = await requestJson(`${endpoint}accounts:signInWithPassword${query}`, {
-    body: { email, password, returnSecureToken: true },
-  });
-  if (!session.idToken || !session.localId) {
-    throw new Error('Firebase did not return a session (MFA/challenge may be required).');
+let firebaseAuth;
+
+// Node has no browser storage, so the session lives in memory for this process only.
+function getFirebaseAuth() {
+  if (!firebaseAuth) {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('<')) {
+      throw new Error('Missing firebaseConfig.apiKey.');
+    }
+    const app = initializeApp(firebaseConfig, 'ola-login');
+    firebaseAuth = initializeAuth(app, { persistence: inMemoryPersistence });
   }
-  const lookup = await requestJson(`${endpoint}accounts:lookup${query}`, {
-    body: { idToken: session.idToken },
-  });
-  const user = lookup.users?.find(item => item.localId === session.localId);
-  if (!user) throw new Error('Firebase lookup did not return the signed-in user.');
-  return { session, user };
+  return firebaseAuth;
+}
+
+async function firebaseLogin({ email, password }) {
+  if (!email || !password) throw new Error('Fill in const username and const password at the top of login.js.');
+  let credential;
+  try {
+    credential = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+  } catch (error) {
+    // SDK codes look like auth/invalid-credential or auth/multi-factor-auth-required.
+    const code = typeof error.code === 'string' && /^[a-z]+\/[a-z0-9-]+$/.test(error.code)
+      ? error.code : 'unknown';
+    throw new Error(`Firebase sign-in failed (${code}).`);
+  }
+  const firebaseUser = credential.user;
+  const tokenResult = await firebaseUser.getIdTokenResult();
+  const session = {
+    localId: firebaseUser.uid,
+    email: firebaseUser.email,
+    idToken: tokenResult.token,
+    refreshToken: firebaseUser.refreshToken,
+    expirationTime: tokenResult.expirationTime,
+  };
+  // firebaseUser.getIdToken() returns a refreshed token once the 1h ID token expires.
+  return { session, user: firebaseUser.toJSON(), firebaseUser };
+}
+
+// Stops SDK timers so a finished CLI process can exit.
+async function closeFirebase() {
+  if (!firebaseAuth) return;
+  const { app } = firebaseAuth;
+  firebaseAuth = undefined;
+  await deleteApp(app);
 }
 
 function olaHeaders({ token, key2, deviceId, appVersion, timestamp, requestPath }) {
@@ -123,9 +152,9 @@ async function syncOla({
 }
 
 function printLoginResult({ session, user, profile }, output = console.log) {
-  output('Firebase signInWithPassword: OK');
+  output('Firebase signInWithEmailAndPassword: OK');
   output(JSON.stringify(session, null, 2));
-  output('Firebase accounts:lookup user: OK');
+  output('Firebase user: OK');
   output(JSON.stringify(user, null, 2));
   if (profile) {
     output('Ola /napi/users/sync: OK');
@@ -134,14 +163,12 @@ function printLoginResult({ session, user, profile }, output = console.log) {
 }
 
 async function login({ firebaseOnly = false } = {}) {
-  const { session, user } = await firebaseLogin({
-    email: username, password, apiKey: firebaseConfig.apiKey,
-  });
-  if (firebaseOnly) return { session, user };
+  const { session, user, firebaseUser } = await firebaseLogin({ email: username, password });
+  if (firebaseOnly) return { session, user, firebaseUser };
   if (!user.emailVerified) throw new Error('Email is unverified; the app requires verification before Ola sync.');
   const profile = await syncOla({ token: session.idToken });
   if (profile.uid !== session.localId) throw new Error('Ola profile UID does not match the Firebase session.');
-  return { session, user, profile };
+  return { session, user, firebaseUser, profile };
 }
 
 async function main() {
@@ -150,10 +177,16 @@ async function main() {
     return;
   }
   if (process.argv.slice(2).some(arg => arg !== '--firebase-only')) throw new Error('Unknown argument; use --help.');
-  printLoginResult(await login({ firebaseOnly: process.argv.includes('--firebase-only') }));
+  try {
+    printLoginResult(await login({ firebaseOnly: process.argv.includes('--firebase-only') }));
+  } finally {
+    await closeFirebase();
+  }
 }
 
-module.exports = { login, firebaseLogin, syncOla, olaHeaders, requestOla, printLoginResult };
+module.exports = {
+  login, firebaseLogin, closeFirebase, syncOla, olaHeaders, requestOla, printLoginResult,
+};
 if (require.main === module) main().catch(error => {
   console.error(error.message);
   process.exitCode = 1;
