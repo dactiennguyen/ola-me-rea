@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { describe, it, mock } from 'node:test';
 import { OlaClient } from '../src/client.ts';
-import { olaConfig } from '../src/config.ts';
+import { olaDefaults as olaConfig } from '../src/defaults.ts';
 import { ApiError, defineEndpoint, text } from '../src/endpoint.ts';
 import { usersSync } from '../src/endpoints/usersSync.ts';
 
@@ -112,6 +112,18 @@ describe('OlaClient', () => {
     assert.deepEqual(JSON.parse(String(init!.body)),
       { os: 'android', deviceId: 'custom-dev', ver: '14', displayName: '', photoURL: '' });
     assert.ok(usersSync.mutates);
+  });
+
+  it('adds the missing trailing slash to baseUrl', async () => {
+    const urls: string[] = [];
+    const fetch = (async (input: string | URL) => {
+      urls.push(String(input));
+      return Response.json(String(input).endsWith('getTimes') ? { serverTime: SERVER_TIME } : { ok: 1 });
+    }) as typeof globalThis.fetch;
+    const config = { ...olaConfig, baseUrl: 'https://example.invalid' };
+    const client = new OlaClient({ session: { idToken: 't', localId: 'me' }, config, fetch });
+    await client.request({ method: 'POST', path: 'faApi2/getCoins.php', body: {} });
+    assert.deepEqual(urls, ['https://example.invalid/napi/general/getTimes', 'https://example.invalid/faApi2/getCoins.php']);
   });
 
   it('appends the query after signing and sends no GET body', async () => {

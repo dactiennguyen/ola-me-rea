@@ -20,7 +20,13 @@ Lấy danh sách thành viên / người đang online trong một phòng chat (m
 
 ## Response
 
-**Chưa bắt response** — chạy `node scripts/nodejs/ola.ts apiAddToRoomV4 --state 79 --page 0 --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
+Quan sát ngày 2026-11-04 bằng client Node với tài khoản test, **chỉ ghi tên key và kiểu**, không ghi giá trị. [Quan sát] Phòng `79`, trang 0 trả 19 người.
+
+```text
+{ is_success: boolean, message: string,
+  data: [ { uid: string, displayName: string, photoURL: string(url), introduceText: string,
+            stt: number, autoID: string, isVip: boolean, lastSeen: number, level: number } ] }
+```
 
 ## Dùng Node.js
 
@@ -28,10 +34,10 @@ Lấy danh sách thành viên / người đang online trong một phòng chat (m
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { apiAddToRoomV4 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const data = await ola.call(apiAddToRoomV4, { state: '79', page: 0 });
 } finally {

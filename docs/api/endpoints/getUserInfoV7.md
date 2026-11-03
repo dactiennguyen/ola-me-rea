@@ -32,10 +32,10 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer Firebase token + `
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getUserInfoV7 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const info = await ola.call(getUserInfoV7, { targetUid: '<uid người được xem>' });
   // myUid tự lấy từ session.localId; truyền { myUid } để ghi đè.

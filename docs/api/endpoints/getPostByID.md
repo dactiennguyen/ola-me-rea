@@ -28,10 +28,10 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getPostByID } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const post = await ola.call(getPostByID, { postID: '540919' });
 } finally {

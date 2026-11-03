@@ -27,10 +27,10 @@ GET /napi/post/stories/feed
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { postStoriesFeed } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const feed = await ola.call(postStoriesFeed);                 // không kèm query (khớp wire)
   // biến thể AOT: ola.call(postStoriesFeed, { viewer_id: '<uid>' })  // [Suy luận]

@@ -1,13 +1,13 @@
-// Firebase email/password sign-in with the JS SDK. Node has no browser storage,
-// so the session lives in memory for this process only. Each sign-in gets its
-// own Firebase app, so several accounts (e.g. chat A and B) can be signed in and
-// closed independently.
+// Firebase email/password sign-in with the JS SDK. The session lives in memory
+// only (Node has no browser storage; the desktop app keeps accounts itself and
+// signs in again). Each sign-in gets its own Firebase app, so several accounts
+// (e.g. chat A and B) can be signed in and closed independently.
 
 import { deleteApp, initializeApp } from 'firebase/app';
 import {
   initializeAuth, inMemoryPersistence, signInWithEmailAndPassword, type User,
 } from 'firebase/auth';
-import { firebaseConfig, type Account } from './config.ts';
+import { firebaseDefaults, type Account, type FirebaseConfig } from './defaults.ts';
 
 export interface Session {
   localId: string;
@@ -27,7 +27,9 @@ export interface FirebaseLogin {
 
 let appCount = 0;
 
-export async function firebaseLogin({ email, password }: Account): Promise<FirebaseLogin> {
+export async function firebaseLogin(
+  { email, password }: Account, firebaseConfig: FirebaseConfig = firebaseDefaults,
+): Promise<FirebaseLogin> {
   const app = initializeApp(firebaseConfig, `ola-login-${++appCount}`);
   const close = () => deleteApp(app);
   let firebaseUser: User;

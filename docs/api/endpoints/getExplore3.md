@@ -41,10 +41,10 @@ Mỗi phần tử `list_data` có `uid`, `lastSeen`, `displayName`, `photoURL`, 
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getExplore3 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const first = await ola.call(getExplore3, { gender: 1, cityID: '1' });
   if (first.next) await ola.call(getExplore3, first.next);

@@ -28,10 +28,10 @@ Ví dụ body (đã redact) — như đã bắt trên dây:
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getNotiCountLove } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(getNotiCountLove);              // body {uid}
   // biến thể AOT: ola.call(getNotiCountLove, { count: 0 })  // [Suy luận] chưa xác minh

@@ -31,10 +31,10 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getFollowListV3 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const following = await ola.call(getFollowListV3, { isFollowing: 1, page: 0 });
   const followers = await ola.call(getFollowListV3, { isFollowing: 0, page: 0 });

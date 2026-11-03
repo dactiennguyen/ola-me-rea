@@ -64,10 +64,10 @@ Bình luận kèm sticker:
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { inserNotiV2 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   // actionUid mặc định = tài khoản đăng nhập; uid là người nhận.
   await ola.call(inserNotiV2, { uid: '<target-uid>', type: 'GIFT' });

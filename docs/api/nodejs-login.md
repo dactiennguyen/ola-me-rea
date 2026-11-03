@@ -10,7 +10,7 @@ corepack yarn install --ignore-engines   # chỉ cần trên Node 22: Firebase S
 cp .env.example .env                    # rồi điền OLA_EMAIL / OLA_PASSWORD
 ```
 
-Tài khoản **chỉ** nằm trong `scripts/nodejs/.env` (đã Git ignore) hoặc biến môi trường; không còn hard-code trong source. Biến tuỳ chọn: `OLA_DEVICE_ID` (mặc định `nodejs-probe`) — được ký vào header `deviceid` và đăng ký bởi `napi/users/sync`. Hằng số của app (Firebase config, `key2`, phiên bản app) nằm ở `src/config.ts`.
+Tài khoản **chỉ** nằm trong `scripts/nodejs/.env` (đã Git ignore) hoặc biến môi trường; không còn hard-code trong source. Mọi hằng số server/app (Firebase config, base URL, `key2`, device ID, phiên bản app, Socket.IO) có mặc định trong `src/defaults.ts` và ghi đè được bằng biến `OLA_*` — danh sách đầy đủ ở [`.env.example`](../../scripts/nodejs/.env.example). `OLA_DEVICE_ID` (mặc định `nodejs-probe`) được ký vào header `deviceid` và đăng ký bởi `napi/users/sync`.
 
 `package.json` ghim `yarn@1.22.22` qua `packageManager`, nên `corepack yarn` dùng đúng bản này. `node_modules/` được Git ignore.
 
@@ -44,10 +44,10 @@ CLI `ola`:
 
 ```ts
 // Một file .ts trong scripts/nodejs/
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getCoins, getPostByID } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();          // Firebase sign-in + napi/users/sync
+const ola = await loginFromEnv();          // Firebase sign-in + napi/users/sync
 try {
   const coins = await ola.call(getCoins);
   const post = await ola.call(getPostByID, { postID: '123' });   // input được type-check
@@ -58,12 +58,26 @@ try {
 getPostByID.build(ola.session, { postID: '123' });   // chỉ dựng request, không gọi mạng
 ```
 
+`loginFromEnv()` (`src/node.ts`) là `OlaClient.login()` với tài khoản trong `.env` và config đã áp biến `OLA_*`. Lõi client (`client.ts`, `endpoints/`, `chat.ts`, `defaults.ts`, `md5.ts`) không import `node:*`, nên app desktop ([apps](../../apps/README.md)) dùng lại nguyên vẹn bằng cách truyền tham số tường minh:
+
+```ts
+import { OlaClient } from './src/client.ts';
+import { firebaseDefaults, olaDefaults } from './src/defaults.ts';
+
+const ola = await OlaClient.login({
+  account: { email, password },                 // bắt buộc; lõi không tự đọc .env
+  config: { ...olaDefaults, deviceId: 'abc123' },
+  firebaseConfig: firebaseDefaults,
+  fetch,                                         // vd fetch của Tauri http plugin
+});
+```
+
 - `ola.call(endpoint, input)`: validate → ký → gửi → kiểm tra cờ thành công → parse. Lỗi input là `InputError`; server báo thất bại là `ApiError` (`error.response` giữ JSON gốc).
 - `ola.request({ method, path, body, query })`: ký và gửi request thô.
 - `ola.session` (`localId`, `email`, `idToken`, ...), `ola.user` (Firebase `user.toJSON()`), `ola.profile` (hồ sơ Ola từ sync).
 - Mỗi request lấy ID token qua `firebaseUser.getIdToken()`, nên tiến trình chạy quá 1 giờ vẫn có token mới.
-- Mỗi `OlaClient.login()` có Firebase app riêng, nên có thể đăng nhập hai tài khoản cùng lúc (vd A và B trong [workflow chat](vi-du-chat-nodejs.md)); `close()` của client này không ảnh hưởng client kia.
-- `deviceId`/`ver` của `usersSync` lấy từ config của chính client (mặc định `olaConfig`), luôn trùng header `deviceid` mà client ký.
+- Mỗi lần đăng nhập (`loginFromEnv()` / `OlaClient.login()`) có Firebase app riêng, nên có thể đăng nhập hai tài khoản cùng lúc (vd A và B trong [workflow chat](vi-du-chat-nodejs.md)); `close()` của client này không ảnh hưởng client kia.
+- `deviceId`/`ver` của `usersSync` lấy từ config của chính client (`loginFromEnv()` dùng `olaConfig` từ `.env`; `new OlaClient()` không truyền config thì dùng `olaDefaults`), luôn trùng header `deviceid` mà client ký.
 - Request được ký bằng giờ server. Client lấy độ lệch đồng hồ qua `napi/general/getTimes` **một lần** rồi dùng lại, thay vì gọi `getTimes` trước mỗi request.
 
 ## Luồng đăng nhập
@@ -82,11 +96,15 @@ Firebase config lấy từ Android resources; `apiKey` là trường cần cho �
 
 | File | Vai trò |
 |---|---|
-| `src/config.ts` | Hằng số app + đọc `.env` |
+| `src/defaults.ts` | Hằng số app + `buildConfig(env)` áp biến `OLA_*` (không phụ thuộc Node) |
+| `src/config.ts` | Phía Node: đọc `.env` + `process.env`, xuất `olaConfig`, `firebaseConfig`, `socketConfig`, `accountFromEnv()` |
+| `src/node.ts` | `loginFromEnv()`, `envDryRunSession()` cho CLI |
 | `src/auth.ts` | Firebase sign-in / close |
+| `src/md5.ts` | MD5 thuần TypeScript (chạy cả trong webview) |
 | `src/signing.ts` | Header ký (`hash` = MD5(`timestamp-888` + deviceId + đoạn path cuối)), kiểm tra path |
 | `src/http.ts` | fetch JSON, thông báo lỗi không lộ body/token |
 | `src/client.ts` | `OlaClient`: login, sync, call, request |
+| `src/chat.ts` | Kênh Socket.IO 2.x (nhận `io` từ ngoài), payload tin 1-1/phòng, chuẩn hoá tin/hội thoại, luồng gửi |
 | `src/endpoint.ts` | `defineEndpoint()` + helper field (`text`, `int`, `scalar`, `identifier`, `segment`, `extraFields`, `oneOf`) |
 | `src/endpoints/*.ts` | Một khai báo cho mỗi endpoint; `index.ts` là registry sinh tự động |
 | `src/cli.ts` | CLI `ola` sinh từ registry |

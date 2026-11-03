@@ -40,10 +40,10 @@
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { apiAddPostV9 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   await ola.call(apiAddPostV9, { text: 'Xin chào' });                       // bài chỉ có chữ
   await ola.call(apiAddPostV9, { listImage: ['https://.../1.jpg'],          // bài có ảnh

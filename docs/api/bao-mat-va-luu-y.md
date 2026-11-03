@@ -11,6 +11,7 @@ Các mục dưới đây là bằng chứng về request/payload phía client. C
 | Request legacy truyền uid trong body; có request thiếu Bearer khi mất phiên | Logger request không chứng minh server chấp nhận, trả dữ liệu hoặc có IDOR |
 | `/napi/users/notifications/{uid}` đặt uid trên path | Cấu trúc path tự nó không chứng minh truy cập chéo tài khoản |
 | Client gửi socket và cập nhật tin cuối qua HTTP | Các bước có thể lỗi riêng; chưa chứng minh server tin mọi field do client gửi |
+| Object `user` mà `napi/users/sync` trả về có key `password` (chuỗi ngắn, quan sát 2026-11-04, chỉ ghi kiểu) cùng `email`, `lat`/`lng`, `fcmToken` | Chưa rõ đây là mật khẩu, hash hay field khác; không lưu nguyên profile. App desktop chỉ giữ `displayName`, `photoURL`, `isVip`, `level`, `isVerifyAvatar` |
 
 Công thức hash đã được phân tích và dùng thành công cho login/sync; xem [auth-va-header.md](auth-va-header.md). Không suy rộng kết quả sang quyền truy cập các endpoint khác.
 
@@ -21,6 +22,7 @@ Các hành động đã thực hiện khi bắt request — cần biết để k
 - Đã gửi **1 tin `"hi"`** trong chat 1-1 (tới hội thoại có sẵn) và **1 tin `"hi"`** vào phòng chat Hồ Chí Minh (`79`).
 - `addUserToRoom.php` đã ghi tài khoản vào phòng `79` và phòng `6`.
 - Đã mở các màn Thích bạn, Thông báo, Danh sách chặn, Lịch sử giao dịch, hồ sơ một user (sinh ra `addViewProfile`), leaderboard mini game. **Không** follow, like, tặng quà, nạp xu, đăng bài.
+- Ngày 2026-11-04, khi dựng app desktop: chỉ gọi các endpoint đọc `getLastMessage2`, `getMessageByRoom` (phòng `79`), `checkBlockChat`, `apiAddToRoomV4` (phòng `79`) và login/sync bằng tài khoản test (`deviceid` `nodejs-probe`); chỉ ghi lại tên key/kiểu của response. Không gửi tin, không gọi `addUserToRoom`.
 - Dữ liệu app đã sao lưu bằng root (`/sdcard/olaachat_data_backup_20261103.tgz`), `pm clear`, rồi khôi phục. Phiên Firebase **không** khôi phục được (khoá Android Keystore bị xoá cùng `pm clear`), nên cần đăng nhập Google lại 1 lần.
 
 ## Nguyên tắc khi làm tiếp

@@ -36,10 +36,10 @@ Các key khác (nếu có) chưa được bắt đầy đủ. [Chưa xác minh] 
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { generalGetTimes } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(generalGetTimes); // { serverTime: ... }
 } finally {

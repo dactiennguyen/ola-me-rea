@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { md5Hex } from './md5.ts';
 
 export interface SignInput {
   token?: string;
@@ -16,7 +16,7 @@ export function olaHeaders({ token, key2, deviceId, appVersion, timestamp, reque
   const slash = requestPath.lastIndexOf('/');
   const suffix = slash < 0 ? '' : requestPath.slice(slash);
   // UTF8 -> MD5 -> lowercase hex.
-  const hash = createHash('md5').update(`${timestamp - 888}${deviceId}${suffix}`, 'utf8').digest('hex');
+  const hash = md5Hex(`${timestamp - 888}${deviceId}${suffix}`);
   return {
     key2, deviceid: deviceId, os: 'android', ver: appVersion,
     timestamp: String(timestamp), hash,

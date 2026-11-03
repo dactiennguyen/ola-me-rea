@@ -19,7 +19,16 @@ Tải lịch sử tin nhắn của một phòng chat. Gọi mỗi lần **vào p
 
 ## Response
 
-**Chưa bắt response** — chạy `node scripts/nodejs/ola.ts getMessageByRoom --roomID 79 --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
+Quan sát ngày 2026-11-04 bằng client Node với tài khoản test, **chỉ ghi tên key và kiểu**, không ghi giá trị. [Quan sát] Phòng `79` trả 43 tin.
+
+```text
+{ is_success: boolean, message: string,
+  data: [ { mess: string, userID: string, name: string, photoURL2: string(url), id: string,
+            deviceID: string, send: number, isVip: boolean, level: number,
+            timestamp: string (ms), isSticker: number, isAudio: number, fcmToken: string } ] }
+```
+
+Mỗi phần tử có cùng shape với payload `new message` của phòng (xem [luong-phong-chat.md](../luong-phong-chat.md)), cộng `timestamp` (chuỗi mili-giây) và các cờ loại tin. Chưa xác minh thứ tự (cũ→mới hay ngược lại); client desktop sắp lại theo `timestamp`.
 
 > Client báo lỗi nếu `is_success=false` (nhiều `faApi2/*` trả `{ is_success, ... }`).
 
@@ -29,10 +38,10 @@ Tải lịch sử tin nhắn của một phòng chat. Gọi mỗi lần **vào p
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getMessageByRoom } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const data = await ola.call(getMessageByRoom, { roomID: '79' });
 } finally {

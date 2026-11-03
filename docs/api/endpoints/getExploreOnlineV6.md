@@ -48,10 +48,10 @@ Mỗi phần tử `list_data` có các key quan sát được: `uid`, `lastSeen`
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getExploreOnlineV6 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const first = await ola.call(getExploreOnlineV6, { gender: 0, cityID: '1' });
   // { tab, page, items, next, raw } — items giữ nguyên field hồ sơ

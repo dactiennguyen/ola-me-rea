@@ -30,10 +30,10 @@ Ví dụ body:
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getViolate } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const page0 = await ola.call(getViolate);              // page = 0
   const page1 = await ola.call(getViolate, { page: 1 });

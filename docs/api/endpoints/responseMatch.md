@@ -36,10 +36,10 @@ Hai call-site trong cùng `match_provider` dùng **chung một bộ keys** `uid1
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { responseMatch } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   await ola.call(responseMatch, { uid2: '<uid_nguoi_thich_minh>', response: 1 }); // đồng ý (suy luận)
   await ola.call(responseMatch, { uid2: '<uid_nguoi_thich_minh>', response: 0 }); // từ chối (suy luận)

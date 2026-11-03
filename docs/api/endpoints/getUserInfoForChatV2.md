@@ -30,10 +30,10 @@ Client báo lỗi (`ApiError`) nếu backend trả `is_success=false`; shape cò
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getUserInfoForChatV2 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const info = await ola.call(getUserInfoForChatV2, { id: '<peer_uid>' });
 } finally {

@@ -20,7 +20,13 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 
 ## Response
 
-**Chưa bắt response** — logger phiên 2026-11-03 chỉ ghi request. Chạy `node scripts/nodejs/ola.ts getLastMessage2 --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
+Quan sát ngày 2026-11-04 bằng client Node với tài khoản test, **chỉ ghi tên key và kiểu**, không ghi giá trị. [Quan sát]
+
+```text
+{ is_success: boolean, data: [] }
+```
+
+Tài khoản test chưa có hội thoại nên `data` rỗng; **chưa biết các field của một phần tử**. Client desktop (`normalizeConversations()` trong `scripts/nodejs/src/chat.ts`) đoán peer từ `uid`/`userID`/`id`/`roomID` (giá trị khác uid của mình), nội dung từ `content`/`mess`, thời gian từ `timestamp` — cần đối chiếu khi có dữ liệu thật. [Chưa xác minh]
 
 ## Dùng Node.js
 
@@ -28,10 +34,10 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getLastMessage2 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const data = await ola.call(getLastMessage2);                 // roomID = uid của mình
   // hoặc một hội thoại cụ thể:

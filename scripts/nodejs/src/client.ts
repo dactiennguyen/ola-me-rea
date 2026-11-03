@@ -1,6 +1,8 @@
-// OlaClient: signs and sends requests built by endpoints.
+// OlaClient: signs and sends requests built by endpoints. Platform-neutral: the
+// Node CLIs sign in through loginFromEnv() (node.ts); the desktop app passes its
+// stored account, config and Tauri fetch to OlaClient.login().
 //
-//   const ola = await OlaClient.login();          // Firebase sign-in + napi/users/sync
+//   const ola = await OlaClient.login({ account });  // Firebase sign-in + napi/users/sync
 //   try {
 //     const coins = await ola.call(getCoins);
 //   } finally {
@@ -9,7 +11,7 @@
 
 import type { z } from 'zod';
 import { firebaseLogin } from './auth.ts';
-import { accountFromEnv, olaConfig, type Account, type OlaConfig } from './config.ts';
+import { olaDefaults, type Account, type FirebaseConfig, type OlaConfig } from './defaults.ts';
 import {
   DRY_RUN_SESSION, type CallInput, type Endpoint, type InputArgs, type JsonObject, type OlaRequest, type SessionInfo,
 } from './endpoint.ts';
@@ -28,22 +30,28 @@ export interface OlaClientOptions {
 }
 
 /** What endpoints default from: the account plus this device's identity (usersSync's deviceId/ver). */
-export function sessionInfo(session: SessionInfo, config: OlaConfig = olaConfig): SessionInfo {
+export function sessionInfo(session: SessionInfo, config: OlaConfig = olaDefaults): SessionInfo {
   return { ...session, deviceId: config.deviceId, androidVersion: config.androidVersion };
 }
 
 /** The session --dry-run and pre-login validation build with. */
-export const dryRunSession = (config: OlaConfig = olaConfig) => sessionInfo(DRY_RUN_SESSION, config);
+export const dryRunSession = (config: OlaConfig = olaDefaults) => sessionInfo(DRY_RUN_SESSION, config);
 
 export interface LoginOptions {
-  account?: Account;
+  account: Account;
   /** Stop after Firebase sign-in; skip napi/users/sync. */
   firebaseOnly?: boolean;
   config?: OlaConfig;
+  firebaseConfig?: FirebaseConfig;
   fetch?: FetchLike;
 }
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
+
+/** URLs are `${baseUrl}${path}`; OLA_BASE_URL or app settings may omit the slash. */
+function withTrailingSlash(config: OlaConfig): OlaConfig {
+  return config.baseUrl.endsWith('/') ? config : { ...config, baseUrl: `${config.baseUrl}/` };
+}
 
 export class OlaClient {
   readonly session: OlaClientOptions['session'];
@@ -64,14 +72,14 @@ export class OlaClient {
     }
     this.session = options.session;
     this.#getToken = options.getToken ?? (async () => this.session.idToken);
-    this.#config = options.config ?? olaConfig;
+    this.#config = withTrailingSlash(options.config ?? olaDefaults);
     this.#fetch = options.fetch ?? fetch;
     this.#close = options.close;
   }
 
-  /** Signs in with the .env account and, unless firebaseOnly, syncs the Ola profile. */
-  static async login({ account = accountFromEnv(), firebaseOnly = false, ...options }: LoginOptions = {}): Promise<OlaClient> {
-    const { session, user, firebaseUser, close } = await firebaseLogin(account);
+  /** Signs in with `account` and, unless firebaseOnly, syncs the Ola profile. */
+  static async login({ account, firebaseOnly = false, firebaseConfig, ...options }: LoginOptions): Promise<OlaClient> {
+    const { session, user, firebaseUser, close } = await firebaseLogin(account, firebaseConfig);
     const client = new OlaClient({ ...options, session, getToken: () => firebaseUser.getIdToken(), close });
     client.user = user;
     if (firebaseOnly) return client;

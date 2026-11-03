@@ -2,7 +2,7 @@
 // Firebase sign-in + napi/users/sync with the account from scripts/nodejs/.env,
 // then print the session, Firebase user and Ola profile.
 
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { runMain } from './src/run.ts';
 
 export async function main(args = process.argv.slice(2), output = console.log): Promise<void> {
@@ -12,7 +12,7 @@ export async function main(args = process.argv.slice(2), output = console.log): 
     return;
   }
   if (args.some(arg => arg !== '--firebase-only')) throw new Error('Unknown argument; use --help.');
-  const client = await OlaClient.login({ firebaseOnly: args.includes('--firebase-only') });
+  const client = await loginFromEnv({ firebaseOnly: args.includes('--firebase-only') });
   try {
     output('Firebase signInWithEmailAndPassword: OK');
     output(JSON.stringify(client.session, null, 2));

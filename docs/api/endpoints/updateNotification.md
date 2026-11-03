@@ -55,10 +55,10 @@ Ví dụ body (đã redact):
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { updateNotification } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   await ola.call(updateNotification, { related_id: 9001 });        // đọc 1 mục
   await ola.call(updateNotification, { action: 'mark_all_read', mark_all_read: true }); // đọc tất cả

@@ -33,10 +33,10 @@ Ví dụ body (đã redact) — mua cho chính mình:
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { addVipUser7 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   // Mua cho bản thân (uid/uidTang mặc định = tài khoản đăng nhập):
   const res = await ola.call(addVipUser7, { successRes: '<store-success>', transID: '<transID>' });

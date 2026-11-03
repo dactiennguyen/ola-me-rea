@@ -29,10 +29,10 @@ Client ném lỗi nếu `is_success=false`: endpoint faApi2 `get*` dạng danh s
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getContactV3 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const danhBa = await ola.call(getContactV3);                 // uid = tài khoản đang đăng nhập
   // hoặc danh bạ của một user khác:

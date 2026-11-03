@@ -27,10 +27,10 @@ Ví dụ body (đã redact):
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { checkUV2 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(checkUV2);               // uid = tài khoản đang đăng nhập
   // hoặc ola.call(checkUV2, { uid: '<uid-khác>' })

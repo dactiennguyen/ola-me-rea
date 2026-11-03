@@ -29,10 +29,10 @@ Chặn chat với một người dùng. Thuộc `room_provider` (màn phòng cha
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { apiAddBlockChatV3 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(apiAddBlockChatV3, { uid: '<uid người bị chặn>', name: 'Tên' });
 } finally {

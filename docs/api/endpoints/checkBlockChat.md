@@ -18,7 +18,13 @@ Kiểm tra tài khoản đang đăng nhập có bị **cấm chat** hay không. 
 
 ## Response
 
-**Chưa bắt response** — chạy `node scripts/nodejs/ola.ts checkBlockChat --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
+Quan sát ngày 2026-11-04 bằng client Node với tài khoản test, **chỉ ghi tên key và kiểu**, không ghi giá trị. [Quan sát]
+
+```text
+{ is_success: boolean, isBlock: boolean, isStrict: number }
+```
+
+`isBlock` là câu trả lời bị cấm chat hay không; client desktop khoá ô nhập khi `isBlock === true`. Ý nghĩa `isStrict` chưa rõ.
 
 ## Dùng Node.js
 
@@ -26,10 +32,10 @@ Kiểm tra tài khoản đang đăng nhập có bị **cấm chat** hay không. 
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { checkBlockChat } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const data = await ola.call(checkBlockChat); // uid mặc định = session.localId
 } finally {

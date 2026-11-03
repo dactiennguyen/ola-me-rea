@@ -42,10 +42,10 @@ Ví dụ body (đã redact):
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { reportPost } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(reportPost, {
     userBlock: '<peer-uid>', id: '<post-id>', text: 'spam',

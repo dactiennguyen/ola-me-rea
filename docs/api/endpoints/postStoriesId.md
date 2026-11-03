@@ -37,10 +37,10 @@ Ví dụ body thả cảm xúc (đã redact):
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { postStoriesId } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   await ola.call(postStoriesId, { storyId: '540918', action: 'view' });                 // POST .../view
   await ola.call(postStoriesId, { storyId: '540918', action: 'react', body: { type: 1 } });

@@ -58,14 +58,14 @@ Giá trị thật (uid, email, tên) đã được redact; chỉ ghi shape key/k
 
 ## Dùng Node.js
 
-Định nghĩa: [`scripts/nodejs/src/endpoints/usersSync.ts`](../../../scripts/nodejs/src/endpoints/usersSync.ts). `OlaClient.login()` đã tự gọi endpoint này (qua `ola.sync()`); gọi lại riêng khi cần body tuỳ chỉnh. Mặc định `os="android"`, `displayName`/`photoURL` rỗng, còn `deviceId`/`ver` lấy từ config của client đang gọi — mặc định `olaConfig` ([`scripts/nodejs/src/config.ts`](../../../scripts/nodejs/src/config.ts): `deviceId` = `OLA_DEVICE_ID` trong `.env`, mặc định `nodejs-probe`; `ver` = phiên bản Android `13`) — nên luôn trùng header `deviceid` đã ký.
+Định nghĩa: [`scripts/nodejs/src/endpoints/usersSync.ts`](../../../scripts/nodejs/src/endpoints/usersSync.ts). `OlaClient.login()` đã tự gọi endpoint này (qua `ola.sync()`); gọi lại riêng khi cần body tuỳ chỉnh. Mặc định `os="android"`, `displayName`/`photoURL` rỗng, còn `deviceId`/`ver` lấy từ config của client đang gọi — với `loginFromEnv()` là `olaConfig` ([`scripts/nodejs/src/config.ts`](../../../scripts/nodejs/src/config.ts): `deviceId` = `OLA_DEVICE_ID` trong `.env`, mặc định `nodejs-probe`; `ver` = phiên bản Android `13`) — nên luôn trùng header `deviceid` đã ký.
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { usersSync } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(usersSync, { displayName: 'Phong', photoURL: '' });
 } finally {

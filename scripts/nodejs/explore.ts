@@ -3,7 +3,8 @@
 // each response's `next` input. Flow: ../../docs/api/luong-kham-pha.md
 
 import { parseArgs } from 'node:util';
-import { OlaClient, dryRunSession } from './src/client.ts';
+import type { OlaClient } from './src/client.ts';
+import { envDryRunSession, loginFromEnv } from './src/node.ts';
 import type { JsonObject } from './src/endpoint.ts';
 import type { ExploreTab } from './src/endpoints/_explore.ts';
 import { getExplore3 } from './src/endpoints/getExplore3.ts';
@@ -51,12 +52,12 @@ export function parseCli(args: string[]) {
   if (values.cursor !== undefined) input.lastSeenPaging = number(values.cursor, 'cursor');
   const pages = number(values.pages, 'pages');
   if (!pages) throw new Error('pages must be at least 1.');
-  const preview = exploreTabs[tab].build(dryRunSession(), input); // Validate before login/network calls.
+  const preview = exploreTabs[tab].build(envDryRunSession(), input); // Validate before login/network calls.
   return { tab, input, pages, preview, dryRun: Boolean(values['dry-run']) };
 }
 
 export async function main(args = process.argv.slice(2), {
-  output = console.log, login = () => OlaClient.login(),
+  output = console.log, login = () => loginFromEnv(),
 }: { output?: (line: string) => void; login?: () => Promise<OlaClient> } = {}): Promise<void> {
   const cli = parseCli(args);
   if ('help' in cli) {

@@ -129,10 +129,10 @@ CLI đăng nhập một lần mỗi lần chạy, rồi gọi tuần tự các t
 
 ```ts
 // Một file .ts trong scripts/nodejs/
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { getExplore3, getExploreAvatarV4, getExploreOnlineV6 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const first = await ola.call(getExploreOnlineV6, { gender: 0, cityID: '1' });
   console.log(first.items); // Giữ đầy đủ field của từng hồ sơ.

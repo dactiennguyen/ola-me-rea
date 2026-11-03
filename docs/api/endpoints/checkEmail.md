@@ -32,10 +32,10 @@ Client Node mặc định lấy `session.email` của phiên đăng nhập; truy
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { checkEmail } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(checkEmail, { email: 'you@example.com' });
 } finally {

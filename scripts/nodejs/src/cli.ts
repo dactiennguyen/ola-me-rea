@@ -10,7 +10,8 @@
 
 import { Command, Option } from 'commander';
 import { z } from 'zod';
-import { OlaClient, dryRunSession } from './client.ts';
+import type { OlaClient } from './client.ts';
+import { envDryRunSession, loginFromEnv } from './node.ts';
 import { InputError, type AnyEndpoint, type JsonObject } from './endpoint.ts';
 import { endpoints } from './endpoints/index.ts';
 
@@ -33,7 +34,7 @@ interface JsonSchemaProp {
 
 export function buildProgram({
   output = console.log,
-  login = () => OlaClient.login(),
+  login = () => loginFromEnv(),
   endpoints: registry = endpoints as unknown as Record<string, AnyEndpoint>,
 }: CliDeps = {}): Command {
   const program = new Command('ola')
@@ -97,7 +98,7 @@ function addEndpointCommand(program: Command, ep: AnyEndpoint, { output, login }
         if (raw !== undefined) input[field] = cliValue(shape[field]!, raw as string | true);
       }
       // Validate before login so a typo costs no sign-in and no users/sync.
-      const preview = ep.build(dryRunSession(), input);
+      const preview = ep.build(envDryRunSession(), input);
       if (opts.dryRun) {
         output(JSON.stringify(preview, null, 2));
         return;

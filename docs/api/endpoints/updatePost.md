@@ -60,10 +60,10 @@ Call-site `ViolationListScreen.dart:2216` còn ghép thêm `label, admin, uid, p
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { updatePost } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   // Biến thể cơ bản action/id/value:
   await ola.call(updatePost, { action: '<action>', id: '<id>', value: '<value>' });

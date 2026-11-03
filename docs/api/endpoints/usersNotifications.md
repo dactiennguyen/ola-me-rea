@@ -32,10 +32,10 @@ GET /napi/users/notifications/<uid>
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { usersNotifications } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const data = await ola.call(usersNotifications);               // uid = tài khoản đăng nhập
 } finally {

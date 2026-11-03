@@ -40,10 +40,10 @@ Tạo một **tin (story)** theo API `napi` — biến thể mới của luồng
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { postStories } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   await ola.call(postStories, {
     media_url: 'https://.../story.jpg', media_type: 'image', privacy: 'public',

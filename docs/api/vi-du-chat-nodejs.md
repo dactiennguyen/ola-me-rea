@@ -8,7 +8,7 @@ không phải một client chat hoàn chỉnh đã kiểm chứng hai đầu.
 
 | Dữ liệu | Nguồn |
 |---|---|
-| A.uid, tên, avatar | `await OlaClient.login()` → `ola.session.localId` và `ola.profile` |
+| A.uid, tên, avatar | `await loginFromEnv()` → `ola.session.localId` và `ola.profile` |
 | Firebase ID token | `ola.session.idToken` (OlaClient tự lấy token mới cho mỗi request), dùng Bearer cho HTTP Ola |
 | B.uid | UID trong danh bạ/hội thoại; không dùng ID hiển thị dạng số hay email thay thế |
 | B info/token FCM | POST `faApi2/getUserInfoForChatV2.php`, body `{id: B.uid}` |

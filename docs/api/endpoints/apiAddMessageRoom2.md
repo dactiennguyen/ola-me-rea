@@ -43,10 +43,10 @@ Lưu một tin nhắn vào phòng chat. Đây là bản HTTP đi kèm socket `ne
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { apiAddMessageRoom2 } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   const res = await ola.call(apiAddMessageRoom2, { roomID: '79', mess: 'hi', name: 'Phong nguyen' });
 } finally {

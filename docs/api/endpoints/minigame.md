@@ -53,10 +53,10 @@ AOT chỉ cho path gốc `napi/minigame/` (dòng 1317 = POST), **không liệt k
 
 ```ts
 // Một file .ts trong scripts/nodejs/; tài khoản lấy từ scripts/nodejs/.env
-import { OlaClient } from './src/client.ts';
+import { loginFromEnv } from './src/node.ts';
 import { minigameLeaderboard, minigameScore } from './src/endpoints/index.ts';
 
-const ola = await OlaClient.login();
+const ola = await loginFromEnv();
 try {
   // GET bảng xếp hạng
   const board = await ola.call(minigameLeaderboard, { gameKey: 'flappy', limit: 10 });
