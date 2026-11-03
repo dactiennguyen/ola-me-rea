@@ -1,0 +1,44 @@
+# --- Secrets / local config ---
+.claude/settings.local.json
+*.env
+.env*
+
+# --- Python tooling ---
+tools-venv/
+__pycache__/
+*.pyc
+
+# --- Binary inputs (APK, native libs) — re-obtainable, large ---
+olaachat/apk/
+olaachat/lib/
+olaachat/native/
+*.apk
+*.xapk
+*.apks
+*.so
+*.dex
+
+# --- Regenerable decompiler output ---
+olaachat/jadx-out/
+olaachat/decompiled-skill/
+olaachat/jadx.log
+work/dae-aot-*/
+
+# --- Large derived string dumps (regenerate with scripts/strings.py) ---
+olaachat/libapp_strings.txt
+olaachat/analysis/
+
+# --- Raw runtime captures / device screenshots (may contain personal data) ---
+work/*.log
+work/screens/
+work/device-capture*/
+work/continue-screens/
+*.png
+!docs/**/*.png
+
+# --- OS / editor ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
