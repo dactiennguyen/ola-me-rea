@@ -25,9 +25,9 @@ Host chung `https://sgdev.vip`. Auth = bộ header ở [auth-va-header.md](auth-
 | POST | `/faApi2/checkBlockChat.php` | `uid` | **vào phòng chat** |
 | POST | `/faApi2/apiAddMessageRoom2.php` | `deviceID, mess, name, userID, photoURL2, send, id, isVip, level, roomID, isVerifyAvatar` | **gửi tin phòng** |
 | POST | `/faApi2/apiAddToRoomV4.php` | `uid, page, state` | thành viên phòng |
-| POST | `/faApi2/getExploreOnlineV6.php` | `uid, os, page, condition, lastSeenPaging` | Khám phá — Online |
-| POST | `/faApi2/getExplore3.php` | `uid, os, page, condition` | Khám phá — Đã xác thực |
-| POST | `/faApi2/getExploreAvatarV4.php` | `uid, os, page` | Khám phá — Ảnh có mặt |
+| POST | `/faApi2/getExploreOnlineV6.php` | `uid, os, page, condition, lastSeenPaging`; tùy chọn `gender, cityID` | [Khám phá — Online](luong-kham-pha.md) |
+| POST | `/faApi2/getExplore3.php` | `uid, os, page, condition`; tùy chọn `gender, cityID` | Khám phá — Đã xác thực |
+| POST | `/faApi2/getExploreAvatarV4.php` | `uid, os, page`; tùy chọn `gender, cityID` | Khám phá — Ảnh có mặt |
 | POST | `/faApi2/getUserInfoV7.php` | `myUid, targetUid` | xem hồ sơ |
 | POST | `/faApi2/shouldLoadFeed.php` | `uid` | xem hồ sơ |
 | POST | `/faApi2/getPostByUserV7.php` | `uid, page` | xem hồ sơ |

@@ -22,6 +22,7 @@
 var OFF = {
     post: 0x6d4d80, get: 0x932898, put: 0xb0c93c, del: 0xabd670,
     request: 0x6d4ebc, fetch: 0x6d4fec, dispatch: 0x6d87a4,
+    exploreResponse: 0x9910f0,  // ExploreProvider.fetchData, after `await dio.post`
     // socket_io_common / socket_io_client — hooked at the wire-text level (see Socket.IO section)
     sioEncode: 0x7cd740, sioDecode: 0x7daf78, sioUri: 0x7d67f8
 };
@@ -61,7 +62,8 @@ function decodeCompressed(u32, depth) {
 
 function decode(v, depth) {
     if (depth === undefined) depth = MAX_DEPTH;
-    if (v.isNull()) return null;
+    // Dart Smi(0) is the zero pointer; Dart null is a tagged heap object (CID.Null).
+    if (v.isNull()) return 0;
     if (!isHeapObj(v)) return v.toInt32() >> 1;            // Smi
     var p;
     try { p = untag(v); } catch (e) { return '<bad ptr>'; }
@@ -71,7 +73,11 @@ function decode(v, depth) {
         switch (cid) {
         case CID.Null: return null;
         case CID.Bool: return p.add(8).readU8() !== 0;
-        case CID.Mint: return p.add(8).readS64().toString();
+        case CID.Mint: {
+            var integerText = p.add(8).readS64().toString();
+            var integer = Number(integerText);
+            return Number.isSafeInteger(integer) ? integer : integerText;
+        }
         case CID.Double: return p.add(8).readDouble();
         case CID.Str: {
             var n = smi(p.add(8));
@@ -277,6 +283,33 @@ function onDispatch(ctx) {
     console.log('    ↳ wire hdrs (' + (path || '?') + '): ' + JSON.stringify(scrub(extra)));
 }
 
+/* ExploreProvider.fetchData: instruction immediately after awaiting Dio.post.
+   27.7.8 arm64 only: x0 is Response; data at raw+0xc, statusCode at raw+0x14.
+   Print schema/count/cursor only, never profile values or credentials. */
+function onExploreResponse(ctx) {
+    initHeap(ctx);
+    if (!isHeapObj(ctx.x0)) return;
+    var response = untag(ctx.x0);
+    if (cidOf(response) !== CID.Response) return;
+    var data = decodeCompressed(field(response, 0xc), 5);
+    var list = data && data.list_data;
+    // readArray keeps 64 items and appends a '…+N' marker string when longer.
+    var truncated = Array.isArray(list) && list.length > 64;
+    var first = Array.isArray(list) && list.length ? list[0] : null;
+    var types = {};
+    if (first && typeof first === 'object') Object.keys(first).forEach(function (k) {
+        types[k] = first[k] === null ? 'null' : typeof first[k];
+    });
+    console.log('EXPLORE-RESPONSE ' + JSON.stringify({
+        status: decodeCompressed(field(response, 0x14), 1),
+        keys: data && typeof data === 'object' ? Object.keys(data) : [],
+        decodedItems: Array.isArray(list) ? (truncated ? 64 : list.length) : null,
+        truncated: truncated,
+        lastSeenPaging: data && data.lastSeenPaging,
+        firstItemFieldTypes: types
+    }));
+}
+
 /* ---------- Socket.IO (wire level) ----------
  * Outgoing: Encoder.encodeAsString(packet) returns the wire text  -> hook onLeave, read x0.
  * Incoming: Decoder.decodeString(String)  receives the wire text   -> scan stack for the String.
@@ -372,6 +405,7 @@ function waitFor(n) {
         console.log('[*] libapp.so base=' + m.base);
         hook(OFF.fetch, 'DioMixin.fetch', onFetch);
         hook(OFF.dispatch, 'DioMixin._dispatchRequest', onDispatch);
+        hook(OFF.exploreResponse, 'ExploreProvider.fetchData response schema', onExploreResponse);
         hookLeave(OFF.sioEncode, 'Encoder.encodeAsString', onSioOutLeave);
         hook(OFF.sioDecode, 'Decoder.decodeString', onSioIn);
         hookLeave(OFF.sioUri, 'IOWebSocketTransport.uri', onSioUriLeave);

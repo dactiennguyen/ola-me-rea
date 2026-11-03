@@ -1,28 +1,34 @@
 # Chạy đăng nhập bằng Node.js
 
-Chỉ có một script: `scripts/nodejs/login.js`. File local chứa tài khoản và cấu hình ở các const đầu file, được Git ignore. Cần Node.js 18+, không cần npm install.
+Script đăng nhập duy nhất là `scripts/nodejs/login.js`. API Khám phá nằm riêng trong `scripts/nodejs/explore.js`; xem [cách chạy và API JavaScript](luong-kham-pha.md#client-node-explorejs). Tài khoản và cấu hình nằm ở các const đầu file; file **có trong Git kèm email và mật khẩu**, không push lên remote công khai. Cần Node.js 18+ và cài dependency bằng Yarn (Firebase JS SDK).
 
 ```powershell
-node scripts/nodejs/login.js
-node scripts/nodejs/login.js --firebase-only
+cd scripts/nodejs
+corepack yarn install      # hoặc `yarn install` nếu đã có yarn
+node login.js              # hoặc `corepack yarn login`
+node login.js --firebase-only
 ```
 
-CLI in đầy đủ JSON của Firebase session (gồm ID token và refresh token), Firebase user từ lookup, và hồ sơ Ola từ sync. Đầu ra chứa credential; không đưa vào commit. Script không tự ghi session ra đĩa.
+`package.json` ghim `yarn@1.22.22` qua trường `packageManager`, nên `corepack yarn` dùng đúng bản này. `node_modules/` được Git ignore.
+
+CLI in session Firebase (`localId`, `email`, `idToken`, `refreshToken`, `expirationTime`), Firebase user (`user.toJSON()` của SDK) và hồ sơ Ola từ sync. Đầu ra chứa credential; không đưa vào commit. Script không tự ghi session ra đĩa.
 
 Luồng chạy:
 
-1. Firebase REST `accounts:signInWithPassword` với email, password và `returnSecureToken:true`.
-2. `accounts:lookup` bằng ID token vừa nhận để lấy Firebase user.
-3. Kiểm tra email đã xác minh, rồi lấy `napi/general/getTimes`.
-4. Gọi `napi/users/sync` với Bearer ID token và [header ký](auth-va-header.md).
-5. Kiểm tra UID hồ sơ Ola khớp Firebase UID và in toàn bộ kết quả.
+1. Firebase JS SDK `signInWithEmailAndPassword` với persistence trong bộ nhớ. SDK tự gọi `accounts:signInWithPassword` và `accounts:lookup`.
+2. Kiểm tra email đã xác minh, rồi lấy `napi/general/getTimes`.
+3. Gọi `napi/users/sync` với Bearer ID token và [header ký](auth-va-header.md).
+4. Kiểm tra UID hồ sơ Ola khớp Firebase UID và in toàn bộ kết quả.
+5. `closeFirebase()` giải phóng SDK để process thoát.
 
-Firebase config lấy từ Android resources; `apiKey` là trường cần cho REST login. HTTP `key2` lấy từ native `publicKey`. Không cần `authDomain` cho luồng này.
+Lỗi đăng nhập in mã SDK, ví dụ `Firebase sign-in failed (auth/invalid-credential).`
 
-Mỗi lần chạy script đều đăng nhập mới. App Android giữ phiên Firebase và cache hồ sơ nên thường không hỏi mật khẩu khi mở lại; script chưa lưu hoặc refresh phiên tự động.
+Firebase config lấy từ Android resources; `apiKey` là trường cần cho đăng nhập email. HTTP `key2` lấy từ native `publicKey`. Không cần `authDomain` cho luồng này.
 
-Có thể import `login()` để nhận `{session, user, profile}` trong bộ nhớ; import không tự đăng nhập. `requestOla(token, path, body)` ký và gửi POST đến host Ola cố định.
+Mỗi lần chạy script đều đăng nhập mới. App Android giữ phiên Firebase và cache hồ sơ nên thường không hỏi mật khẩu khi mở lại; script chưa lưu phiên ra đĩa.
 
-Luồng email login + lookup + sync đã thành công trong phiên thử trước. Đã kiểm tra cú pháp, ba kiểm tra giả lập cho login/token/header và kiểm tra việc in đủ trường. Bản dọn file không chạy thêm đăng nhập live. Các bản example, probe, test và JSON cấu hình trùng đã được bỏ; cấu hình cần dùng vẫn nằm trong file local duy nhất.
+Có thể import `login()` để nhận `{session, user, firebaseUser, profile}` trong bộ nhớ; import không tự đăng nhập. ID token hết hạn sau 1 giờ: với tiến trình chạy lâu, lấy token mới bằng `await firebaseUser.getIdToken()` thay vì dùng lại `session.idToken`. `requestOla(token, path, body)` ký và gửi POST đến host Ola cố định.
 
-Xem [workflow chat](vi-du-chat-nodejs.md) để hiểu dữ liệu cần cho gửi tin. File login local không nằm trong commit; clone repo sang máy khác không tự có script chứa tài khoản này.
+Bản dùng SDK mới được kiểm tra bằng Firebase/Ola giả lập (đăng nhập, token, sai mật khẩu, process tự thoát); chưa chạy đăng nhập live sau khi chuyển sang SDK. Luồng REST trước đó đã đăng nhập live thành công.
+
+Xem [workflow chat](vi-du-chat-nodejs.md) để hiểu dữ liệu cần cho gửi tin.

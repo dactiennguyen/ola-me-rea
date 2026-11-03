@@ -39,3 +39,5 @@ Muốn chạy lại công cụ bắt request: xem [04-runtime-api-capture.md](..
 Bản CSV: [work/api_runtime_inventory.csv](../../work/api_runtime_inventory.csv) (runtime, 40 dòng) và [work/api_inventory.csv](../../work/api_inventory.csv) (tĩnh, 135 dòng).
 
 Ví dụ Node: [đăng nhập một file](nodejs-login.md) và [workflow chat](vi-du-chat-nodejs.md).
+
+Khám phá: [API ba tab, bộ lọc, response và phân trang](luong-kham-pha.md).

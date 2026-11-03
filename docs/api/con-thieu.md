@@ -39,5 +39,5 @@ Danh sách những gì **chưa** bắt được hoặc chưa phân tích, xếp 
 
 - Chỉ hook `DioMixin.fetch` / `_dispatchRequest` và 3 điểm của Socket.IO.
 - Chưa giải mã `FormData` trên luồng thật.
-- Chưa bắt response.
+- Đã thêm hook cấu trúc response của Khám phá tại `0x9910f0` (key/type/count/cursor); chưa bắt response tổng quát cho các endpoint khác.
 - Bảng `Classes` trong `work/dae-aot-20261102/frida.js` của dae **lệch 4 byte** (giả định header 4 byte, thật là 8) — nếu dùng lại file đó phải sửa; `ola_api_logger.js` đã hardcode layout đúng.
