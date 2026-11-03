@@ -1,8 +1,11 @@
 // Runtime configuration.
 //
-// App constants (Firebase client config, key2, app version) were recovered from
-// the APK and live here. The account used to sign in is personal, so it is read
-// from scripts/nodejs/.env (gitignored) or the environment, never from source.
+// App/server constants (Firebase client config, Ola base URL, key2, app version)
+// were recovered from the APK. They ship as built-in defaults and can be overridden
+// per-environment via scripts/nodejs/.env or the process environment.
+//
+// The account used to sign in is personal, so it has NO default: set OLA_EMAIL /
+// OLA_PASSWORD in scripts/nodejs/.env (gitignored), never in source.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
@@ -15,14 +18,20 @@ const env: Record<string, string | undefined> = {
   ...process.env,
 };
 
+// Read env var NAME, falling back to the built-in default when unset or blank.
+const envOr = (name: string, fallback: string): string => {
+  const value = env[name];
+  return value && value.trim() ? value : fallback;
+};
+
 export const firebaseConfig = {
-  apiKey: 'AIzaSyDbgTrrzTslO1iXyyUhCa2F9d-On2TUbtg',
-  projectId: 'olaachat',
-  databaseURL: 'https://olaachat.firebaseio.com',
-  storageBucket: 'olaachat.appspot.com',
-  messagingSenderId: '211539470356',
-  appId: '1:211539470356:android:54d93ae0ba01751b',
-  oauthClientId: '211539470356-6qpsdsshh6klat94t7vc5llf9663l1dh.apps.googleusercontent.com',
+  apiKey: envOr('OLA_FIREBASE_API_KEY', 'AIzaSyDbgTrrzTslO1iXyyUhCa2F9d-On2TUbtg'),
+  projectId: envOr('OLA_FIREBASE_PROJECT_ID', 'olaachat'),
+  databaseURL: envOr('OLA_FIREBASE_DATABASE_URL', 'https://olaachat.firebaseio.com'),
+  storageBucket: envOr('OLA_FIREBASE_STORAGE_BUCKET', 'olaachat.appspot.com'),
+  messagingSenderId: envOr('OLA_FIREBASE_MESSAGING_SENDER_ID', '211539470356'),
+  appId: envOr('OLA_FIREBASE_APP_ID', '1:211539470356:android:54d93ae0ba01751b'),
+  oauthClientId: envOr('OLA_FIREBASE_OAUTH_CLIENT_ID', '211539470356-6qpsdsshh6klat94t7vc5llf9663l1dh.apps.googleusercontent.com'),
 } as const;
 
 export interface OlaConfig {
@@ -38,11 +47,11 @@ export interface OlaConfig {
 }
 
 export const olaConfig: OlaConfig = {
-  baseUrl: 'https://sgdev.vip/',
-  publicKey: '49|S4f(vcVKIZ',
-  deviceId: env.OLA_DEVICE_ID || 'nodejs-probe',
-  appVersion: '27.7.8',
-  androidVersion: '13',
+  baseUrl: envOr('OLA_BASE_URL', 'https://sgdev.vip/'),
+  publicKey: envOr('OLA_PUBLIC_KEY', '49|S4f(vcVKIZ'),
+  deviceId: envOr('OLA_DEVICE_ID', 'nodejs-probe'),
+  appVersion: envOr('OLA_APP_VERSION', '27.7.8'),
+  androidVersion: envOr('OLA_ANDROID_VERSION', '13'),
 };
 
 export interface Account {
