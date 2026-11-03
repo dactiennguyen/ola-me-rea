@@ -14,6 +14,7 @@ Node.js/TypeScript. Tài liệu được chia theo mục đích tra cứu:
 | Inventory 40 endpoint đã chạy thật và 135 path tìm thấy trong AOT | [Endpoint runtime](docs/api/endpoint-runtime.md) · [Endpoint tĩnh](docs/api/endpoint-tinh.md) |
 | Chạy client Node.js, đăng nhập, gọi endpoint, dry-run và dùng như thư viện | [Client Node.js](docs/api/nodejs-login.md) |
 | Ví dụ workflow chat 1-1 bằng hai client Node.js | [Ví dụ chat Node.js](docs/api/vi-du-chat-nodejs.md) |
+| App desktop Tauri 2: quản lý tài khoản, tin nhắn, Khám phá, phòng chat | [Ola Desktop](apps/README.md) |
 | Luồng đăng nhập/khởi động, khám phá, chat và phòng chat | [Các luồng API](docs/api/luong-dang-nhap-khoi-dong.md) |
 | Nguồn dữ liệu điều tra và danh sách file Dart nhận diện được | [ola_files.txt](olaachat/ola_files.txt) |
 

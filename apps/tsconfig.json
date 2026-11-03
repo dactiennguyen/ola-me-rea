@@ -1,0 +1,27 @@
+{
+  // Type-check only; Vite bundles. The Ola client core is imported straight from
+  // scripts/nodejs/src through the @ola/core alias (see vite.config.ts), and its
+  // bare imports (zod, firebase) resolve to this app's node_modules.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@ola/core/*": ["../scripts/nodejs/src/*"],
+      "zod": ["./node_modules/zod"],
+      "firebase/*": ["./node_modules/firebase/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

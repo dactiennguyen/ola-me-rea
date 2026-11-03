@@ -37,6 +37,11 @@ work/device-capture*/
 work/continue-screens/
 *.png
 !docs/**/*.png
+# Tauri needs the app icons to build.
+!apps/src-tauri/icons/*.png
+
+# --- Release bundles staged by .github/scripts/stage-bundles.mjs ---
+/staged/
 
 # --- OS / editor ---
 Thumbs.db
