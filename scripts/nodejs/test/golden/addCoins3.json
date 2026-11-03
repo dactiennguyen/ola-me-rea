@@ -1,0 +1,56 @@
+{
+  "endpoint": "addCoins3",
+  "cases": [
+    {
+      "name": "uid defaults to the signed-in account",
+      "input": {
+        "receipt": "rcpt-1",
+        "transID": "GPA.1234"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addCoins3.php",
+        "body": {
+          "uid": "me-uid",
+          "receipt": "rcpt-1",
+          "transID": "GPA.1234"
+        }
+      },
+      "legacy": "api/addCoins3.js buildAddCoins3"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "receipt": "rcpt-1",
+        "transID": "GPA.1234"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addCoins3.php",
+        "body": {
+          "uid": "other-uid",
+          "receipt": "rcpt-1",
+          "transID": "GPA.1234"
+        }
+      },
+      "legacy": "api/addCoins3.js buildAddCoins3"
+    },
+    {
+      "name": "missing transID is rejected (legacy sent '<transID>')",
+      "input": {
+        "receipt": "rcpt-1"
+      },
+      "error": "transID"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "receipt": "r",
+        "transID": "t",
+        "bogus": 1
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "endpoint": "usersUpdateLastSeen",
+  "cases": [
+    {
+      "name": "empty body (as captured)",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "napi/users/updateLastSeen",
+        "body": {}
+      },
+      "legacy": "api/usersUpdateLastSeen.js buildUsersUpdateLastSeen"
+    },
+    {
+      "name": "uid is not accepted",
+      "input": {
+        "uid": "me-uid"
+      },
+      "error": "uid"
+    }
+  ]
+}

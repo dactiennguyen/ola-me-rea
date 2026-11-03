@@ -1,0 +1,36 @@
+{
+  "endpoint": "postDelR2",
+  "cases": [
+    {
+      "name": "file + path",
+      "input": {
+        "file": "chat/abc.jpg",
+        "path": "uploads/2026"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/delR2",
+        "body": {
+          "file": "chat/abc.jpg",
+          "path": "uploads/2026"
+        }
+      },
+      "legacy": "api/postDelR2.js buildPostDelR2"
+    },
+    {
+      "name": "missing path is rejected",
+      "input": {
+        "file": "chat/abc.jpg"
+      },
+      "error": "→ at path"
+    },
+    {
+      "name": "file must be a string",
+      "input": {
+        "file": 1,
+        "path": "uploads"
+      },
+      "error": "→ at file"
+    }
+  ]
+}

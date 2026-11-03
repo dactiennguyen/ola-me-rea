@@ -1,0 +1,108 @@
+{
+  "endpoint": "reportPost",
+  "cases": [
+    {
+      "name": "minimal report, displayName/photoURL default to ''",
+      "input": {
+        "userBlock": "peer-uid",
+        "id": "post-1",
+        "text": "spam"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/reportPost.php",
+        "body": {
+          "uid": "me-uid",
+          "userBlock": "peer-uid",
+          "displayName": "",
+          "photoURL": "",
+          "id": "post-1",
+          "text": "spam"
+        }
+      },
+      "legacy": "api/reportPost.js buildReportPost"
+    },
+    {
+      "name": "full report with explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "userBlock": "peer-uid",
+        "id": "post-1",
+        "text": "spam",
+        "displayName": "Phong nguyen",
+        "photoURL": "https://cdn.example/a.jpg"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/reportPost.php",
+        "body": {
+          "uid": "other-uid",
+          "userBlock": "peer-uid",
+          "displayName": "Phong nguyen",
+          "photoURL": "https://cdn.example/a.jpg",
+          "id": "post-1",
+          "text": "spam"
+        }
+      },
+      "legacy": "api/reportPost.js buildReportPost"
+    },
+    {
+      "name": "explicit '' displayName/photoURL is accepted (legacy rejected '')",
+      "input": {
+        "userBlock": "peer-uid",
+        "id": "post-1",
+        "text": "spam",
+        "displayName": "",
+        "photoURL": ""
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/reportPost.php",
+        "body": {
+          "uid": "me-uid",
+          "userBlock": "peer-uid",
+          "displayName": "",
+          "photoURL": "",
+          "id": "post-1",
+          "text": "spam"
+        }
+      },
+      "legacy": "api/reportPost.js buildReportPost"
+    },
+    {
+      "name": "missing text is rejected",
+      "input": {
+        "userBlock": "peer-uid",
+        "id": "post-1"
+      },
+      "error": "→ at text"
+    },
+    {
+      "name": "missing userBlock is rejected",
+      "input": {
+        "id": "post-1",
+        "text": "spam"
+      },
+      "error": "→ at userBlock"
+    },
+    {
+      "name": "id must be a string",
+      "input": {
+        "userBlock": "peer-uid",
+        "id": 123,
+        "text": "spam"
+      },
+      "error": "→ at id"
+    },
+    {
+      "name": "displayName must be a string",
+      "input": {
+        "userBlock": "peer-uid",
+        "id": "post-1",
+        "text": "spam",
+        "displayName": 5
+      },
+      "error": "→ at displayName"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "endpoint": "sendGift",
+  "cases": [
+    {
+      "name": "sender defaults to the session",
+      "input": {
+        "uid2": "peer-uid",
+        "displayName": "Phong nguyen",
+        "xu": 100,
+        "transID": "tx-1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/sendGift.php",
+        "body": {
+          "uid": "me-uid",
+          "displayName": "Phong nguyen",
+          "uid2": "peer-uid",
+          "xu": 100,
+          "transID": "tx-1"
+        }
+      },
+      "legacy": "api/sendGift.js buildSendGift"
+    },
+    {
+      "name": "explicit sender uid",
+      "input": {
+        "uid": "other-uid",
+        "uid2": "peer-uid",
+        "displayName": "An",
+        "xu": 0,
+        "transID": "tx-2"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/sendGift.php",
+        "body": {
+          "uid": "other-uid",
+          "displayName": "An",
+          "uid2": "peer-uid",
+          "xu": 0,
+          "transID": "tx-2"
+        }
+      },
+      "legacy": "api/sendGift.js buildSendGift"
+    },
+    {
+      "name": "missing uid2 is rejected",
+      "input": {
+        "displayName": "An",
+        "xu": 1,
+        "transID": "tx"
+      },
+      "error": "uid2"
+    },
+    {
+      "name": "xu must be an integer",
+      "input": {
+        "uid2": "p",
+        "displayName": "An",
+        "xu": "100",
+        "transID": "tx"
+      },
+      "error": "xu"
+    },
+    {
+      "name": "blank transID is rejected",
+      "input": {
+        "uid2": "p",
+        "displayName": "An",
+        "xu": 1,
+        "transID": "  "
+      },
+      "error": "transID"
+    }
+  ]
+}

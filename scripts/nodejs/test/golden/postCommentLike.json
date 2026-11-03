@@ -1,0 +1,29 @@
+{
+  "endpoint": "postCommentLike",
+  "cases": [
+    {
+      "name": "commentId goes into the path, empty body",
+      "input": {
+        "commentId": "c_123"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/c_123/like",
+        "body": {}
+      },
+      "legacy": "api/postCommentLike.js buildPostCommentLike"
+    },
+    {
+      "name": "'..' is rejected (legacy built napi/post/../like)",
+      "input": {
+        "commentId": ".."
+      },
+      "error": "\"..\""
+    },
+    {
+      "name": "missing commentId is rejected",
+      "input": {},
+      "error": "commentId"
+    }
+  ]
+}

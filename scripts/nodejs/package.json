@@ -1,18 +1,29 @@
 {
   "name": "ola-nodejs-scripts",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Ola API login and exploration scripts",
+  "description": "Ola API client and CLIs (TypeScript, run directly by Node)",
   "license": "UNLICENSED",
+  "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=22.18"
   },
   "packageManager": "yarn@1.22.22",
   "scripts": {
-    "login": "node login.js",
-    "explore": "node explore.js"
+    "ola": "node ola.ts",
+    "login": "node login.ts",
+    "explore": "node explore.ts",
+    "typecheck": "tsc",
+    "gen:index": "node tools/gen-endpoint-index.ts",
+    "test": "node --test \"test/**/*.test.ts\""
   },
   "dependencies": {
-    "firebase": "^13.2.0"
+    "commander": "15.0.0",
+    "firebase": "^13.2.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "7.0.2"
   }
 }

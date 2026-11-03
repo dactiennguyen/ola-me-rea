@@ -1,0 +1,85 @@
+{
+  "endpoint": "caroAiFinish",
+  "cases": [
+    {
+      "name": "finish with moves",
+      "input": {
+        "gameId": "game-1",
+        "moves": [
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            7,
+            8
+          ]
+        ]
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/caro/ai/finish",
+        "body": {
+          "gameId": "game-1",
+          "moves": [
+            [
+              7,
+              7
+            ],
+            [
+              8,
+              8
+            ],
+            [
+              7,
+              8
+            ]
+          ]
+        }
+      },
+      "legacy": "api/caroAiFinish.js buildCaroAiFinish"
+    },
+    {
+      "name": "empty moves array",
+      "input": {
+        "gameId": "game-1",
+        "moves": []
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/caro/ai/finish",
+        "body": {
+          "gameId": "game-1",
+          "moves": []
+        }
+      },
+      "legacy": "api/caroAiFinish.js buildCaroAiFinish"
+    },
+    {
+      "name": "missing gameId is rejected",
+      "input": {
+        "moves": []
+      },
+      "error": "at gameId"
+    },
+    {
+      "name": "missing moves is rejected",
+      "input": {
+        "gameId": "game-1"
+      },
+      "error": "at moves"
+    },
+    {
+      "name": "moves must be an array",
+      "input": {
+        "gameId": "game-1",
+        "moves": "[[7,7]]"
+      },
+      "error": "at moves"
+    }
+  ]
+}

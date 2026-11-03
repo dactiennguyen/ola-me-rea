@@ -1,0 +1,85 @@
+{
+  "endpoint": "usersNearby",
+  "cases": [
+    {
+      "name": "lat/lng only, page defaults to 0",
+      "input": {
+        "lat": 10.776,
+        "lng": 106.7
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/nearby",
+        "query": {
+          "lat": 10.776,
+          "lng": 106.7,
+          "page": 0
+        }
+      },
+      "legacy": "api/usersNearby.js buildUsersNearby"
+    },
+    {
+      "name": "with gender and page",
+      "input": {
+        "lat": 10.776,
+        "lng": 106.7,
+        "gender": 1,
+        "page": 2
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/nearby",
+        "query": {
+          "lat": 10.776,
+          "lng": 106.7,
+          "page": 2,
+          "gender": 1
+        }
+      },
+      "legacy": "api/usersNearby.js buildUsersNearby"
+    },
+    {
+      "name": "negative coordinates",
+      "input": {
+        "lat": -33.86,
+        "lng": -151.2,
+        "gender": 0
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/nearby",
+        "query": {
+          "lat": -33.86,
+          "lng": -151.2,
+          "page": 0,
+          "gender": 0
+        }
+      },
+      "legacy": "api/usersNearby.js buildUsersNearby"
+    },
+    {
+      "name": "missing lng is rejected",
+      "input": {
+        "lat": 10.7
+      },
+      "error": "lng"
+    },
+    {
+      "name": "lat must be a number",
+      "input": {
+        "lat": "10.7",
+        "lng": 106.7
+      },
+      "error": "lat"
+    },
+    {
+      "name": "page must be an integer",
+      "input": {
+        "lat": 10.7,
+        "lng": 106.7,
+        "page": 1.5
+      },
+      "error": "page"
+    }
+  ]
+}

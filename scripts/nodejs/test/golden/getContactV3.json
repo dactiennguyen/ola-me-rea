@@ -1,0 +1,52 @@
+{
+  "endpoint": "getContactV3",
+  "cases": [
+    {
+      "name": "uid defaults to the signed-in account",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getContactV3.php",
+        "body": {
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/getContactV3.js buildGetContactV3"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getContactV3.php",
+        "body": {
+          "uid": "other-uid"
+        }
+      },
+      "legacy": "api/getContactV3.js buildGetContactV3"
+    },
+    {
+      "name": "empty uid is rejected",
+      "input": {
+        "uid": ""
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "numeric uid is rejected",
+      "input": {
+        "uid": 5
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "page": 1
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

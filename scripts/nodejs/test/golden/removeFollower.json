@@ -1,0 +1,48 @@
+{
+  "endpoint": "removeFollower",
+  "cases": [
+    {
+      "name": "uid1 defaults to the signed-in account",
+      "input": {
+        "uid2": "follower-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/removeFollower.php",
+        "body": {
+          "uid1": "me-uid",
+          "uid2": "follower-uid"
+        }
+      },
+      "legacy": "api/removeFollower.js buildRemoveFollower"
+    },
+    {
+      "name": "explicit uid1",
+      "input": {
+        "uid1": "other-uid",
+        "uid2": "follower-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/removeFollower.php",
+        "body": {
+          "uid1": "other-uid",
+          "uid2": "follower-uid"
+        }
+      },
+      "legacy": "api/removeFollower.js buildRemoveFollower"
+    },
+    {
+      "name": "missing uid2 is rejected",
+      "input": {},
+      "error": "→ at uid2"
+    },
+    {
+      "name": "uid2 must be a string",
+      "input": {
+        "uid2": 7
+      },
+      "error": "→ at uid2"
+    }
+  ]
+}

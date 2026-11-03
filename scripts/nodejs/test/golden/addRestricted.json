@@ -1,0 +1,39 @@
+{
+  "endpoint": "addRestricted",
+  "cases": [
+    {
+      "name": "restrict by id",
+      "input": {
+        "id": "peer-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addRestricted.php",
+        "body": {
+          "id": "peer-uid"
+        }
+      },
+      "legacy": "api/addRestricted.js buildAddRestricted"
+    },
+    {
+      "name": "missing id is rejected",
+      "input": {},
+      "error": "at id"
+    },
+    {
+      "name": "numeric id is rejected",
+      "input": {
+        "id": 7
+      },
+      "error": "at id"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "id": "peer-uid",
+        "uid": "me"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

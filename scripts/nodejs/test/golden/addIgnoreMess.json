@@ -1,0 +1,39 @@
+{
+  "endpoint": "addIgnoreMess",
+  "cases": [
+    {
+      "name": "room message id",
+      "input": {
+        "id": "1793703706157me-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addIgnoreMess.php",
+        "body": {
+          "id": "1793703706157me-uid"
+        }
+      },
+      "legacy": "api/addIgnoreMess.js buildAddIgnoreMess"
+    },
+    {
+      "name": "missing id is rejected",
+      "input": {},
+      "error": "at id"
+    },
+    {
+      "name": "numeric id is rejected",
+      "input": {
+        "id": 1793703706157
+      },
+      "error": "at id"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "id": "x",
+        "uid": "me"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

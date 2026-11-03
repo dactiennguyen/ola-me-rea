@@ -1,0 +1,49 @@
+{
+  "endpoint": "getExploreOnlineV6",
+  "cases": [
+    {
+      "name": "first page sends cursor 0",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExploreOnlineV6.php",
+        "body": {
+          "uid": "me-uid",
+          "os": "android",
+          "page": 0,
+          "condition": 2,
+          "lastSeenPaging": 0
+        }
+      },
+      "legacy": "api/getExploreOnlineV6.js buildGetExploreOnlineV6"
+    },
+    {
+      "name": "next page with cursor",
+      "input": {
+        "page": 1,
+        "lastSeenPaging": 40,
+        "gender": 2
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExploreOnlineV6.php",
+        "body": {
+          "uid": "me-uid",
+          "os": "android",
+          "page": 1,
+          "condition": 2,
+          "gender": 2,
+          "lastSeenPaging": 40
+        }
+      },
+      "legacy": "api/getExploreOnlineV6.js buildGetExploreOnlineV6"
+    },
+    {
+      "name": "page > 0 needs a cursor",
+      "input": {
+        "page": 1
+      },
+      "error": "requires lastSeenPaging"
+    }
+  ]
+}

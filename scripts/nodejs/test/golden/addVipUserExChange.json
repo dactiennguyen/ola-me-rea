@@ -1,0 +1,63 @@
+{
+  "endpoint": "addVipUserExChange",
+  "cases": [
+    {
+      "name": "uid defaults to the signed-in account",
+      "input": {
+        "successRes": "exchange-res",
+        "transID": "tx-1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addVipUserExChange.php",
+        "body": {
+          "uid": "me-uid",
+          "successRes": "exchange-res",
+          "transID": "tx-1"
+        }
+      },
+      "legacy": "api/addVipUserExChange.js buildAddVipUserExChange"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "successRes": "exchange-res",
+        "transID": "tx-1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addVipUserExChange.php",
+        "body": {
+          "uid": "other-uid",
+          "successRes": "exchange-res",
+          "transID": "tx-1"
+        }
+      },
+      "legacy": "api/addVipUserExChange.js buildAddVipUserExChange"
+    },
+    {
+      "name": "missing successRes is rejected (legacy sent '<successRes>')",
+      "input": {
+        "transID": "tx-1"
+      },
+      "error": "at successRes"
+    },
+    {
+      "name": "missing transID is rejected (legacy sent '<transID>')",
+      "input": {
+        "successRes": "exchange-res"
+      },
+      "error": "at transID"
+    },
+    {
+      "name": "uidTang is not accepted here",
+      "input": {
+        "successRes": "r",
+        "transID": "t",
+        "uidTang": "x"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "endpoint": "check_update_app",
+  "cases": [
+    {
+      "name": "uid defaults to the captured constant 1",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/check_update_app.php",
+        "body": {
+          "uid": 1
+        }
+      },
+      "legacy": "api/check_update_app.js buildCheck_update_app"
+    },
+    {
+      "name": "explicit numeric uid",
+      "input": {
+        "uid": 2
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/check_update_app.php",
+        "body": {
+          "uid": 2
+        }
+      },
+      "legacy": "api/check_update_app.js buildCheck_update_app"
+    },
+    {
+      "name": "explicit string uid",
+      "input": {
+        "uid": "abc"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/check_update_app.php",
+        "body": {
+          "uid": "abc"
+        }
+      },
+      "legacy": "api/check_update_app.js buildCheck_update_app"
+    },
+    {
+      "name": "negative uid is rejected",
+      "input": {
+        "uid": -1
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "empty uid is rejected",
+      "input": {
+        "uid": ""
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "boolean uid is rejected",
+      "input": {
+        "uid": true
+      },
+      "error": "at uid"
+    }
+  ]
+}

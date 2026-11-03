@@ -1,0 +1,69 @@
+{
+  "endpoint": "blockUserV2",
+  "cases": [
+    {
+      "name": "temporary block; isForever defaults to false, uid to the signed-in account",
+      "input": {
+        "id": "peer-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/blockUserV2.php",
+        "body": {
+          "id": "peer-uid",
+          "isForever": false,
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/blockUserV2.js buildBlockUserV2"
+    },
+    {
+      "name": "forever block for an explicit uid",
+      "input": {
+        "id": "peer-uid",
+        "isForever": true,
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/blockUserV2.php",
+        "body": {
+          "id": "peer-uid",
+          "isForever": true,
+          "uid": "other-uid"
+        }
+      },
+      "legacy": "api/blockUserV2.js buildBlockUserV2"
+    },
+    {
+      "name": "explicit isForever false",
+      "input": {
+        "id": "peer-uid",
+        "isForever": false
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/blockUserV2.php",
+        "body": {
+          "id": "peer-uid",
+          "isForever": false,
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/blockUserV2.js buildBlockUserV2"
+    },
+    {
+      "name": "missing id is rejected",
+      "input": {},
+      "error": "at id"
+    },
+    {
+      "name": "non-boolean isForever is rejected",
+      "input": {
+        "id": "peer-uid",
+        "isForever": "yes"
+      },
+      "error": "expected boolean"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "endpoint": "getNotificationsV5",
+  "cases": [
+    {
+      "name": "page defaults to 0",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getNotificationsV5.php",
+        "body": {
+          "page": 0
+        }
+      },
+      "legacy": "api/getNotificationsV5.js buildGetNotificationsV5"
+    },
+    {
+      "name": "explicit page",
+      "input": {
+        "page": 2
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getNotificationsV5.php",
+        "body": {
+          "page": 2
+        }
+      },
+      "legacy": "api/getNotificationsV5.js buildGetNotificationsV5"
+    },
+    {
+      "name": "page must be an integer",
+      "input": {
+        "page": "1"
+      },
+      "error": "→ at page"
+    },
+    {
+      "name": "negative page is rejected",
+      "input": {
+        "page": -1
+      },
+      "error": "→ at page"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "bogus": 1
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

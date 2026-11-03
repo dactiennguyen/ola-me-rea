@@ -1,0 +1,56 @@
+{
+  "endpoint": "caroAiStart",
+  "cases": [
+    {
+      "name": "humanFirst defaults to true",
+      "input": {
+        "difficulty": 2
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/caro/ai/start",
+        "body": {
+          "difficulty": 2,
+          "humanFirst": true
+        }
+      },
+      "legacy": "api/caroAiStart.js buildCaroAiStart"
+    },
+    {
+      "name": "AI moves first",
+      "input": {
+        "difficulty": 0,
+        "humanFirst": false
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/caro/ai/start",
+        "body": {
+          "difficulty": 0,
+          "humanFirst": false
+        }
+      },
+      "legacy": "api/caroAiStart.js buildCaroAiStart"
+    },
+    {
+      "name": "missing difficulty is rejected",
+      "input": {},
+      "error": "at difficulty"
+    },
+    {
+      "name": "fractional difficulty is rejected",
+      "input": {
+        "difficulty": 1.5
+      },
+      "error": "at difficulty"
+    },
+    {
+      "name": "string humanFirst is rejected",
+      "input": {
+        "difficulty": 2,
+        "humanFirst": "false"
+      },
+      "error": "expected boolean"
+    }
+  ]
+}

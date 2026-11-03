@@ -1,0 +1,104 @@
+{
+  "endpoint": "usersAddViewProfile",
+  "cases": [
+    {
+      "name": "one viewed uid (as captured)",
+      "input": {
+        "viewed_ids": [
+          "zGDVUA8zcHRZ1ezOEy6JPsH2nSv1"
+        ]
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/users/addViewProfile",
+        "body": {
+          "viewed_ids": [
+            "zGDVUA8zcHRZ1ezOEy6JPsH2nSv1"
+          ]
+        }
+      },
+      "legacy": "api/usersAddViewProfile.js buildUsersAddViewProfile"
+    },
+    {
+      "name": "batch with incognito",
+      "input": {
+        "viewed_ids": [
+          "uid1",
+          "uid2"
+        ],
+        "incognito": true
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/users/addViewProfile",
+        "body": {
+          "viewed_ids": [
+            "uid1",
+            "uid2"
+          ],
+          "incognito": true
+        }
+      },
+      "legacy": "api/usersAddViewProfile.js buildUsersAddViewProfile"
+    },
+    {
+      "name": "incognito false is sent",
+      "input": {
+        "viewed_ids": [
+          "uid1"
+        ],
+        "incognito": false
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/users/addViewProfile",
+        "body": {
+          "viewed_ids": [
+            "uid1"
+          ],
+          "incognito": false
+        }
+      },
+      "legacy": "api/usersAddViewProfile.js buildUsersAddViewProfile"
+    },
+    {
+      "name": "missing viewed_ids is rejected (legacy dry-run sent '<viewed-uid>')",
+      "input": {},
+      "error": "viewed_ids"
+    },
+    {
+      "name": "empty viewed_ids is rejected",
+      "input": {
+        "viewed_ids": []
+      },
+      "error": "viewed_ids"
+    },
+    {
+      "name": "blank uid in viewed_ids is rejected",
+      "input": {
+        "viewed_ids": [
+          "uid1",
+          " "
+        ]
+      },
+      "error": "viewed_ids"
+    },
+    {
+      "name": "viewed_ids must be an array",
+      "input": {
+        "viewed_ids": "uid1"
+      },
+      "error": "viewed_ids"
+    },
+    {
+      "name": "incognito must be a boolean",
+      "input": {
+        "viewed_ids": [
+          "uid1"
+        ],
+        "incognito": 1
+      },
+      "error": "incognito"
+    }
+  ]
+}

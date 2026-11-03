@@ -1,0 +1,52 @@
+{
+  "endpoint": "getNotificationsCount",
+  "cases": [
+    {
+      "name": "uid defaults to the signed-in account",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getNotificationsCount.php",
+        "body": {
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/getNotificationsCount.js buildGetNotificationsCount"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getNotificationsCount.php",
+        "body": {
+          "uid": "other-uid"
+        }
+      },
+      "legacy": "api/getNotificationsCount.js buildGetNotificationsCount"
+    },
+    {
+      "name": "empty uid is rejected",
+      "input": {
+        "uid": ""
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "numeric uid is rejected",
+      "input": {
+        "uid": 5
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "page": 1
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

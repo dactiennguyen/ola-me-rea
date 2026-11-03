@@ -1,0 +1,79 @@
+{
+  "endpoint": "upStory",
+  "cases": [
+    {
+      "name": "story_media with caption",
+      "input": {
+        "story_media": "https://m/s.mp4",
+        "caption": "hi"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/upStory.php",
+        "body": {
+          "uid": "me-uid",
+          "story_media": "https://m/s.mp4",
+          "caption": "hi"
+        }
+      },
+      "legacy": "api/upStory.js buildUpStory"
+    },
+    {
+      "name": "image only",
+      "input": {
+        "image": "https://m/t.jpg"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/upStory.php",
+        "body": {
+          "uid": "me-uid",
+          "image": "https://m/t.jpg"
+        }
+      },
+      "legacy": "api/upStory.js buildUpStory"
+    },
+    {
+      "name": "all fields with explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "story_media": "https://m/s.mp4",
+        "image": "https://m/t.jpg",
+        "caption": "Một ngày đẹp trời"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/upStory.php",
+        "body": {
+          "uid": "other-uid",
+          "story_media": "https://m/s.mp4",
+          "image": "https://m/t.jpg",
+          "caption": "Một ngày đẹp trời"
+        }
+      },
+      "legacy": "api/upStory.js buildUpStory"
+    },
+    {
+      "name": "no media is rejected",
+      "input": {
+        "caption": "hi"
+      },
+      "error": "story_media or image"
+    },
+    {
+      "name": "blank story_media is rejected",
+      "input": {
+        "story_media": " "
+      },
+      "error": "story_media"
+    },
+    {
+      "name": "caption must be a string",
+      "input": {
+        "image": "https://m/t.jpg",
+        "caption": 5
+      },
+      "error": "caption"
+    }
+  ]
+}

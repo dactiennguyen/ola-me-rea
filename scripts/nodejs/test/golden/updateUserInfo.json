@@ -1,0 +1,128 @@
+{
+  "endpoint": "updateUserInfo",
+  "cases": [
+    {
+      "name": "profile variant, string value",
+      "input": {
+        "condition": "bio",
+        "value": "Xin chào"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateUserInfo.php",
+        "body": {
+          "condition": "bio",
+          "value": "Xin chào",
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/updateUserInfo.js buildUpdateUserInfo"
+    },
+    {
+      "name": "settings variant with isHideFollow",
+      "input": {
+        "condition": "hideFollow",
+        "value": true,
+        "isHideFollow": true,
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateUserInfo.php",
+        "body": {
+          "condition": "hideFollow",
+          "value": true,
+          "uid": "other-uid",
+          "isHideFollow": true
+        }
+      },
+      "legacy": "api/updateUserInfo.js buildUpdateUserInfo"
+    },
+    {
+      "name": "numeric value",
+      "input": {
+        "condition": "gender",
+        "value": 1
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateUserInfo.php",
+        "body": {
+          "condition": "gender",
+          "value": 1,
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/updateUserInfo.js buildUpdateUserInfo"
+    },
+    {
+      "name": "empty string value is allowed",
+      "input": {
+        "condition": "bio",
+        "value": ""
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateUserInfo.php",
+        "body": {
+          "condition": "bio",
+          "value": "",
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/updateUserInfo.js buildUpdateUserInfo"
+    },
+    {
+      "name": "isHideFollow false is sent",
+      "input": {
+        "condition": "hideFollow",
+        "value": false,
+        "isHideFollow": false
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateUserInfo.php",
+        "body": {
+          "condition": "hideFollow",
+          "value": false,
+          "uid": "me-uid",
+          "isHideFollow": false
+        }
+      },
+      "legacy": "api/updateUserInfo.js buildUpdateUserInfo"
+    },
+    {
+      "name": "missing value is rejected",
+      "input": {
+        "condition": "bio"
+      },
+      "error": "value"
+    },
+    {
+      "name": "missing condition is rejected",
+      "input": {
+        "value": "x"
+      },
+      "error": "condition"
+    },
+    {
+      "name": "isHideFollow must be a boolean",
+      "input": {
+        "condition": "hideFollow",
+        "value": 1,
+        "isHideFollow": "true"
+      },
+      "error": "isHideFollow"
+    },
+    {
+      "name": "object value is rejected",
+      "input": {
+        "condition": "bio",
+        "value": {
+          "a": 1
+        }
+      },
+      "error": "value"
+    }
+  ]
+}

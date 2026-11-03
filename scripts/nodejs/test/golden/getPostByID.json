@@ -1,0 +1,24 @@
+{
+  "endpoint": "getPostByID",
+  "cases": [
+    {
+      "name": "basic",
+      "input": {
+        "postID": "p_1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getPostByID.php",
+        "body": {
+          "postID": "p_1"
+        }
+      },
+      "legacy": "api/getPostByID.js buildGetPostByID"
+    },
+    {
+      "name": "missing postID is rejected",
+      "input": {},
+      "error": "postID"
+    }
+  ]
+}

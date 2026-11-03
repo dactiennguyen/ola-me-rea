@@ -1,0 +1,92 @@
+{
+  "endpoint": "postStories",
+  "cases": [
+    {
+      "name": "media_url story, uid defaults to the signed-in account",
+      "input": {
+        "media_url": "https://m.example/story.jpg",
+        "media_type": "image",
+        "privacy": "public"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/stories",
+        "body": {
+          "uid": "me-uid",
+          "media_url": "https://m.example/story.jpg",
+          "media_type": "image",
+          "privacy": "public"
+        }
+      },
+      "legacy": "api/postStories.js buildPostStories"
+    },
+    {
+      "name": "image-only story with explicit uid, caption, LOCATION",
+      "input": {
+        "uid": "other-uid",
+        "image": "https://m.example/t.jpg",
+        "caption": "Một ngày đẹp trời",
+        "LOCATION": "Hà Nội"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/stories",
+        "body": {
+          "uid": "other-uid",
+          "image": "https://m.example/t.jpg",
+          "caption": "Một ngày đẹp trời",
+          "LOCATION": "Hà Nội"
+        }
+      },
+      "legacy": "api/postStories.js buildPostStories"
+    },
+    {
+      "name": "all fields",
+      "input": {
+        "media_url": "https://m.example/v.mp4",
+        "image": "https://m.example/v.jpg",
+        "media_type": "video",
+        "caption": "clip",
+        "privacy": "friends",
+        "LOCATION": "HCM"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/stories",
+        "body": {
+          "uid": "me-uid",
+          "media_url": "https://m.example/v.mp4",
+          "image": "https://m.example/v.jpg",
+          "media_type": "video",
+          "caption": "clip",
+          "privacy": "friends",
+          "LOCATION": "HCM"
+        }
+      },
+      "legacy": "api/postStories.js buildPostStories"
+    },
+    {
+      "name": "story without media is rejected",
+      "input": {
+        "caption": "x"
+      },
+      "error": "Provide media_url or image"
+    },
+    {
+      "name": "blank caption is rejected",
+      "input": {
+        "media_url": "https://m/x.jpg",
+        "caption": ""
+      },
+      "error": "→ at caption"
+    },
+    {
+      "name": "is_success is not an input",
+      "input": {
+        "media_url": "https://m/x.jpg",
+        "is_success": true
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

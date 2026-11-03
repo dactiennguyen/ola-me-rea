@@ -1,0 +1,165 @@
+{
+  "endpoint": "apiAddPostV9",
+  "cases": [
+    {
+      "name": "text-only post; uid defaults to the signed-in account",
+      "input": {
+        "text": "Xin chào"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddPostV9.php",
+        "body": {
+          "uid": "me-uid",
+          "text": "Xin chào",
+          "listImage": []
+        }
+      },
+      "legacy": "api/apiAddPostV9.js buildApiAddPostV9"
+    },
+    {
+      "name": "image post with dimensions",
+      "input": {
+        "listImage": [
+          "https://a/1.jpg",
+          "https://a/2.jpg"
+        ],
+        "listDimen": [
+          {
+            "w": 1080,
+            "h": 1080
+          },
+          {
+            "w": 1080,
+            "h": 1350
+          }
+        ]
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddPostV9.php",
+        "body": {
+          "uid": "me-uid",
+          "text": "",
+          "listImage": [
+            "https://a/1.jpg",
+            "https://a/2.jpg"
+          ],
+          "listDimen": [
+            {
+              "w": 1080,
+              "h": 1080
+            },
+            {
+              "w": 1080,
+              "h": 1350
+            }
+          ]
+        }
+      },
+      "legacy": "api/apiAddPostV9.js buildApiAddPostV9"
+    },
+    {
+      "name": "every optional flag, explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "text": "hi",
+        "listImage": [
+          "https://a/1.jpg"
+        ],
+        "listDimen": [
+          {
+            "w": 1,
+            "h": 2
+          }
+        ],
+        "requestNewFeed": 1,
+        "isVip": true,
+        "feeling": "vui",
+        "checkIn": {
+          "name": "Hà Nội"
+        }
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddPostV9.php",
+        "body": {
+          "uid": "other-uid",
+          "text": "hi",
+          "listImage": [
+            "https://a/1.jpg"
+          ],
+          "listDimen": [
+            {
+              "w": 1,
+              "h": 2
+            }
+          ],
+          "requestNewFeed": 1,
+          "isVip": true,
+          "feeling": "vui",
+          "checkIn": {
+            "name": "Hà Nội"
+          }
+        }
+      },
+      "legacy": "api/apiAddPostV9.js buildApiAddPostV9"
+    },
+    {
+      "name": "empty text with an image is accepted (legacy rejected text '')",
+      "input": {
+        "text": "",
+        "listImage": [
+          "https://a/1.jpg"
+        ]
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddPostV9.php",
+        "body": {
+          "uid": "me-uid",
+          "text": "",
+          "listImage": [
+            "https://a/1.jpg"
+          ]
+        }
+      },
+      "legacy": "api/apiAddPostV9.js buildApiAddPostV9"
+    },
+    {
+      "name": "neither text nor image is rejected",
+      "input": {},
+      "error": "Provide text or at least one listImage"
+    },
+    {
+      "name": "whitespace-only text without image is rejected",
+      "input": {
+        "text": "   "
+      },
+      "error": "Provide text or at least one listImage"
+    },
+    {
+      "name": "listImage must be an array",
+      "input": {
+        "listImage": "https://a/1.jpg"
+      },
+      "error": "at listImage"
+    },
+    {
+      "name": "empty image URL is rejected",
+      "input": {
+        "listImage": [
+          ""
+        ]
+      },
+      "error": "at listImage"
+    },
+    {
+      "name": "legacy CLI name image is not a field",
+      "input": {
+        "image": "https://a/1.jpg"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

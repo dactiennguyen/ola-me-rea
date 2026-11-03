@@ -1,0 +1,75 @@
+{
+  "endpoint": "delImage",
+  "cases": [
+    {
+      "name": "uid defaults to the signed-in account",
+      "input": {
+        "id": "img-1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/delImage.php",
+        "body": {
+          "id": "img-1",
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/delImage.js buildDelImage"
+    },
+    {
+      "name": "explicit uid and isForever",
+      "input": {
+        "id": "img-1",
+        "uid": "other-uid",
+        "isForever": true
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/delImage.php",
+        "body": {
+          "id": "img-1",
+          "uid": "other-uid",
+          "isForever": true
+        }
+      },
+      "legacy": "api/delImage.js buildDelImage"
+    },
+    {
+      "name": "isForever false is sent",
+      "input": {
+        "id": "img-1",
+        "isForever": false
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/delImage.php",
+        "body": {
+          "id": "img-1",
+          "uid": "me-uid",
+          "isForever": false
+        }
+      },
+      "legacy": "api/delImage.js buildDelImage"
+    },
+    {
+      "name": "missing id is rejected",
+      "input": {},
+      "error": "at id"
+    },
+    {
+      "name": "numeric id is rejected",
+      "input": {
+        "id": 7
+      },
+      "error": "at id"
+    },
+    {
+      "name": "non-boolean isForever is rejected",
+      "input": {
+        "id": "img-1",
+        "isForever": 1
+      },
+      "error": "at isForever"
+    }
+  ]
+}

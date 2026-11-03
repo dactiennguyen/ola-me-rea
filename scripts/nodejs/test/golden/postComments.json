@@ -1,0 +1,63 @@
+{
+  "endpoint": "postComments",
+  "cases": [
+    {
+      "name": "page defaults to 1",
+      "input": {
+        "postId": "540919"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/540919/comments",
+        "body": {
+          "page": 1
+        }
+      },
+      "legacy": "api/postComments.js buildPostComments"
+    },
+    {
+      "name": "explicit page",
+      "input": {
+        "postId": "540919",
+        "page": 3
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/540919/comments",
+        "body": {
+          "page": 3
+        }
+      },
+      "legacy": "api/postComments.js buildPostComments"
+    },
+    {
+      "name": "missing postId is rejected",
+      "input": {
+        "page": 1
+      },
+      "error": "→ at postId"
+    },
+    {
+      "name": "'..' postId is rejected (legacy built napi/post/../comments)",
+      "input": {
+        "postId": ".."
+      },
+      "error": "\"..\""
+    },
+    {
+      "name": "postId with a slash is rejected",
+      "input": {
+        "postId": "1/2"
+      },
+      "error": "[A-Za-z0-9_.-]"
+    },
+    {
+      "name": "page must be an integer",
+      "input": {
+        "postId": "540919",
+        "page": "2"
+      },
+      "error": "→ at page"
+    }
+  ]
+}

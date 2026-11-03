@@ -1,0 +1,55 @@
+{
+  "endpoint": "upAudio",
+  "cases": [
+    {
+      "name": "uid defaults to the session",
+      "input": {
+        "audio": "data:audio/mp4;base64,AAAA"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/upAudio.php",
+        "body": {
+          "uid": "me-uid",
+          "audio": "data:audio/mp4;base64,AAAA"
+        }
+      },
+      "legacy": "api/upAudio.js buildUpAudio"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "audio": "./voice.m4a"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/upAudio.php",
+        "body": {
+          "uid": "other-uid",
+          "audio": "./voice.m4a"
+        }
+      },
+      "legacy": "api/upAudio.js buildUpAudio"
+    },
+    {
+      "name": "missing audio is rejected (legacy sent the '<audio-data>' placeholder)",
+      "input": {},
+      "error": "audio"
+    },
+    {
+      "name": "audio must be a string",
+      "input": {
+        "audio": 1
+      },
+      "error": "audio"
+    },
+    {
+      "name": "blank audio is rejected",
+      "input": {
+        "audio": ""
+      },
+      "error": "audio"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "endpoint": "usersSync",
+  "cases": [
+    {
+      "name": "defaults match the signed deviceid",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "napi/users/sync",
+        "body": {
+          "os": "android",
+          "deviceId": "nodejs-probe",
+          "ver": "13",
+          "displayName": "",
+          "photoURL": ""
+        }
+      },
+      "legacy": "api/usersSync.js buildUsersSync"
+    },
+    {
+      "name": "profile fields",
+      "input": {
+        "displayName": "An",
+        "photoURL": "https://example.com/a.jpg"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/users/sync",
+        "body": {
+          "os": "android",
+          "deviceId": "nodejs-probe",
+          "ver": "13",
+          "displayName": "An",
+          "photoURL": "https://example.com/a.jpg"
+        }
+      },
+      "legacy": "api/usersSync.js buildUsersSync"
+    }
+  ]
+}

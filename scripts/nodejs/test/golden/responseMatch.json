@@ -1,0 +1,70 @@
+{
+  "endpoint": "responseMatch",
+  "cases": [
+    {
+      "name": "accept, uid1 defaults to the signed-in account",
+      "input": {
+        "uid2": "liker-uid",
+        "response": 1
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/responseMatch.php",
+        "body": {
+          "uid1": "me-uid",
+          "uid2": "liker-uid",
+          "response": 1
+        }
+      },
+      "legacy": "api/responseMatch.js buildResponseMatch"
+    },
+    {
+      "name": "decline with explicit uid1",
+      "input": {
+        "uid1": "other-uid",
+        "uid2": "liker-uid",
+        "response": 0
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/responseMatch.php",
+        "body": {
+          "uid1": "other-uid",
+          "uid2": "liker-uid",
+          "response": 0
+        }
+      },
+      "legacy": "api/responseMatch.js buildResponseMatch"
+    },
+    {
+      "name": "missing response is rejected",
+      "input": {
+        "uid2": "liker-uid"
+      },
+      "error": "→ at response"
+    },
+    {
+      "name": "response must be an integer",
+      "input": {
+        "uid2": "liker-uid",
+        "response": 1.5
+      },
+      "error": "→ at response"
+    },
+    {
+      "name": "response string is rejected",
+      "input": {
+        "uid2": "liker-uid",
+        "response": "1"
+      },
+      "error": "→ at response"
+    },
+    {
+      "name": "missing uid2 is rejected",
+      "input": {
+        "response": 1
+      },
+      "error": "→ at uid2"
+    }
+  ]
+}

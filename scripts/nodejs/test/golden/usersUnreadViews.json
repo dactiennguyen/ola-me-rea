@@ -1,0 +1,59 @@
+{
+  "endpoint": "usersUnreadViews",
+  "cases": [
+    {
+      "name": "no parameters (as captured)",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/unread-views",
+        "query": {}
+      },
+      "legacy": "api/usersUnreadViews.js buildUsersUnreadViews"
+    },
+    {
+      "name": "both timestamps",
+      "input": {
+        "last_checked_views_at": 1793703039,
+        "last_checked": 1793700000
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/unread-views",
+        "query": {
+          "last_checked_views_at": 1793703039,
+          "last_checked": 1793700000
+        }
+      },
+      "legacy": "api/usersUnreadViews.js buildUsersUnreadViews"
+    },
+    {
+      "name": "last_checked only",
+      "input": {
+        "last_checked": 0
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/unread-views",
+        "query": {
+          "last_checked": 0
+        }
+      },
+      "legacy": "api/usersUnreadViews.js buildUsersUnreadViews"
+    },
+    {
+      "name": "last_checked_views_at must be an integer",
+      "input": {
+        "last_checked_views_at": "1793703039"
+      },
+      "error": "last_checked_views_at"
+    },
+    {
+      "name": "negative last_checked is rejected",
+      "input": {
+        "last_checked": -1
+      },
+      "error": "last_checked"
+    }
+  ]
+}

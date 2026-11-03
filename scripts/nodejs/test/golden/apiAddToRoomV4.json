@@ -1,0 +1,60 @@
+{
+  "endpoint": "apiAddToRoomV4",
+  "cases": [
+    {
+      "name": "first page as captured (#44); page defaults to 0",
+      "input": {
+        "state": "79"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddToRoomV4.php",
+        "body": {
+          "uid": "me-uid",
+          "page": 0,
+          "state": "79"
+        }
+      },
+      "legacy": "api/apiAddToRoomV4.js buildApiAddToRoomV4"
+    },
+    {
+      "name": "explicit uid and page",
+      "input": {
+        "uid": "other-uid",
+        "page": 2,
+        "state": "79"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddToRoomV4.php",
+        "body": {
+          "uid": "other-uid",
+          "page": 2,
+          "state": "79"
+        }
+      },
+      "legacy": "api/apiAddToRoomV4.js buildApiAddToRoomV4"
+    },
+    {
+      "name": "missing state is rejected",
+      "input": {},
+      "error": "at state"
+    },
+    {
+      "name": "negative page is rejected",
+      "input": {
+        "state": "79",
+        "page": -1
+      },
+      "error": "at page"
+    },
+    {
+      "name": "string page is rejected",
+      "input": {
+        "state": "79",
+        "page": "1"
+      },
+      "error": "at page"
+    }
+  ]
+}

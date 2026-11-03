@@ -1,0 +1,56 @@
+{
+  "endpoint": "getUserInfoV7",
+  "cases": [
+    {
+      "name": "myUid defaults to the signed-in account",
+      "input": {
+        "targetUid": "peer-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getUserInfoV7.php",
+        "body": {
+          "targetUid": "peer-uid",
+          "myUid": "me-uid"
+        }
+      },
+      "legacy": "api/getUserInfoV7.js buildGetUserInfoV7"
+    },
+    {
+      "name": "explicit myUid",
+      "input": {
+        "targetUid": "peer-uid",
+        "myUid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getUserInfoV7.php",
+        "body": {
+          "targetUid": "peer-uid",
+          "myUid": "other-uid"
+        }
+      },
+      "legacy": "api/getUserInfoV7.js buildGetUserInfoV7"
+    },
+    {
+      "name": "missing targetUid is rejected (legacy sent '<target-uid>')",
+      "input": {},
+      "error": "→ at targetUid"
+    },
+    {
+      "name": "targetUid must be a string",
+      "input": {
+        "targetUid": 7
+      },
+      "error": "→ at targetUid"
+    },
+    {
+      "name": "blank myUid is rejected",
+      "input": {
+        "targetUid": "peer-uid",
+        "myUid": ""
+      },
+      "error": "→ at myUid"
+    }
+  ]
+}

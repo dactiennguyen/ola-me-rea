@@ -1,0 +1,27 @@
+{
+  "endpoint": "minigameScore",
+  "cases": [
+    {
+      "name": "submit a score",
+      "input": {
+        "gameKey": "flappy",
+        "score": 120
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/minigame/flappy/score",
+        "body": {
+          "score": 120
+        }
+      },
+      "legacy": "api/minigame.js buildMinigameScore"
+    },
+    {
+      "name": "missing score is rejected",
+      "input": {
+        "gameKey": "flappy"
+      },
+      "error": "score"
+    }
+  ]
+}

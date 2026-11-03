@@ -1,0 +1,46 @@
+{
+  "endpoint": "getExploreAvatarV4",
+  "cases": [
+    {
+      "name": "first page has no condition",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExploreAvatarV4.php",
+        "body": {
+          "uid": "me-uid",
+          "os": "android",
+          "page": 0
+        }
+      },
+      "legacy": "api/getExploreAvatarV4.js buildGetExploreAvatarV4"
+    },
+    {
+      "name": "filters",
+      "input": {
+        "page": 3,
+        "gender": 0,
+        "cityID": "12"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExploreAvatarV4.php",
+        "body": {
+          "uid": "me-uid",
+          "os": "android",
+          "page": 3,
+          "gender": 0,
+          "cityID": "12"
+        }
+      },
+      "legacy": "api/getExploreAvatarV4.js buildGetExploreAvatarV4"
+    },
+    {
+      "name": "cityID must be a positive decimal",
+      "input": {
+        "cityID": "01"
+      },
+      "error": "cityID"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "endpoint": "caroMe",
+  "cases": [
+    {
+      "name": "GET without params",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/caro/me",
+        "query": {}
+      },
+      "legacy": "api/caroMe.js buildCaroMe"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "uid": "x"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

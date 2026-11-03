@@ -1,0 +1,43 @@
+{
+  "endpoint": "apiAddBlockChatV3",
+  "cases": [
+    {
+      "name": "block chat with a named user",
+      "input": {
+        "uid": "peer-uid",
+        "name": "Tên"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddBlockChatV3.php",
+        "body": {
+          "name": "Tên",
+          "uid": "peer-uid"
+        }
+      },
+      "legacy": "api/apiAddBlockChatV3.js buildApiAddBlockChatV3"
+    },
+    {
+      "name": "uid is not taken from the session",
+      "input": {
+        "name": "Tên"
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "missing name is rejected",
+      "input": {
+        "uid": "peer-uid"
+      },
+      "error": "at name"
+    },
+    {
+      "name": "whitespace-only name is rejected",
+      "input": {
+        "uid": "peer-uid",
+        "name": " "
+      },
+      "error": "must be a non-empty string"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "endpoint": "getPostByUserV7",
+  "cases": [
+    {
+      "name": "own posts, first page",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getPostByUserV7.php",
+        "body": {
+          "uid": "me-uid",
+          "page": 0
+        }
+      },
+      "legacy": "api/getPostByUserV7.js buildGetPostByUserV7"
+    },
+    {
+      "name": "another user's posts, page 2",
+      "input": {
+        "uid": "peer-uid",
+        "page": 2
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getPostByUserV7.php",
+        "body": {
+          "uid": "peer-uid",
+          "page": 2
+        }
+      },
+      "legacy": "api/getPostByUserV7.js buildGetPostByUserV7"
+    },
+    {
+      "name": "explicit page with session uid",
+      "input": {
+        "page": 1
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getPostByUserV7.php",
+        "body": {
+          "uid": "me-uid",
+          "page": 1
+        }
+      },
+      "legacy": "api/getPostByUserV7.js buildGetPostByUserV7"
+    },
+    {
+      "name": "page must be an integer",
+      "input": {
+        "page": "2"
+      },
+      "error": "→ at page"
+    },
+    {
+      "name": "uid must be a string",
+      "input": {
+        "uid": 5
+      },
+      "error": "→ at uid"
+    }
+  ]
+}

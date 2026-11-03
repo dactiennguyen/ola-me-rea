@@ -1,0 +1,45 @@
+{
+  "endpoint": "getLastMessage2",
+  "cases": [
+    {
+      "name": "roomID defaults to the signed-in uid",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getLastMessage2.php",
+        "body": {
+          "roomID": "me-uid"
+        }
+      },
+      "legacy": "api/getLastMessage2.js buildGetLastMessage2"
+    },
+    {
+      "name": "explicit roomID",
+      "input": {
+        "roomID": "peer-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getLastMessage2.php",
+        "body": {
+          "roomID": "peer-uid"
+        }
+      },
+      "legacy": "api/getLastMessage2.js buildGetLastMessage2"
+    },
+    {
+      "name": "empty roomID is rejected",
+      "input": {
+        "roomID": ""
+      },
+      "error": "at roomID"
+    },
+    {
+      "name": "numeric roomID is rejected",
+      "input": {
+        "roomID": 79
+      },
+      "error": "at roomID"
+    }
+  ]
+}

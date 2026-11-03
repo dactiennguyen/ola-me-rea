@@ -1,0 +1,45 @@
+{
+  "endpoint": "shouldLoadFeed",
+  "cases": [
+    {
+      "name": "uid defaults to the session",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/shouldLoadFeed.php",
+        "body": {
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/shouldLoadFeed.js buildShouldLoadFeed"
+    },
+    {
+      "name": "another profile owner",
+      "input": {
+        "uid": "Zg7di6F8VOdhn0N9adyWi6yUK7F2"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/shouldLoadFeed.php",
+        "body": {
+          "uid": "Zg7di6F8VOdhn0N9adyWi6yUK7F2"
+        }
+      },
+      "legacy": "api/shouldLoadFeed.js buildShouldLoadFeed"
+    },
+    {
+      "name": "uid must be a string",
+      "input": {
+        "uid": 123
+      },
+      "error": "uid"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "page": 0
+      },
+      "error": "page"
+    }
+  ]
+}

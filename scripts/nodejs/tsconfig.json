@@ -1,0 +1,20 @@
+{
+  // Type-check only: Node >= 22.18 runs the .ts files directly (type stripping),
+  // so the code must stay erasable (no enums, namespaces or parameter properties).
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true
+  },
+  "include": ["*.ts", "src/**/*.ts", "test/**/*.ts", "tools/**/*.ts"]
+}

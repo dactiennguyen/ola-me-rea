@@ -1,0 +1,111 @@
+{
+  "endpoint": "updateStrictV2",
+  "cases": [
+    {
+      "name": "profile variant, uid from session",
+      "input": {
+        "label": "spam",
+        "score": 3
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictV2.php",
+        "body": {
+          "label": "spam",
+          "score": 3,
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/updateStrictV2.js buildUpdateStrictV2"
+    },
+    {
+      "name": "profile variant with admin and photoURL",
+      "input": {
+        "label": "spam",
+        "score": 3,
+        "uid": "target-uid",
+        "admin": "admin-uid",
+        "photoURL": "https://a/p.jpg"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictV2.php",
+        "body": {
+          "label": "spam",
+          "score": 3,
+          "uid": "target-uid",
+          "admin": "admin-uid",
+          "photoURL": "https://a/p.jpg"
+        }
+      },
+      "legacy": "api/updateStrictV2.js buildUpdateStrictV2"
+    },
+    {
+      "name": "violation list variant with action",
+      "input": {
+        "label": "spam",
+        "score": 0,
+        "uid": "target-uid",
+        "admin": "admin-uid",
+        "photoURL": "https://a/p.jpg",
+        "action": "warn"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictV2.php",
+        "body": {
+          "label": "spam",
+          "score": 0,
+          "uid": "target-uid",
+          "admin": "admin-uid",
+          "photoURL": "https://a/p.jpg",
+          "action": "warn"
+        }
+      },
+      "legacy": "api/updateStrictV2.js buildUpdateStrictV2"
+    },
+    {
+      "name": "missing label is rejected",
+      "input": {
+        "score": 3
+      },
+      "error": "label"
+    },
+    {
+      "name": "score must be an integer",
+      "input": {
+        "label": "spam",
+        "score": 1.5
+      },
+      "error": "score"
+    },
+    {
+      "name": "action must be non-empty",
+      "input": {
+        "label": "spam",
+        "score": 3,
+        "action": ""
+      },
+      "error": "action"
+    },
+    {
+      "name": "photoURL may be '' (legacy rejected it)",
+      "input": {
+        "label": "spam",
+        "score": 3,
+        "photoURL": ""
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictV2.php",
+        "body": {
+          "label": "spam",
+          "score": 3,
+          "uid": "me-uid",
+          "photoURL": ""
+        }
+      },
+      "legacy": "hand-written (legacy rejected this input)"
+    }
+  ]
+}

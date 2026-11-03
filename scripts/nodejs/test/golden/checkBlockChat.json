@@ -1,0 +1,52 @@
+{
+  "endpoint": "checkBlockChat",
+  "cases": [
+    {
+      "name": "uid defaults to the signed-in account",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/checkBlockChat.php",
+        "body": {
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/checkBlockChat.js buildCheckBlockChat"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/checkBlockChat.php",
+        "body": {
+          "uid": "other-uid"
+        }
+      },
+      "legacy": "api/checkBlockChat.js buildCheckBlockChat"
+    },
+    {
+      "name": "blank uid is rejected",
+      "input": {
+        "uid": "  "
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "numeric uid is rejected",
+      "input": {
+        "uid": 5
+      },
+      "error": "at uid"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "bogus": 1
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "endpoint": "minigameLeaderboard",
+  "cases": [
+    {
+      "name": "leaderboard",
+      "input": {
+        "gameKey": "flappy"
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/minigame/flappy/leaderboard",
+        "query": {}
+      },
+      "legacy": "api/minigame.js buildMinigameLeaderboard"
+    },
+    {
+      "name": "leaderboard with limit",
+      "input": {
+        "gameKey": "sweet",
+        "limit": 10
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/minigame/sweet/leaderboard",
+        "query": {
+          "limit": 10
+        }
+      },
+      "legacy": "api/minigame.js buildMinigameLeaderboard"
+    },
+    {
+      "name": "'..' gameKey is rejected (legacy built napi/minigame/../leaderboard)",
+      "input": {
+        "gameKey": ".."
+      },
+      "error": "\"..\""
+    }
+  ]
+}

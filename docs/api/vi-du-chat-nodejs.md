@@ -8,12 +8,12 @@ không phải một client chat hoàn chỉnh đã kiểm chứng hai đầu.
 
 | Dữ liệu | Nguồn |
 |---|---|
-| A.uid, tên, avatar | `await login()` → session.localId và profile |
-| Firebase ID token | session.idToken, dùng Bearer cho HTTP Ola |
+| A.uid, tên, avatar | `await OlaClient.login()` → `ola.session.localId` và `ola.profile` |
+| Firebase ID token | `ola.session.idToken` (OlaClient tự lấy token mới cho mỗi request), dùng Bearer cho HTTP Ola |
 | B.uid | UID trong danh bạ/hội thoại; không dùng ID hiển thị dạng số hay email thay thế |
 | B info/token FCM | POST `faApi2/getUserInfoForChatV2.php`, body `{id: B.uid}` |
 | Socket query key | Giá trị `key` trong kết nối Socket.IO của app; cần đối chiếu riêng, không mặc định bằng HTTP `key2` |
-| timestamp/hash/deviceid/key2 | Cùng cách ký HTTP trong `login.js`, tạo timestamp mới cho mỗi request |
+| timestamp/hash/deviceid/key2 | Cùng cách ký HTTP trong `scripts/nodejs/src/signing.ts`, tạo timestamp mới cho mỗi request |
 
 ## Trình tự theo capture app
 
@@ -49,7 +49,7 @@ npm install --prefix scripts/nodejs --no-save --package-lock=false socket.io-cli
 app. Nó chỉ kết nối và đăng ký event; không tự gửi nội dung chat.
 
 ```js
-const io = require('socket.io-client');
+import io from 'socket.io-client';
 
 function connectChat({ myUid, peerUid, socketKey, onMessage }) {
   function makeSocket(roomNo) {

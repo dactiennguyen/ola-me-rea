@@ -1,0 +1,197 @@
+{
+  "endpoint": "inserNotiV2",
+  "cases": [
+    {
+      "name": "gift, actionUid defaults to the signed-in account",
+      "input": {
+        "uid": "peer-uid",
+        "type": "GIFT"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/inserNotiV2.php",
+        "body": {
+          "actionUid": "me-uid",
+          "uid": "peer-uid",
+          "type": "GIFT"
+        }
+      },
+      "legacy": "api/inserNotiV2.js buildInserNotiV2"
+    },
+    {
+      "name": "explicit actionUid",
+      "input": {
+        "actionUid": "other-uid",
+        "uid": "peer-uid",
+        "type": "MATCH"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/inserNotiV2.php",
+        "body": {
+          "actionUid": "other-uid",
+          "uid": "peer-uid",
+          "type": "MATCH"
+        }
+      },
+      "legacy": "api/inserNotiV2.js buildInserNotiV2"
+    },
+    {
+      "name": "comment with sticker",
+      "input": {
+        "uid": "peer-uid",
+        "postID": 55123,
+        "content": "đẹp quá",
+        "stickerURL": "https://cdn.example/s.png"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/inserNotiV2.php",
+        "body": {
+          "actionUid": "me-uid",
+          "uid": "peer-uid",
+          "postID": 55123,
+          "content": "đẹp quá",
+          "stickerURL": "https://cdn.example/s.png"
+        }
+      },
+      "legacy": "api/inserNotiV2.js buildInserNotiV2"
+    },
+    {
+      "name": "like comment with extra flag",
+      "input": {
+        "uid": "peer-uid",
+        "type": "LIKE_COMMENT",
+        "postID": 55123,
+        "commentId": 9001,
+        "extra": {
+          "LIKE_COMMENT": 1
+        }
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/inserNotiV2.php",
+        "body": {
+          "actionUid": "me-uid",
+          "uid": "peer-uid",
+          "type": "LIKE_COMMENT",
+          "postID": 55123,
+          "commentId": 9001,
+          "LIKE_COMMENT": 1
+        }
+      },
+      "legacy": "api/inserNotiV2.js buildInserNotiV2"
+    },
+    {
+      "name": "follow variant with displayName and extra flags",
+      "input": {
+        "uid": "peer-uid",
+        "displayName": "An",
+        "extra": {
+          "action": "FOLLOW",
+          "FRIENDS_NOW": true,
+          "mess": "hi"
+        }
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/inserNotiV2.php",
+        "body": {
+          "actionUid": "me-uid",
+          "uid": "peer-uid",
+          "displayName": "An",
+          "action": "FOLLOW",
+          "FRIENDS_NOW": true,
+          "mess": "hi"
+        }
+      },
+      "legacy": "api/inserNotiV2.js buildInserNotiV2"
+    },
+    {
+      "name": "string postID and commentId",
+      "input": {
+        "uid": "peer-uid",
+        "postID": "55123",
+        "commentId": "c-9"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/inserNotiV2.php",
+        "body": {
+          "actionUid": "me-uid",
+          "uid": "peer-uid",
+          "postID": "55123",
+          "commentId": "c-9"
+        }
+      },
+      "legacy": "api/inserNotiV2.js buildInserNotiV2"
+    },
+    {
+      "name": "missing recipient uid is rejected",
+      "input": {
+        "type": "GIFT"
+      },
+      "error": "→ at uid"
+    },
+    {
+      "name": "extra may not redirect the recipient uid (legacy overwrote it)",
+      "input": {
+        "uid": "peer-uid",
+        "extra": {
+          "uid": "someone-else"
+        }
+      },
+      "error": "extra may not set declared field(s) uid"
+    },
+    {
+      "name": "extra may not spoof actionUid (legacy overwrote it)",
+      "input": {
+        "uid": "peer-uid",
+        "extra": {
+          "actionUid": "someone-else"
+        }
+      },
+      "error": "extra may not set declared field(s) actionUid"
+    },
+    {
+      "name": "extra may not override a declared context field",
+      "input": {
+        "uid": "peer-uid",
+        "extra": {
+          "postID": 1
+        }
+      },
+      "error": "extra may not set declared field(s) postID"
+    },
+    {
+      "name": "extra values must be scalars",
+      "input": {
+        "uid": "peer-uid",
+        "extra": {
+          "flag": {
+            "a": 1
+          }
+        }
+      },
+      "error": "extra"
+    },
+    {
+      "name": "postID must be a scalar",
+      "input": {
+        "uid": "peer-uid",
+        "postID": {
+          "id": 1
+        }
+      },
+      "error": "→ at postID"
+    },
+    {
+      "name": "blank content is rejected",
+      "input": {
+        "uid": "peer-uid",
+        "content": " "
+      },
+      "error": "→ at content"
+    }
+  ]
+}

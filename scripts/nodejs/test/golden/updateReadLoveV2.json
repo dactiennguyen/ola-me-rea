@@ -1,0 +1,45 @@
+{
+  "endpoint": "updateReadLoveV2",
+  "cases": [
+    {
+      "name": "uid defaults to the session",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateReadLoveV2.php",
+        "body": {
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/updateReadLoveV2.js buildUpdateReadLoveV2"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateReadLoveV2.php",
+        "body": {
+          "uid": "other-uid"
+        }
+      },
+      "legacy": "api/updateReadLoveV2.js buildUpdateReadLoveV2"
+    },
+    {
+      "name": "blank uid is rejected",
+      "input": {
+        "uid": ""
+      },
+      "error": "uid"
+    },
+    {
+      "name": "uid must be a string",
+      "input": {
+        "uid": true
+      },
+      "error": "uid"
+    }
+  ]
+}

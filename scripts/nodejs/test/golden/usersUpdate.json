@@ -1,0 +1,57 @@
+{
+  "endpoint": "usersUpdate",
+  "cases": [
+    {
+      "name": "partial update",
+      "input": {
+        "name": "An",
+        "birth_year": 1999
+      },
+      "expected": {
+        "method": "PUT",
+        "path": "napi/users/update",
+        "body": {
+          "name": "An",
+          "birth_year": 1999
+        }
+      },
+      "legacy": "api/usersUpdate.js buildUsersUpdate"
+    },
+    {
+      "name": "all fields",
+      "input": {
+        "name": "An",
+        "birth_year": 1999,
+        "gender": 1,
+        "location": "Hà Nội",
+        "job": "Dev",
+        "introduceText": "Xin chào"
+      },
+      "expected": {
+        "method": "PUT",
+        "path": "napi/users/update",
+        "body": {
+          "name": "An",
+          "birth_year": 1999,
+          "gender": 1,
+          "location": "Hà Nội",
+          "job": "Dev",
+          "introduceText": "Xin chào"
+        }
+      },
+      "legacy": "api/usersUpdate.js buildUsersUpdate"
+    },
+    {
+      "name": "empty update is rejected",
+      "input": {},
+      "error": "at least one profile field"
+    },
+    {
+      "name": "birth_year must be an integer",
+      "input": {
+        "birth_year": "1999"
+      },
+      "error": "birth_year"
+    }
+  ]
+}

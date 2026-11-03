@@ -55,7 +55,7 @@ Online:       {is_success, message, list_data: [...], lastSeenPaging: <integer>}
 Ảnh có mặt:   {is_success, message, list_data: [...]}
 ```
 
-Danh sách nằm ở **`response.data.list_data` khi dùng Dio**, hoặc **`result.list_data` với `requestOla()` trong Node**. Mỗi phần tử được chuyển qua `UserModel.fromJson()` rồi hiển thị thành thẻ người dùng.
+Danh sách nằm ở **`response.data.list_data` khi dùng Dio**, hoặc **`result.raw.list_data` (đã tách sẵn thành `result.items`) với `ola.call()` trong Node**. Mỗi phần tử được chuyển qua `UserModel.fromJson()` rồi hiển thị thành thẻ người dùng.
 
 | Tab | Các key của phần tử đầu đã quan sát |
 |---|---|
@@ -88,27 +88,27 @@ Cuộn gần cuối danh sách (còn khoảng 200 đơn vị scroll)
 - Làm mới/đổi tab/bộ lọc reset page và cờ còn dữ liệu. Riêng cursor Online không được reset trong nhánh refresh này; runtime cũng thấy page về 0 nhưng vẫn gửi cursor cũ. Chưa kết luận server có sử dụng hay bỏ qua cursor khi page bằng 0.
 - Chỉ `build()` ban đầu đặt cả page và cursor bằng 0. App có cờ loading để hạn chế gọi chồng.
 
-## Client Node: explore.js
+## Client Node: explore.ts
 
-API client nằm riêng tại [scripts/nodejs/explore.js](../../scripts/nodejs/explore.js). Node.js 18+; chạy `corepack yarn install` trong `scripts/nodejs` trước vì `login.js` dùng Firebase JS SDK ([chi tiết](nodejs-login.md)). Script dùng `login()` và `requestOla()` từ `login.js` để lấy session và ký request; không thay đổi logic login. Đây là client gọi API Ola, không mở HTTP server local.
+CLI phân trang nằm tại [scripts/nodejs/explore.ts](../../scripts/nodejs/explore.ts); ba tab là ba endpoint [getExploreOnlineV6](endpoints/getExploreOnlineV6.md), [getExplore3](endpoints/getExplore3.md) và [getExploreAvatarV4](endpoints/getExploreAvatarV4.md), dùng chung định nghĩa trong `scripts/nodejs/src/endpoints/_explore.ts`. Node.js 22.18+ (ưu tiên 24, xem [chi tiết](nodejs-login.md)); cài dependency và điền `scripts/nodejs/.env` trước ([chi tiết](nodejs-login.md)). Đây là client gọi API Ola, không mở HTTP server local.
 
 Chạy từ thư mục gốc repo:
 
 ```powershell
 # Một trang Online mặc định
-node scripts/nodejs/explore.js
+node scripts/nodejs/explore.ts
 
 # Hai tab còn lại
-node scripts/nodejs/explore.js --tab verified
-node scripts/nodejs/explore.js --tab avatar
+node scripts/nodejs/explore.ts --tab verified
+node scripts/nodejs/explore.ts --tab avatar
 
 # Nữ, Hà Nội, tối đa hai trang; tự chuyển cursor giữa các trang
-node scripts/nodejs/explore.js --tab online --gender 0 --city 1 --pages 2
+node scripts/nodejs/explore.ts --tab online --gender 0 --city 1 --pages 2
 
 # Xem body, không đăng nhập hoặc gọi mạng
-node scripts/nodejs/explore.js --tab online --gender 0 --city 1 --dry-run
+node scripts/nodejs/explore.ts --tab online --gender 0 --city 1 --dry-run
 
-node scripts/nodejs/explore.js --help
+node scripts/nodejs/explore.ts --help
 ```
 
 | Tham số CLI | Ý nghĩa |
@@ -119,44 +119,43 @@ node scripts/nodejs/explore.js --help
 | `--page <số>` | Trang bắt đầu, mặc định 0 |
 | `--cursor <số>` | Cursor response Online trước; bắt buộc khi bắt đầu Online ở page > 0 |
 | `--pages <số>` | Số trang tối đa trong lần chạy, mặc định 1; dừng sớm khi list_data rỗng |
-| `--dry-run` | Chỉ in request đầu tiên với UID placeholder; không gọi mạng |
+| `--dry-run` | Chỉ in request đầu tiên (UID là `SIGNED_IN_UID`); không đăng nhập, không gọi mạng |
 
 Online trang đầu mặc định cursor 0. Khi tự lấy trang tiếp theo, client dùng nguyên cursor response và giữ bộ lọc. Bắt đầu một truy vấn mới bằng page 0/cursor 0; nếu cần tái hiện hành vi refresh của app giữ cursor cũ, truyền `--cursor` rõ ràng. Tab verified/avatar không nhận `--cursor`.
 
 CLI đăng nhập một lần mỗi lần chạy, rồi gọi tuần tự các trang. Mỗi trang in một dòng JSON đầy đủ dạng `{tab, page, count, next, response}`. Danh sách ở `response.list_data`; `next` chứa tham số trang kế tiếp hoặc null nếu hết dữ liệu. Không tự ghi file, refresh token hay thử lại request lỗi. Lỗi giữa chừng trả exit code 1; các trang trước đã in vẫn giữ nguyên. CLI Khám phá không in session đăng nhập.
 
-## API JavaScript để dùng lại
+## API TypeScript để dùng lại
 
-```js
-const { login } = require('./scripts/nodejs/login');
-const {
-  getExploreOnline, getExploreVerified, getExploreAvatar, getExplore,
-} = require('./scripts/nodejs/explore');
+```ts
+// Một file .ts trong scripts/nodejs/
+import { OlaClient } from './src/client.ts';
+import { getExplore3, getExploreAvatarV4, getExploreOnlineV6 } from './src/endpoints/index.ts';
 
-async function run() {
-  const { session } = await login();
-  const first = await getExploreOnline(session, { gender: 0, cityID: '1' });
+const ola = await OlaClient.login();
+try {
+  const first = await ola.call(getExploreOnlineV6, { gender: 0, cityID: '1' });
   console.log(first.items); // Giữ đầy đủ field của từng hồ sơ.
   if (first.next) {
-    const second = await getExplore(session, first.next);
+    const second = await ola.call(getExploreOnlineV6, first.next);
     console.log(second.items);
   }
-  // Hai API khác có cùng cấu trúc kết quả:
-  // await getExploreVerified(session, { page: 0 });
-  // await getExploreAvatar(session, { page: 0 });
+  // Hai tab khác có cùng cấu trúc kết quả:
+  // await ola.call(getExplore3, { page: 0 });
+  // await ola.call(getExploreAvatarV4, { page: 0 });
+} finally {
+  await ola.close();
 }
-run().catch(error => { console.error(error.message); process.exitCode = 1; });
 ```
 
-- `getExplore(session, options)` chọn tab qua `options.tab`.
-- `getExploreOnline/Verified/Avatar(session, options)` cố định tab tương ứng.
-- `session` chứa `idToken` và `localId` do login trả về; UID request luôn lấy từ session.
-- `options`: `tab`, `page`, `gender`, `cityID`, `lastSeenPaging`; các giá trị số phải là integer an toàn, không âm. `gender` nhận number 0/1/2 hoặc chuỗi `all`; `cityID` nhận chuỗi mã hoặc `all`.
-- Kết quả: `{tab, page, items, next, raw}`. `items` là `raw.list_data`, giữ nguyên toàn bộ trường. `next` giữ tab/bộ lọc và tăng page; chỉ dừng khi danh sách rỗng, không dựa vào số lượng ít hơn 50.
-- `buildExploreRequest(uid, options)` chỉ tạo `{path, body}`, không gọi mạng.
+- Mỗi tab là một endpoint riêng; `explore.ts` export `exploreTabs` = `{ online, verified, avatar }` nếu cần chọn tab theo tên.
+- `uid` mặc định là tài khoản đăng nhập (`ola.session.localId`); truyền `uid` để ghi đè.
+- Input: `page`, `gender`, `cityID`, `lastSeenPaging` (chỉ tab Online); các giá trị số phải là integer an toàn, không âm. `gender` nhận number 0/1/2 hoặc chuỗi `all`; `cityID` nhận chuỗi mã hoặc `all`. Field khác bị từ chối.
+- Kết quả: `{tab, page, items, next, raw}`. `items` là `raw.list_data`, giữ nguyên toàn bộ trường. `next` là input của trang kế tiếp (giữ `uid` và bộ lọc, tăng page, kèm cursor với tab Online) — truyền lại nguyên cho cùng endpoint; chỉ dừng khi danh sách rỗng, không dựa vào số lượng ít hơn 50.
+- `getExploreOnlineV6.build(session, input)` chỉ tạo `{method, path, body}`, không gọi mạng.
 - HTTP lỗi, `is_success` biểu thị false, thiếu mảng `list_data`, hoặc Online có dữ liệu nhưng thiếu cursor hợp lệ đều gây lỗi. Không suy ra thành công chỉ từ HTTP 200.
 
-`--help` và `--dry-run` của explore.js không cần `login.js` hay dependency. Khi gọi mạng mà thiếu `login.js` hoặc chưa `yarn install`, script báo rõ trường hợp nào.
+`--help` và `--dry-run` của explore.ts kiểm tra input mà không đăng nhập hay gọi mạng.
 
 ## Bằng chứng và giới hạn
 

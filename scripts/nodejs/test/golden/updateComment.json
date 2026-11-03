@@ -1,0 +1,75 @@
+{
+  "endpoint": "updateComment",
+  "cases": [
+    {
+      "name": "id only",
+      "input": {
+        "id": "12345"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateComment.php",
+        "body": {
+          "id": "12345"
+        }
+      },
+      "legacy": "api/updateComment.js buildUpdateComment"
+    },
+    {
+      "name": "id with extra fields",
+      "input": {
+        "id": "12345",
+        "extra": {
+          "content": "nội dung mới",
+          "edited": true,
+          "n": 2
+        }
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateComment.php",
+        "body": {
+          "id": "12345",
+          "content": "nội dung mới",
+          "edited": true,
+          "n": 2
+        }
+      },
+      "legacy": "api/updateComment.js buildUpdateComment"
+    },
+    {
+      "name": "missing id is rejected (legacy dry-run sent '<commentId>')",
+      "input": {},
+      "error": "id"
+    },
+    {
+      "name": "id must be a string",
+      "input": {
+        "id": 12345
+      },
+      "error": "id"
+    },
+    {
+      "name": "extra may not override id (legacy let it)",
+      "input": {
+        "id": "12345",
+        "extra": {
+          "id": "999"
+        }
+      },
+      "error": "extra may not set declared field(s) id"
+    },
+    {
+      "name": "extra values must be scalars",
+      "input": {
+        "id": "12345",
+        "extra": {
+          "content": {
+            "a": 1
+          }
+        }
+      },
+      "error": "extra"
+    }
+  ]
+}

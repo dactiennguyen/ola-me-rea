@@ -1,0 +1,73 @@
+{
+  "endpoint": "getFollowListV3",
+  "cases": [
+    {
+      "name": "defaults: own following list, page 0",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getFollowListV3.php",
+        "body": {
+          "uid": "me-uid",
+          "page": 0,
+          "isFollowing": 1,
+          "myUid": "me-uid"
+        }
+      },
+      "legacy": "api/getFollowListV3.js buildGetFollowListV3"
+    },
+    {
+      "name": "followers of another account",
+      "input": {
+        "uid": "other-uid",
+        "isFollowing": 0,
+        "page": 2
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getFollowListV3.php",
+        "body": {
+          "uid": "other-uid",
+          "page": 2,
+          "isFollowing": 0,
+          "myUid": "me-uid"
+        }
+      },
+      "legacy": "api/getFollowListV3.js buildGetFollowListV3"
+    },
+    {
+      "name": "explicit myUid",
+      "input": {
+        "uid": "other-uid",
+        "myUid": "viewer-uid",
+        "isFollowing": 1,
+        "page": 0
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getFollowListV3.php",
+        "body": {
+          "uid": "other-uid",
+          "page": 0,
+          "isFollowing": 1,
+          "myUid": "viewer-uid"
+        }
+      },
+      "legacy": "api/getFollowListV3.js buildGetFollowListV3"
+    },
+    {
+      "name": "string isFollowing is rejected",
+      "input": {
+        "isFollowing": "1"
+      },
+      "error": "at isFollowing"
+    },
+    {
+      "name": "empty myUid is rejected",
+      "input": {
+        "myUid": ""
+      },
+      "error": "at myUid"
+    }
+  ]
+}

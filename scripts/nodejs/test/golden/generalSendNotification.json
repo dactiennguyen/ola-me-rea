@@ -1,0 +1,141 @@
+{
+  "endpoint": "generalSendNotification",
+  "cases": [
+    {
+      "name": "token/title/body",
+      "input": {
+        "token": "fcm-peer",
+        "title": "Phong nguyen",
+        "body": "hi"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/general/send-notification",
+        "body": {
+          "token": "fcm-peer",
+          "title": "Phong nguyen",
+          "body": "hi"
+        }
+      },
+      "legacy": "api/generalSendNotification.js buildGeneralSendNotification"
+    },
+    {
+      "name": "chat variant with data",
+      "input": {
+        "token": "fcm-peer",
+        "title": "Phong nguyen",
+        "body": "hi",
+        "data": {
+          "action": "chat",
+          "photo": "",
+          "messageID": "1793703248125me-uid",
+          "isSticker": 0,
+          "isImage": 0,
+          "isGift": 0,
+          "isAudio": 0,
+          "replyText": "",
+          "replyID": "",
+          "fcmToken": "fcm-me",
+          "user": {
+            "uid": "me-uid",
+            "photoURL": "",
+            "displayName": "Phong nguyen"
+          }
+        }
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/general/send-notification",
+        "body": {
+          "token": "fcm-peer",
+          "title": "Phong nguyen",
+          "body": "hi",
+          "data": {
+            "action": "chat",
+            "photo": "",
+            "messageID": "1793703248125me-uid",
+            "isSticker": 0,
+            "isImage": 0,
+            "isGift": 0,
+            "isAudio": 0,
+            "replyText": "",
+            "replyID": "",
+            "fcmToken": "fcm-me",
+            "user": {
+              "uid": "me-uid",
+              "photoURL": "",
+              "displayName": "Phong nguyen"
+            }
+          }
+        }
+      },
+      "legacy": "api/generalSendNotification.js buildGeneralSendNotification"
+    },
+    {
+      "name": "db interaction variant with str_li_pos",
+      "input": {
+        "token": "fcm-peer",
+        "title": "t",
+        "body": "b",
+        "str_li_pos": "3"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/general/send-notification",
+        "body": {
+          "token": "fcm-peer",
+          "title": "t",
+          "body": "b",
+          "str_li_pos": "3"
+        }
+      },
+      "legacy": "api/generalSendNotification.js buildGeneralSendNotification"
+    },
+    {
+      "name": "missing token is rejected (legacy sent '<fcm-token>')",
+      "input": {
+        "title": "t",
+        "body": "b"
+      },
+      "error": "at token"
+    },
+    {
+      "name": "missing title is rejected (legacy sent '<title>')",
+      "input": {
+        "token": "fcm-peer",
+        "body": "b"
+      },
+      "error": "at title"
+    },
+    {
+      "name": "missing body is rejected (legacy sent '<body>')",
+      "input": {
+        "token": "fcm-peer",
+        "title": "t"
+      },
+      "error": "at body"
+    },
+    {
+      "name": "array data is rejected",
+      "input": {
+        "token": "fcm-peer",
+        "title": "t",
+        "body": "b",
+        "data": [
+          1
+        ]
+      },
+      "error": "at data"
+    },
+    {
+      "name": "empty str_li_pos is rejected",
+      "input": {
+        "token": "fcm-peer",
+        "title": "t",
+        "body": "b",
+        "str_li_pos": ""
+      },
+      "error": "at str_li_pos"
+    }
+  ]
+}

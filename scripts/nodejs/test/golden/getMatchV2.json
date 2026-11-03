@@ -1,0 +1,63 @@
+{
+  "endpoint": "getMatchV2",
+  "cases": [
+    {
+      "name": "defaults: own uid, page 0",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getMatchV2.php",
+        "body": {
+          "uid": "me-uid",
+          "page": 0
+        }
+      },
+      "legacy": "api/getMatchV2.js buildGetMatchV2"
+    },
+    {
+      "name": "page 1",
+      "input": {
+        "page": 1
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getMatchV2.php",
+        "body": {
+          "uid": "me-uid",
+          "page": 1
+        }
+      },
+      "legacy": "api/getMatchV2.js buildGetMatchV2"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "page": 0
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getMatchV2.php",
+        "body": {
+          "uid": "other-uid",
+          "page": 0
+        }
+      },
+      "legacy": "api/getMatchV2.js buildGetMatchV2"
+    },
+    {
+      "name": "negative page is rejected",
+      "input": {
+        "page": -1
+      },
+      "error": "at page"
+    },
+    {
+      "name": "empty uid is rejected",
+      "input": {
+        "uid": ""
+      },
+      "error": "at uid"
+    }
+  ]
+}

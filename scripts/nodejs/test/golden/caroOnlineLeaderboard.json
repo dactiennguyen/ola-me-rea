@@ -1,0 +1,43 @@
+{
+  "endpoint": "caroOnlineLeaderboard",
+  "cases": [
+    {
+      "name": "bare GET",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/caro/online/leaderboard",
+        "query": {}
+      },
+      "legacy": "api/caroOnlineLeaderboard.js buildCaroOnlineLeaderboard"
+    },
+    {
+      "name": "with limit",
+      "input": {
+        "limit": 50
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/caro/online/leaderboard",
+        "query": {
+          "limit": 50
+        }
+      },
+      "legacy": "api/caroOnlineLeaderboard.js buildCaroOnlineLeaderboard"
+    },
+    {
+      "name": "negative limit is rejected",
+      "input": {
+        "limit": -1
+      },
+      "error": "at limit"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "period": "week"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

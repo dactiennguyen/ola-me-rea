@@ -1,0 +1,55 @@
+{
+  "endpoint": "reportUsers",
+  "cases": [
+    {
+      "name": "uid1 defaults to the signed-in account",
+      "input": {
+        "uid2": "peer-uid",
+        "content": "quấy rối"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/reportUsers.php",
+        "body": {
+          "uid1": "me-uid",
+          "uid2": "peer-uid",
+          "content": "quấy rối"
+        }
+      },
+      "legacy": "api/reportUsers.js buildReportUsers"
+    },
+    {
+      "name": "explicit uid1",
+      "input": {
+        "uid1": "other-uid",
+        "uid2": "peer-uid",
+        "content": "spam"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/reportUsers.php",
+        "body": {
+          "uid1": "other-uid",
+          "uid2": "peer-uid",
+          "content": "spam"
+        }
+      },
+      "legacy": "api/reportUsers.js buildReportUsers"
+    },
+    {
+      "name": "missing content is rejected",
+      "input": {
+        "uid2": "peer-uid"
+      },
+      "error": "→ at content"
+    },
+    {
+      "name": "uid2 must be a string",
+      "input": {
+        "uid2": 9,
+        "content": "spam"
+      },
+      "error": "→ at uid2"
+    }
+  ]
+}

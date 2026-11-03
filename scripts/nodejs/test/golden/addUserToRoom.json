@@ -1,0 +1,48 @@
+{
+  "endpoint": "addUserToRoom",
+  "cases": [
+    {
+      "name": "enter room 79 as captured (#41)",
+      "input": {
+        "state": "79"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addUserToRoom.php",
+        "body": {
+          "uid": "me-uid",
+          "state": "79"
+        }
+      },
+      "legacy": "api/addUserToRoom.js buildAddUserToRoom"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "state": "1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addUserToRoom.php",
+        "body": {
+          "uid": "other-uid",
+          "state": "1"
+        }
+      },
+      "legacy": "api/addUserToRoom.js buildAddUserToRoom"
+    },
+    {
+      "name": "missing state is rejected",
+      "input": {},
+      "error": "at state"
+    },
+    {
+      "name": "numeric state is rejected",
+      "input": {
+        "state": 79
+      },
+      "error": "at state"
+    }
+  ]
+}

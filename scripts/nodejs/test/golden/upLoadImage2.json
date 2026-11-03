@@ -1,0 +1,50 @@
+{
+  "endpoint": "upLoadImage2",
+  "cases": [
+    {
+      "name": "uid defaults to the session",
+      "input": {
+        "image": "data:image/jpeg;base64,/9j/AAA"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/upLoadImage2.php",
+        "body": {
+          "uid": "me-uid",
+          "image": "data:image/jpeg;base64,/9j/AAA"
+        }
+      },
+      "legacy": "api/upLoadImage2.js buildUpLoadImage2"
+    },
+    {
+      "name": "explicit uid with URL",
+      "input": {
+        "uid": "other-uid",
+        "image": "https://example.com/a.jpg"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/upLoadImage2.php",
+        "body": {
+          "uid": "other-uid",
+          "image": "https://example.com/a.jpg"
+        }
+      },
+      "legacy": "api/upLoadImage2.js buildUpLoadImage2"
+    },
+    {
+      "name": "missing image is rejected",
+      "input": {},
+      "error": "image"
+    },
+    {
+      "name": "image must be a string",
+      "input": {
+        "image": {
+          "url": "x"
+        }
+      },
+      "error": "image"
+    }
+  ]
+}

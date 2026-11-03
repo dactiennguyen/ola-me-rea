@@ -1,0 +1,38 @@
+{
+  "endpoint": "getUserInfoForChatV2",
+  "cases": [
+    {
+      "name": "peer id",
+      "input": {
+        "id": "peer-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getUserInfoForChatV2.php",
+        "body": {
+          "id": "peer-uid"
+        }
+      },
+      "legacy": "api/getUserInfoForChatV2.js buildGetUserInfoForChatV2"
+    },
+    {
+      "name": "missing id is rejected (legacy sent '<peer-uid>')",
+      "input": {},
+      "error": "→ at id"
+    },
+    {
+      "name": "id must be a string",
+      "input": {
+        "id": 42
+      },
+      "error": "→ at id"
+    },
+    {
+      "name": "blank id is rejected",
+      "input": {
+        "id": " "
+      },
+      "error": "non-empty"
+    }
+  ]
+}

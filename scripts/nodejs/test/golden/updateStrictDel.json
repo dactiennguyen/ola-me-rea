@@ -1,0 +1,99 @@
+{
+  "endpoint": "updateStrictDel",
+  "cases": [
+    {
+      "name": "delete one post with context",
+      "input": {
+        "uid": "target-uid",
+        "postID": 55123,
+        "tyleP": 1,
+        "avatar": "https://a/x.jpg"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictDel.php",
+        "body": {
+          "uid": "target-uid",
+          "postID": 55123,
+          "tyleP": 1,
+          "avatar": "https://a/x.jpg"
+        }
+      },
+      "legacy": "api/updateStrictDel.js buildUpdateStrictDel"
+    },
+    {
+      "name": "postID as string, uid from session",
+      "input": {
+        "postID": "55123",
+        "tyleP": "1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictDel.php",
+        "body": {
+          "uid": "me-uid",
+          "postID": "55123",
+          "tyleP": "1"
+        }
+      },
+      "legacy": "api/updateStrictDel.js buildUpdateStrictDel"
+    },
+    {
+      "name": "delete all",
+      "input": {
+        "uid": "target-uid",
+        "delAll": true
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictDel.php",
+        "body": {
+          "uid": "target-uid",
+          "delAll": true
+        }
+      },
+      "legacy": "api/updateStrictDel.js buildUpdateStrictDel"
+    },
+    {
+      "name": "postID with delAll is rejected (legacy sent both)",
+      "input": {
+        "postID": 55123,
+        "delAll": true
+      },
+      "error": "postID and delAll cannot be used together"
+    },
+    {
+      "name": "neither postID nor delAll is rejected",
+      "input": {
+        "tyleP": 1
+      },
+      "error": "Provide one of: postID, delAll"
+    },
+    {
+      "name": "postID must be a scalar",
+      "input": {
+        "postID": {
+          "id": 1
+        }
+      },
+      "error": "postID"
+    },
+    {
+      "name": "avatar may be '' (users without a photo; legacy rejected it)",
+      "input": {
+        "postID": 7,
+        "avatar": ""
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateStrictDel.php",
+        "body": {
+          "uid": "me-uid",
+          "postID": 7,
+          "avatar": ""
+        }
+      },
+      "legacy": "hand-written (legacy rejected this input)"
+    }
+  ]
+}

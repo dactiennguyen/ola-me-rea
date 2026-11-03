@@ -1,0 +1,239 @@
+{
+  "endpoint": "addLastMessage5",
+  "cases": [
+    {
+      "name": "text message as captured (#33); id = timestamp + session uid",
+      "input": {
+        "userID": "peer-uid",
+        "content": "hi",
+        "timestamp": 1793703248125,
+        "fcmToken": "fcm-token"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addLastMessage5.php",
+        "body": {
+          "fcmToken": "fcm-token",
+          "image": "",
+          "timestamp": 1793703248125,
+          "id": "1793703248125me-uid",
+          "content": "hi",
+          "uid": "me-uid",
+          "userID": "peer-uid",
+          "isSticker": null,
+          "replyID": "",
+          "replyText": ""
+        }
+      },
+      "legacy": "api/addLastMessage5.js buildAddLastMessage5"
+    },
+    {
+      "name": "explicit uid and id",
+      "input": {
+        "uid": "other-uid",
+        "userID": "peer-uid",
+        "content": "hi",
+        "timestamp": 1793703248125,
+        "id": "custom-id"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addLastMessage5.php",
+        "body": {
+          "fcmToken": "",
+          "image": "",
+          "timestamp": 1793703248125,
+          "id": "custom-id",
+          "content": "hi",
+          "uid": "other-uid",
+          "userID": "peer-uid",
+          "isSticker": null,
+          "replyID": "",
+          "replyText": ""
+        }
+      },
+      "legacy": "api/addLastMessage5.js buildAddLastMessage5"
+    },
+    {
+      "name": "sticker with empty content",
+      "input": {
+        "userID": "peer-uid",
+        "content": "",
+        "timestamp": 1793703248125,
+        "isSticker": 3
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addLastMessage5.php",
+        "body": {
+          "fcmToken": "",
+          "image": "",
+          "timestamp": 1793703248125,
+          "id": "1793703248125me-uid",
+          "content": "",
+          "uid": "me-uid",
+          "userID": "peer-uid",
+          "isSticker": 3,
+          "replyID": "",
+          "replyText": ""
+        }
+      },
+      "legacy": "api/addLastMessage5.js buildAddLastMessage5"
+    },
+    {
+      "name": "image reply",
+      "input": {
+        "userID": "peer-uid",
+        "content": "",
+        "timestamp": 1793703248125,
+        "image": "https://example.com/a.jpg",
+        "replyID": "1793700000000peer-uid",
+        "replyText": "quoted"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addLastMessage5.php",
+        "body": {
+          "fcmToken": "",
+          "image": "https://example.com/a.jpg",
+          "timestamp": 1793703248125,
+          "id": "1793703248125me-uid",
+          "content": "",
+          "uid": "me-uid",
+          "userID": "peer-uid",
+          "isSticker": null,
+          "replyID": "1793700000000peer-uid",
+          "replyText": "quoted"
+        }
+      },
+      "legacy": "api/addLastMessage5.js buildAddLastMessage5"
+    },
+    {
+      "name": "gift/audio variant adds isGift/isAudio",
+      "input": {
+        "userID": "peer-uid",
+        "content": "",
+        "timestamp": 1793703248125,
+        "isGift": 1,
+        "isAudio": 0
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addLastMessage5.php",
+        "body": {
+          "fcmToken": "",
+          "image": "",
+          "timestamp": 1793703248125,
+          "id": "1793703248125me-uid",
+          "content": "",
+          "uid": "me-uid",
+          "userID": "peer-uid",
+          "isSticker": null,
+          "replyID": "",
+          "replyText": "",
+          "isGift": 1,
+          "isAudio": 0
+        }
+      },
+      "legacy": "api/addLastMessage5.js buildAddLastMessage5"
+    },
+    {
+      "name": "empty fcmToken/image/replyID/replyText are accepted (legacy rejected '')",
+      "input": {
+        "userID": "peer-uid",
+        "content": "hi",
+        "timestamp": 1793703248125,
+        "fcmToken": "",
+        "image": "",
+        "replyID": "",
+        "replyText": ""
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addLastMessage5.php",
+        "body": {
+          "fcmToken": "",
+          "image": "",
+          "timestamp": 1793703248125,
+          "id": "1793703248125me-uid",
+          "content": "hi",
+          "uid": "me-uid",
+          "userID": "peer-uid",
+          "isSticker": null,
+          "replyID": "",
+          "replyText": ""
+        }
+      },
+      "legacy": "api/addLastMessage5.js buildAddLastMessage5"
+    },
+    {
+      "name": "explicit isSticker null is accepted (legacy rejected null)",
+      "input": {
+        "userID": "peer-uid",
+        "content": "hi",
+        "timestamp": 1793703248125,
+        "isSticker": null
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addLastMessage5.php",
+        "body": {
+          "fcmToken": "",
+          "image": "",
+          "timestamp": 1793703248125,
+          "id": "1793703248125me-uid",
+          "content": "hi",
+          "uid": "me-uid",
+          "userID": "peer-uid",
+          "isSticker": null,
+          "replyID": "",
+          "replyText": ""
+        }
+      },
+      "legacy": "api/addLastMessage5.js buildAddLastMessage5"
+    },
+    {
+      "name": "missing userID is rejected (legacy sent '<peer-uid>')",
+      "input": {
+        "content": "hi",
+        "timestamp": 1
+      },
+      "error": "at userID"
+    },
+    {
+      "name": "missing content is rejected (legacy sent '<content>')",
+      "input": {
+        "userID": "peer-uid",
+        "timestamp": 1
+      },
+      "error": "at content"
+    },
+    {
+      "name": "string timestamp is rejected",
+      "input": {
+        "userID": "peer-uid",
+        "content": "hi",
+        "timestamp": "1793703248125"
+      },
+      "error": "at timestamp"
+    },
+    {
+      "name": "negative isSticker is rejected",
+      "input": {
+        "userID": "peer-uid",
+        "content": "hi",
+        "isSticker": -1
+      },
+      "error": "at isSticker"
+    },
+    {
+      "name": "empty id is rejected",
+      "input": {
+        "userID": "peer-uid",
+        "content": "hi",
+        "id": ""
+      },
+      "error": "must be a non-empty string"
+    }
+  ]
+}

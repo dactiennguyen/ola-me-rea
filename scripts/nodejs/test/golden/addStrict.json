@@ -1,0 +1,55 @@
+{
+  "endpoint": "addStrict",
+  "cases": [
+    {
+      "name": "enable; uid defaults to the signed-in account",
+      "input": {
+        "isStrict": true
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addStrict.php",
+        "body": {
+          "isStrict": true,
+          "uid": "me-uid"
+        }
+      },
+      "legacy": "api/addStrict.js buildAddStrict"
+    },
+    {
+      "name": "disable for an explicit uid",
+      "input": {
+        "isStrict": false,
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addStrict.php",
+        "body": {
+          "isStrict": false,
+          "uid": "other-uid"
+        }
+      },
+      "legacy": "api/addStrict.js buildAddStrict"
+    },
+    {
+      "name": "missing isStrict is rejected",
+      "input": {},
+      "error": "at isStrict"
+    },
+    {
+      "name": "numeric isStrict is rejected",
+      "input": {
+        "isStrict": 1
+      },
+      "error": "expected boolean"
+    },
+    {
+      "name": "string isStrict is rejected",
+      "input": {
+        "isStrict": "true"
+      },
+      "error": "expected boolean"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "endpoint": "rewardCheckReward",
+  "cases": [
+    {
+      "name": "uid defaults to the session",
+      "input": {
+        "condition": 1
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/reward/checkReward",
+        "body": {
+          "uid": "me-uid",
+          "condition": 1
+        }
+      },
+      "legacy": "api/rewardCheckReward.js buildRewardCheckReward"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "other-uid",
+        "condition": 0
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/reward/checkReward",
+        "body": {
+          "uid": "other-uid",
+          "condition": 0
+        }
+      },
+      "legacy": "api/rewardCheckReward.js buildRewardCheckReward"
+    },
+    {
+      "name": "missing condition is rejected",
+      "input": {},
+      "error": "condition"
+    },
+    {
+      "name": "condition must be an integer",
+      "input": {
+        "condition": "1"
+      },
+      "error": "condition"
+    },
+    {
+      "name": "negative condition is rejected",
+      "input": {
+        "condition": -1
+      },
+      "error": "condition"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "endpoint": "caroLeaderboard",
+  "cases": [
+    {
+      "name": "bare GET as captured",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/caro/leaderboard",
+        "query": {}
+      },
+      "legacy": "api/caroLeaderboard.js buildCaroLeaderboard"
+    },
+    {
+      "name": "period and limit",
+      "input": {
+        "period": "week",
+        "limit": 20
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/caro/leaderboard",
+        "query": {
+          "period": "week",
+          "limit": 20
+        }
+      },
+      "legacy": "api/caroLeaderboard.js buildCaroLeaderboard"
+    },
+    {
+      "name": "limit 0 is sent",
+      "input": {
+        "limit": 0
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/caro/leaderboard",
+        "query": {
+          "limit": 0
+        }
+      },
+      "legacy": "api/caroLeaderboard.js buildCaroLeaderboard"
+    },
+    {
+      "name": "string limit is rejected",
+      "input": {
+        "limit": "20"
+      },
+      "error": "at limit"
+    },
+    {
+      "name": "empty period is rejected",
+      "input": {
+        "period": ""
+      },
+      "error": "must be a non-empty string"
+    }
+  ]
+}

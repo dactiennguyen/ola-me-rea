@@ -1,0 +1,45 @@
+{
+  "endpoint": "getViolate",
+  "cases": [
+    {
+      "name": "page defaults to 0",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getViolate.php",
+        "body": {
+          "page": 0
+        }
+      },
+      "legacy": "api/getViolate.js buildGetViolate"
+    },
+    {
+      "name": "explicit page",
+      "input": {
+        "page": 3
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getViolate.php",
+        "body": {
+          "page": 3
+        }
+      },
+      "legacy": "api/getViolate.js buildGetViolate"
+    },
+    {
+      "name": "page must be an integer",
+      "input": {
+        "page": 1.5
+      },
+      "error": "→ at page"
+    },
+    {
+      "name": "page string is rejected",
+      "input": {
+        "page": "1"
+      },
+      "error": "→ at page"
+    }
+  ]
+}

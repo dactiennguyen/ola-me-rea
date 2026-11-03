@@ -1,0 +1,72 @@
+{
+  "endpoint": "postUploadChat",
+  "cases": [
+    {
+      "name": "content-type defaults to application/octet-stream",
+      "input": {
+        "fileName": "voice.m4a",
+        "content": "data:base64,AAAA"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/uploadChat",
+        "body": {
+          "content-type": "application/octet-stream",
+          "x-file-name": "voice.m4a",
+          "content": "data:base64,AAAA"
+        }
+      },
+      "legacy": "api/postUploadChat.js buildPostUploadChat"
+    },
+    {
+      "name": "explicit contentType",
+      "input": {
+        "fileName": "pic.jpg",
+        "contentType": "image/jpeg",
+        "content": "data:base64,BBBB"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/uploadChat",
+        "body": {
+          "content-type": "image/jpeg",
+          "x-file-name": "pic.jpg",
+          "content": "data:base64,BBBB"
+        }
+      },
+      "legacy": "api/postUploadChat.js buildPostUploadChat"
+    },
+    {
+      "name": "missing content is rejected",
+      "input": {
+        "fileName": "pic.jpg"
+      },
+      "error": "→ at content"
+    },
+    {
+      "name": "missing fileName is rejected",
+      "input": {
+        "content": "data:base64,AAAA"
+      },
+      "error": "→ at fileName"
+    },
+    {
+      "name": "blank contentType is rejected",
+      "input": {
+        "fileName": "pic.jpg",
+        "content": "x",
+        "contentType": " "
+      },
+      "error": "→ at contentType"
+    },
+    {
+      "name": "wire key names are not inputs",
+      "input": {
+        "fileName": "pic.jpg",
+        "content": "x",
+        "x-file-name": "pic.jpg"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "endpoint": "postStoriesId",
+  "cases": [
+    {
+      "name": "mark as viewed (POST default)",
+      "input": {
+        "storyId": "s1",
+        "action": "view"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/stories/s1/view",
+        "body": {}
+      },
+      "legacy": "api/postStoriesId.js buildPostStoriesId"
+    },
+    {
+      "name": "react with body",
+      "input": {
+        "storyId": "s1",
+        "action": "react",
+        "body": {
+          "type": "love"
+        }
+      },
+      "expected": {
+        "method": "POST",
+        "path": "napi/post/stories/s1/react",
+        "body": {
+          "type": "love"
+        }
+      },
+      "legacy": "api/postStoriesId.js buildPostStoriesId"
+    },
+    {
+      "name": "delete without action",
+      "input": {
+        "storyId": "s1",
+        "method": "DELETE"
+      },
+      "expected": {
+        "method": "DELETE",
+        "path": "napi/post/stories/s1",
+        "body": {}
+      },
+      "legacy": "api/postStoriesId.js buildPostStoriesId"
+    },
+    {
+      "name": "lowercase method",
+      "input": {
+        "storyId": "s1",
+        "method": "delete"
+      },
+      "expected": {
+        "method": "DELETE",
+        "path": "napi/post/stories/s1",
+        "body": {}
+      },
+      "legacy": "api/postStoriesId.js buildPostStoriesId"
+    },
+    {
+      "name": "viewers via GET",
+      "input": {
+        "storyId": "s1",
+        "action": "viewers",
+        "method": "GET"
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/post/stories/s1/viewers",
+        "query": {}
+      },
+      "legacy": "api/postStoriesId.js buildPostStoriesId"
+    },
+    {
+      "name": "'..' storyId is rejected (legacy built napi/post/stories/..)",
+      "input": {
+        "storyId": "..",
+        "method": "DELETE"
+      },
+      "error": "\"..\""
+    },
+    {
+      "name": "GET with body is rejected",
+      "input": {
+        "storyId": "s1",
+        "method": "GET",
+        "body": {
+          "a": 1
+        }
+      },
+      "error": "body is not sent with GET"
+    },
+    {
+      "name": "unknown method is rejected",
+      "input": {
+        "storyId": "s1",
+        "method": "TRACE"
+      },
+      "error": "method"
+    },
+    {
+      "name": "object query values are rejected",
+      "input": {
+        "storyId": "s1",
+        "method": "GET",
+        "query": {
+          "a": {
+            "b": 1
+          }
+        }
+      },
+      "error": "query"
+    }
+  ]
+}

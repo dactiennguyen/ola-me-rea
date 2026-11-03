@@ -1,0 +1,22 @@
+{
+  "endpoint": "caroOnlineMe",
+  "cases": [
+    {
+      "name": "GET without params",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/caro/online/me",
+        "query": {}
+      },
+      "legacy": "api/caroOnlineMe.js buildCaroOnlineMe"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "uid": "x"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

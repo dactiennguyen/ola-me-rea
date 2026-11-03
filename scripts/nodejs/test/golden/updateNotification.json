@@ -1,0 +1,80 @@
+{
+  "endpoint": "updateNotification",
+  "cases": [
+    {
+      "name": "mark one as read",
+      "input": {
+        "related_id": 55
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateNotification.php",
+        "body": {
+          "uid": "me-uid",
+          "related_id": 55
+        }
+      },
+      "legacy": "api/updateNotification.js buildUpdateNotification"
+    },
+    {
+      "name": "mark all read adds its action",
+      "input": {
+        "mark_all_read": true
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateNotification.php",
+        "body": {
+          "uid": "me-uid",
+          "action": "mark_all_read",
+          "mark_all_read": true
+        }
+      },
+      "legacy": "api/updateNotification.js buildUpdateNotification"
+    },
+    {
+      "name": "delete all adds its action",
+      "input": {
+        "delete_all": true
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateNotification.php",
+        "body": {
+          "uid": "me-uid",
+          "action": "delete_all",
+          "delete_all": true
+        }
+      },
+      "legacy": "api/updateNotification.js buildUpdateNotification"
+    },
+    {
+      "name": "mark_all_read with delete_all is rejected",
+      "input": {
+        "mark_all_read": true,
+        "delete_all": true
+      },
+      "error": "cannot be used together"
+    },
+    {
+      "name": "no operation is rejected",
+      "input": {},
+      "error": "Provide one of"
+    },
+    {
+      "name": "delete_all false does not add the delete action",
+      "input": {
+        "delete_all": false
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updateNotification.php",
+        "body": {
+          "uid": "me-uid",
+          "delete_all": false
+        }
+      },
+      "legacy": "hand-written (legacy rejected this input)"
+    }
+  ]
+}

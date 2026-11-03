@@ -1,0 +1,83 @@
+{
+  "endpoint": "addVipUser7",
+  "cases": [
+    {
+      "name": "buy for self: uid and uidTang default to the signed-in account",
+      "input": {
+        "successRes": "store-res",
+        "transID": "GPA.1234"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addVipUser7.php",
+        "body": {
+          "uid": "me-uid",
+          "successRes": "store-res",
+          "uidTang": "me-uid",
+          "transID": "GPA.1234"
+        }
+      },
+      "legacy": "api/addVipUser7.js buildAddVipUser7"
+    },
+    {
+      "name": "gift to another user",
+      "input": {
+        "successRes": "store-res",
+        "transID": "GPA.1234",
+        "uidTang": "friend-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addVipUser7.php",
+        "body": {
+          "uid": "me-uid",
+          "successRes": "store-res",
+          "uidTang": "friend-uid",
+          "transID": "GPA.1234"
+        }
+      },
+      "legacy": "api/addVipUser7.js buildAddVipUser7"
+    },
+    {
+      "name": "explicit uid keeps uidTang on the signed-in account",
+      "input": {
+        "uid": "other-uid",
+        "successRes": "store-res",
+        "transID": "GPA.1234"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/addVipUser7.php",
+        "body": {
+          "uid": "other-uid",
+          "successRes": "store-res",
+          "uidTang": "me-uid",
+          "transID": "GPA.1234"
+        }
+      },
+      "legacy": "api/addVipUser7.js buildAddVipUser7"
+    },
+    {
+      "name": "missing successRes is rejected (legacy sent '<successRes>')",
+      "input": {
+        "transID": "GPA.1234"
+      },
+      "error": "at successRes"
+    },
+    {
+      "name": "missing transID is rejected (legacy sent '<transID>')",
+      "input": {
+        "successRes": "store-res"
+      },
+      "error": "at transID"
+    },
+    {
+      "name": "numeric transID is rejected",
+      "input": {
+        "successRes": "store-res",
+        "transID": 1234
+      },
+      "error": "at transID"
+    }
+  ]
+}

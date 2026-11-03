@@ -1,0 +1,22 @@
+{
+  "endpoint": "usersGetViewProfile",
+  "cases": [
+    {
+      "name": "no parameters",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/getViewProfile",
+        "query": {}
+      },
+      "legacy": "api/usersGetViewProfile.js buildUsersGetViewProfile"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "page": 0
+      },
+      "error": "page"
+    }
+  ]
+}

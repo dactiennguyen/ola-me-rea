@@ -1,0 +1,22 @@
+{
+  "endpoint": "generalGetTimes",
+  "cases": [
+    {
+      "name": "GET without parameters",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/general/getTimes",
+        "query": {}
+      },
+      "legacy": "api/generalGetTimes.js buildGeneralGetTimes"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "page": 1
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

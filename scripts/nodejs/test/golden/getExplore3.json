@@ -1,0 +1,90 @@
+{
+  "endpoint": "getExplore3",
+  "cases": [
+    {
+      "name": "first page",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExplore3.php",
+        "body": {
+          "uid": "me-uid",
+          "os": "android",
+          "page": 0,
+          "condition": 1
+        }
+      },
+      "legacy": "api/getExplore3.js buildGetExplore3"
+    },
+    {
+      "name": "filters",
+      "input": {
+        "page": 2,
+        "gender": 1,
+        "cityID": "1"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExplore3.php",
+        "body": {
+          "uid": "me-uid",
+          "os": "android",
+          "page": 2,
+          "condition": 1,
+          "gender": 1,
+          "cityID": "1"
+        }
+      },
+      "legacy": "api/getExplore3.js buildGetExplore3"
+    },
+    {
+      "name": "'all' filters are omitted",
+      "input": {
+        "gender": "all",
+        "cityID": "all"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExplore3.php",
+        "body": {
+          "uid": "me-uid",
+          "os": "android",
+          "page": 0,
+          "condition": 1
+        }
+      },
+      "legacy": "api/getExplore3.js buildGetExplore3"
+    },
+    {
+      "name": "explicit uid is sent",
+      "input": {
+        "uid": "other-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/getExplore3.php",
+        "body": {
+          "uid": "other-uid",
+          "os": "android",
+          "page": 0,
+          "condition": 1
+        }
+      },
+      "legacy": "api/getExplore3.js buildGetExplore3"
+    },
+    {
+      "name": "lastSeenPaging is online-only",
+      "input": {
+        "lastSeenPaging": 5
+      },
+      "error": "only used by the online tab"
+    },
+    {
+      "name": "gender must be 0, 1, 2 or all",
+      "input": {
+        "gender": 3
+      },
+      "error": "gender"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "endpoint": "postStoriesFeed",
+  "cases": [
+    {
+      "name": "no query (matches the wire)",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/post/stories/feed",
+        "query": {}
+      },
+      "legacy": "api/postStoriesFeed.js buildPostStoriesFeed"
+    },
+    {
+      "name": "optional viewer_id",
+      "input": {
+        "viewer_id": "me-uid"
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/post/stories/feed",
+        "query": {
+          "viewer_id": "me-uid"
+        }
+      },
+      "legacy": "api/postStoriesFeed.js buildPostStoriesFeed"
+    },
+    {
+      "name": "blank viewer_id is rejected",
+      "input": {
+        "viewer_id": ""
+      },
+      "error": "→ at viewer_id"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "uid": "x"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

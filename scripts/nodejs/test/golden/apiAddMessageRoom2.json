@@ -1,0 +1,143 @@
+{
+  "endpoint": "apiAddMessageRoom2",
+  "cases": [
+    {
+      "name": "defaults: userID from session, empty deviceID/photoURL2, send=1, level=1, isVerifyAvatar=0, isVip=false",
+      "input": {
+        "roomID": "79",
+        "mess": "hi",
+        "name": "Phong nguyen",
+        "id": "1793703706157me-uid"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddMessageRoom2.php",
+        "body": {
+          "deviceID": "",
+          "mess": "hi",
+          "name": "Phong nguyen",
+          "userID": "me-uid",
+          "photoURL2": "",
+          "send": 1,
+          "id": "1793703706157me-uid",
+          "isVip": false,
+          "level": 1,
+          "roomID": "79",
+          "isVerifyAvatar": 0
+        }
+      },
+      "legacy": "api/apiAddMessageRoom2.js buildApiAddMessageRoom2"
+    },
+    {
+      "name": "body as captured (#45)",
+      "input": {
+        "roomID": "79",
+        "mess": "hi",
+        "name": "Phong nguyen",
+        "deviceID": "050ec3f0b7c3483b",
+        "photoURL2": "",
+        "id": "1793703706157me-uid",
+        "send": 1,
+        "isVip": false,
+        "level": 1,
+        "isVerifyAvatar": 0
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddMessageRoom2.php",
+        "body": {
+          "deviceID": "050ec3f0b7c3483b",
+          "mess": "hi",
+          "name": "Phong nguyen",
+          "userID": "me-uid",
+          "photoURL2": "",
+          "send": 1,
+          "id": "1793703706157me-uid",
+          "isVip": false,
+          "level": 1,
+          "roomID": "79",
+          "isVerifyAvatar": 0
+        }
+      },
+      "legacy": "api/apiAddMessageRoom2.js buildApiAddMessageRoom2"
+    },
+    {
+      "name": "explicit userID, VIP sender with avatar",
+      "input": {
+        "userID": "other-uid",
+        "roomID": "1",
+        "mess": "chào",
+        "name": "An",
+        "photoURL2": "https://example.com/a.jpg",
+        "id": "1793703706157other-uid",
+        "isVip": true,
+        "level": 5,
+        "isVerifyAvatar": 1
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/apiAddMessageRoom2.php",
+        "body": {
+          "deviceID": "",
+          "mess": "chào",
+          "name": "An",
+          "userID": "other-uid",
+          "photoURL2": "https://example.com/a.jpg",
+          "send": 1,
+          "id": "1793703706157other-uid",
+          "isVip": true,
+          "level": 5,
+          "roomID": "1",
+          "isVerifyAvatar": 1
+        }
+      },
+      "legacy": "api/apiAddMessageRoom2.js buildApiAddMessageRoom2"
+    },
+    {
+      "name": "missing mess is rejected",
+      "input": {
+        "roomID": "79",
+        "name": "P"
+      },
+      "error": "at mess"
+    },
+    {
+      "name": "missing roomID is rejected",
+      "input": {
+        "mess": "hi",
+        "name": "P"
+      },
+      "error": "at roomID"
+    },
+    {
+      "name": "non-boolean isVip is rejected (legacy coerced with Boolean())",
+      "input": {
+        "roomID": "79",
+        "mess": "hi",
+        "name": "P",
+        "isVip": 1
+      },
+      "error": "expected boolean"
+    },
+    {
+      "name": "non-string deviceID is rejected (legacy silently sent '')",
+      "input": {
+        "roomID": "79",
+        "mess": "hi",
+        "name": "P",
+        "deviceID": 123
+      },
+      "error": "at deviceID"
+    },
+    {
+      "name": "string send is rejected",
+      "input": {
+        "roomID": "79",
+        "mess": "hi",
+        "name": "P",
+        "send": "1"
+      },
+      "error": "at send"
+    }
+  ]
+}

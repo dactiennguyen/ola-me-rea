@@ -1,0 +1,48 @@
+{
+  "endpoint": "usersNotifications",
+  "cases": [
+    {
+      "name": "uid defaults to the session",
+      "input": {},
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/notifications/me-uid",
+        "query": {}
+      },
+      "legacy": "api/usersNotifications.js buildUsersNotifications"
+    },
+    {
+      "name": "explicit uid",
+      "input": {
+        "uid": "Bn8RsDQElXTjTkfCmrYGcjpKJjJ2"
+      },
+      "expected": {
+        "method": "GET",
+        "path": "napi/users/notifications/Bn8RsDQElXTjTkfCmrYGcjpKJjJ2",
+        "query": {}
+      },
+      "legacy": "api/usersNotifications.js buildUsersNotifications"
+    },
+    {
+      "name": "'..' uid is rejected (legacy built napi/users/notifications/..)",
+      "input": {
+        "uid": ".."
+      },
+      "error": "\"..\""
+    },
+    {
+      "name": "slash in uid is rejected",
+      "input": {
+        "uid": "a/b"
+      },
+      "error": "[A-Za-z0-9_.-]"
+    },
+    {
+      "name": "uid must be a string",
+      "input": {
+        "uid": 5
+      },
+      "error": "uid"
+    }
+  ]
+}

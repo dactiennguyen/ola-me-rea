@@ -1,0 +1,60 @@
+{
+  "endpoint": "checkEmail",
+  "cases": [
+    {
+      "name": "email defaults to the session email",
+      "input": {},
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/checkEmail.php",
+        "body": {
+          "email": "me@example.com"
+        }
+      },
+      "legacy": "api/checkEmail.js buildCheckEmail"
+    },
+    {
+      "name": "explicit email",
+      "input": {
+        "email": "you@example.com"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/checkEmail.php",
+        "body": {
+          "email": "you@example.com"
+        }
+      },
+      "legacy": "api/checkEmail.js buildCheckEmail"
+    },
+    {
+      "name": "no email (session without email) is rejected (legacy sent '<email>')",
+      "input": {
+        "email": null
+      },
+      "error": "at email"
+    },
+    {
+      "name": "empty email is rejected",
+      "input": {
+        "email": ""
+      },
+      "error": "at email"
+    },
+    {
+      "name": "numeric email is rejected",
+      "input": {
+        "email": 42
+      },
+      "error": "at email"
+    },
+    {
+      "name": "unknown field is rejected",
+      "input": {
+        "email": "a@b.c",
+        "uid": "x"
+      },
+      "error": "Unrecognized key"
+    }
+  ]
+}

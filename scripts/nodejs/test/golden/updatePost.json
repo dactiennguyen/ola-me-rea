@@ -1,0 +1,67 @@
+{
+  "endpoint": "updatePost",
+  "cases": [
+    {
+      "name": "token variant",
+      "input": {
+        "action": "token",
+        "id": "me-uid",
+        "value": "fcm-abc"
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updatePost.php",
+        "body": {
+          "action": "token",
+          "id": "me-uid",
+          "value": "fcm-abc"
+        }
+      },
+      "legacy": "api/updatePost.js buildUpdatePost"
+    },
+    {
+      "name": "numeric id with extra flag",
+      "input": {
+        "action": "removeFriend",
+        "id": 123,
+        "extra": {
+          "removeFriend": 1
+        }
+      },
+      "expected": {
+        "method": "POST",
+        "path": "faApi2/updatePost.php",
+        "body": {
+          "action": "removeFriend",
+          "id": 123,
+          "removeFriend": 1
+        }
+      },
+      "legacy": "api/updatePost.js buildUpdatePost"
+    },
+    {
+      "name": "extra may not override action",
+      "input": {
+        "action": "token",
+        "id": "x",
+        "extra": {
+          "action": "removeFriend"
+        }
+      },
+      "error": "extra may not set declared field(s) action"
+    },
+    {
+      "name": "extra values must be scalars",
+      "input": {
+        "action": "token",
+        "id": "x",
+        "extra": {
+          "flag": {
+            "a": 1
+          }
+        }
+      },
+      "error": "extra"
+    }
+  ]
+}
