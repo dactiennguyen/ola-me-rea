@@ -1,0 +1,123 @@
+name: Release
+
+# On a v* tag: checks the tag against the app version, runs build-matrix.yml (tests and the four builds), then publishes a
+# GitHub release with every bundle, SHA256SUMS.txt and .github/release-notes.md (apps/docs/05-phat-hanh.md). No Apple or
+# Windows code signing. To release 0.1.1:
+#   set "version" to 0.1.1 in apps/package.json (tauri.conf.json reads it from there), commit ("Release 0.1.1", then what
+#   changed), git tag v0.1.1 && git push origin main v0.1.1
+# With the repository variable RELEASE_REPO (owner/name) and the secret RELEASE_TOKEN (a fine-grained token with Contents
+# read and write on that repository), the release goes to that repository instead, so this one may be private
+# (apps/docs/05-phat-hanh.md#repo-phát-hành-riêng).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Check tag and version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Needs a v* tag
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          echo "::error::Run this workflow on a v* tag, not ${GITHUB_REF}."
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # The one app version: apps/package.json. tauri.conf.json must point at it, not carry its own.
+      - name: Tag matches the app version
+        id: version
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          npm=$(node -p "require('./apps/package.json').version")
+          tauri=$(node -p "require('./apps/src-tauri/tauri.conf.json').version")
+          echo "tag $tag; apps/package.json $npm; tauri.conf.json $tauri"
+          if [ "$tauri" != "../package.json" ]; then
+            echo "::error::apps/src-tauri/tauri.conf.json must keep \"version\": \"../package.json\"."
+            exit 1
+          fi
+          if [ "$npm" != "$tag" ]; then
+            echo "::error::Tag v$tag does not match apps/package.json ($npm)."
+            exit 1
+          fi
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build
+    needs: prepare
+    uses: ./.github/workflows/build-matrix.yml
+    secrets: inherit
+
+  publish:
+    name: Publish release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      GH_REPO: ${{ vars.RELEASE_REPO || github.repository }}
+      SOURCE_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download bundles
+        uses: actions/download-artifact@v8
+        with:
+          pattern: bundles-*
+          path: assets
+          merge-multiple: true
+
+      - name: SHA256SUMS.txt
+        working-directory: assets
+        run: |
+          sha256sum -- * > ../SHA256SUMS.txt
+          mv ../SHA256SUMS.txt .
+          ls -l
+          cat SHA256SUMS.txt
+
+      - name: Release notes
+        run: sed "s/{{VERSION}}/${VERSION}/g" .github/release-notes.md > notes.md
+
+      # A draft left by a failed run is replaced; a published release is never changed.
+      - name: Create the release
+        run: |
+          set -euo pipefail
+          # The tag is checked in this repository by the prepare job. In a separate release repository it does not exist
+          # yet: gh creates it on that repository's default branch, and the notes list no commits of that repository.
+          # --target is needed there, as gh refuses a tag of the checkout that the release repository lacks.
+          extra=(--verify-tag --generate-notes)
+          if [ "$GH_REPO" != "$SOURCE_REPO" ]; then
+            if [ -z "$RELEASE_TOKEN" ]; then
+              echo "::error::RELEASE_REPO is $GH_REPO but the secret RELEASE_TOKEN is missing."
+              exit 1
+            fi
+            export GH_TOKEN="$RELEASE_TOKEN"
+            extra=(--target "$(gh api "repos/$GH_REPO" --jq .default_branch)")
+          fi
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" != "true" ]; then
+              echo "::error::Release $TAG is already published; not changing it."
+              exit 1
+            fi
+            gh release delete "$TAG" --yes
+          fi
+          gh release create "$TAG" assets/* "${extra[@]}" --title "Ola Desktop $VERSION" --notes-file notes.md

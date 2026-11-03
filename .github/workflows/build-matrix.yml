@@ -1,0 +1,198 @@
+name: Build Matrix
+
+# Tests, then the desktop app (apps/) built for macOS Apple Silicon, macOS Intel, Windows x64 and Ubuntu x64 (on a
+# release or a run started by hand; a push or pull request only tests).
+# The bundles stay as artifacts of the run; release.yml calls this workflow on a v* tag and publishes them. No Apple or
+# Windows code signing; macOS bundles are signed ad hoc (bundle.macOS.signingIdentity "-") (apps/docs/05-phat-hanh.md).
+# Nothing here calls the Ola servers: the client tests use fake fetch and sockets.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: build-matrix-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Firebase 13 (scripts/nodejs) declares Node >=24.12.
+  NODE_VERSION: "24"
+  # Pinned so a new stable clippy lint does not fail the build on its own.
+  RUST_TOOLCHAIN: "1.90.0"
+  # Yarn 1.22.22 comes from "packageManager" through Corepack; never prompt in CI.
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+  # Tauri 2 on Debian/Ubuntu (https://v2.tauri.app/start/prerequisites/#linux), plus patchelf for the AppImage.
+  LINUX_PACKAGES: >-
+    libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev
+    libayatana-appindicator3-dev librsvg2-dev patchelf
+
+jobs:
+  preflight-ts:
+    name: "Preflight: TypeScript tests"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Yarn
+        run: corepack enable
+
+      # tsc over src/ and test/, then node --test: endpoints, signing, golden requests, chat flows, and that the modules
+      # the app imports never reach a node:* import.
+      - name: Ola client (scripts/nodejs)
+        working-directory: scripts/nodejs
+        run: |
+          yarn install --frozen-lockfile
+          yarn typecheck
+          yarn test
+
+      # The app type-check also covers the scripts/nodejs/src modules it imports through @ola/core.
+      - name: App type-check (apps)
+        working-directory: apps
+        run: |
+          yarn install --frozen-lockfile
+          yarn typecheck
+
+  preflight-rust:
+    name: "Preflight: Rust fmt, clippy, tests"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Tauri system packages
+        run: |
+          # shellcheck disable=SC2086 # the list is split into packages on purpose
+          sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
+
+      - name: Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/src-tauri -> target
+          key: preflight
+
+      - name: Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Yarn
+        run: corepack enable
+
+      # tauri::generate_context! embeds apps/dist, so the crate does not compile before the frontend is built.
+      - name: Frontend (vite build)
+        working-directory: apps
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: cargo fmt
+        working-directory: apps/src-tauri
+        run: cargo fmt --all --check
+
+      - name: cargo clippy
+        working-directory: apps/src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: cargo test
+        working-directory: apps/src-tauri
+        run: cargo test --locked
+
+  # The four builds only for a release (release.yml on a v* tag) or a run started by hand: a push or pull request runs
+  # the tests alone, as the macOS minutes of a private repository count ten times.
+  build:
+    name: "Build: ${{ matrix.label }}"
+    needs: [preflight-ts, preflight-rust]
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS Apple Silicon
+            os: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+          - label: macOS Intel
+            os: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+          - label: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+          - label: Ubuntu x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,rpm,appimage
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Tauri system packages
+        if: runner.os == 'Linux'
+        run: |
+          # shellcheck disable=SC2086 # the list is split into packages on purpose
+          sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
+
+      - name: Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/src-tauri -> target
+          key: ${{ matrix.target }}
+
+      - name: Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Yarn
+        run: corepack enable
+
+      - name: Frontend packages
+        working-directory: apps
+        run: yarn install --frozen-lockfile
+
+      # beforeBuildCommand (yarn build) builds the frontend; --bundles overrides bundle.targets.
+      - name: tauri build
+        working-directory: apps
+        shell: bash
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: yarn tauri build --ci --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+
+      - name: Stage bundles
+        run: node .github/scripts/stage-bundles.mjs ${{ matrix.target }} staged
+
+      - name: Upload bundles
+        uses: actions/upload-artifact@v7
+        with:
+          name: bundles-${{ matrix.target }}
+          path: staged/*
+          if-no-files-found: error
+          retention-days: 14

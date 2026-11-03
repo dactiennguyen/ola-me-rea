@@ -1,0 +1,38 @@
+name: Release retry
+
+# A Release run that failed only because GitHub cancelled a job it never gave a runner is run again: its cancelled jobs
+# and the jobs after them (Publish release), until the third attempt. A run where a job failed by itself (a test, a
+# build, the publish), or that someone cancelled, is left alone (apps/docs/05-phat-hanh.md#chạy-lại-khi-thiếu-máy).
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+permissions:
+  actions: write
+
+jobs:
+  retry:
+    name: Re-run the jobs GitHub cancelled
+    # A run cancelled by hand ends "cancelled"; one with a job GitHub gave up on ends "failure".
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt < 3
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN: ${{ github.event.workflow_run.id }}
+    steps:
+      - name: Re-run the cancelled jobs
+        run: |
+          set -euo pipefail
+          jobs=$(gh api "repos/$GH_REPO/actions/runs/$RUN/jobs?filter=latest&per_page=100" --jq '.jobs[] | "\(.conclusion)\t\(.name)"')
+          echo "$jobs"
+          if grep -q '^failure' <<< "$jobs"; then
+            echo "A job failed by itself: the run is not run again."
+          elif grep -q '^cancelled' <<< "$jobs"; then
+            echo "::warning::GitHub cancelled a job of run $RUN: its cancelled jobs run again."
+            gh run rerun "$RUN" --failed
+          else
+            echo "No job was cancelled: the run is not run again."
+          fi
