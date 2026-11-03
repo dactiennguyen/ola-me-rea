@@ -9,6 +9,8 @@
   - `napi/...`: namespace API mới; snapshot chứa 27 path. Tên `/napi` **không đủ** để chứng minh backend được viết bằng Node.js.
 - Socket.IO dùng `https://sgdev.vip:3001`; game Caro dùng `https://sgdev.vip:5000/caro`.
 - **Cập nhật 2026-11-03:** đã bắt được plaintext request (method, URL, body, header) và frame Socket.IO bằng hook tầng Dart — xem [04-runtime-api-capture.md](04-runtime-api-capture.md). Phần dưới đây giữ nguyên làm lịch sử phân tích tĩnh.
+
+> **Tài liệu API đã tách sang [api/](api/README.md).** Các bảng endpoint, luồng đăng nhập/chat/phòng, giao thức Socket.IO và phần bảo mật giờ nằm trong thư mục đó. Trang này giữ lại phần **phân tích tĩnh** (cách suy ra endpoint từ AOT, hook Frida thế hệ đầu, giới hạn của nó).
 - Hook Frida đã attach/spawn được process `Ola` trên serial `55UKEATGRWJRLNVC`. Vòng hook runtime sạch đã quan sát DNS `sgdev.vip`, kết nối TCP `139.59.246.95:443` và Socket.IO `139.59.246.95:3001`. Hook `SSL_write` của `libssl.so` chỉ thấy WebView/ads; đường HTTP của Flutter dùng BoringSSL tích hợp nên chưa thu được plaintext API body. Payload API dưới đây vì vậy vẫn là mapping tĩnh từ AOT.
 
 Evidence tĩnh chính: nhận diện Flutter `ev_a52580966c6f878f8bd333cfed08021c22f1df20984d48f0ac0bb94a3fd5be7`, AOT dossier `ev_ea70b6a968cd160d8205ad531e75cdc7182b0c85ca02413772d0daa6bbf42cfc`. Evidence runtime chính: DNS/socket `ev_6fd9978eafa5c256861b9f2121c18300a21ea0c5eef4f338a3f77e2605bd6d17`, attach/session `ev_03b2adc80c48eb18a321169cac1c77f702eb189cfb2b3a310cf9fc49b9b5996d`. Các evidence này chứng minh đích kết nối, không chứng minh body HTTP.
