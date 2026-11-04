@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon.tsx';
 import { cn } from './cn.ts';
+import { HUE_SOFT, type Hue } from './hue.ts';
 
-export type Tone = 'neutral' | 'ok' | 'warn' | 'bad' | 'accent' | 'info';
+/** Status tones (ok/warn/bad/info) plus the category hues (sky, teal…). */
+export type Tone = 'neutral' | 'ok' | 'warn' | 'bad' | 'info' | Hue;
 
 const TONE: Record<Tone, string> = {
   neutral: 'bg-raised text-soft',
   ok: 'bg-ok-bg text-ok-text',
   warn: 'bg-warn-bg text-warn-text',
   bad: 'bg-bad-bg text-bad-text',
-  accent: 'bg-accent-soft text-on-accent-soft',
   info: 'bg-info-bg text-info',
+  ...HUE_SOFT,
 };
 
 /** Short status or count label. Give it a word, not only a color. */
@@ -33,7 +35,7 @@ export function Badge({ tone = 'neutral', icon, children, title, className }: {
 }
 
 /** Colored dot for a status that is also written next to it. */
-export function StatusDot({ tone, className }: { tone: Exclude<Tone, 'accent'>; className?: string }) {
+export function StatusDot({ tone, className }: { tone: 'neutral' | 'ok' | 'warn' | 'bad' | 'info'; className?: string }) {
   const color = { neutral: 'bg-line-strong', ok: 'bg-ok', warn: 'bg-warn', bad: 'bg-bad', info: 'bg-info' }[tone];
   return <span aria-hidden="true" className={cn('inline-block size-2 shrink-0 rounded-full', color, className)} />;
 }

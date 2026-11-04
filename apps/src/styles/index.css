@@ -94,4 +94,17 @@
   --color-link: var(--link);
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
+
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
+  --color-sky-text: var(--sky-text);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-teal-text: var(--teal-text);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+  --color-orange-text: var(--orange-text);
+  --color-pink: var(--pink);
+  --color-pink-soft: var(--pink-soft);
+  --color-pink-text: var(--pink-text);
 }

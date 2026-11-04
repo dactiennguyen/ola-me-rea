@@ -4,7 +4,12 @@ import type { ChatUser } from '@ola/core/chat.ts';
 export type Source = 'explore' | 'room';
 
 /** A signed-in account usable for collecting or sending. */
-export interface Nick { id: string; label: string }
+export interface Nick {
+  id: string;
+  label: string;
+  /** The account's avatar color: the nick's identity color in chips and logs. */
+  color: string;
+}
 
 /** One collected person. */
 export interface Found {

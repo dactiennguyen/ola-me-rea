@@ -62,6 +62,22 @@
   --danger: #b91c1c;              /* destructive button fill (white text 6.5:1) */
   --danger-hover: #991b1b;
 
+  /* ---- categories: tell parts apart (steps, counts), never a status.
+     base = icon/border/fill (dark text on it), -soft = tint, -text = text on the tint.
+     Violet stays reserved for the main action and focus. ------------------ */
+  --sky: #38bdf8;
+  --sky-soft: rgba(56, 189, 248, 0.14);
+  --sky-text: #bae6fd;
+  --teal: #2dd4bf;
+  --teal-soft: rgba(45, 212, 191, 0.14);
+  --teal-text: #99f6e4;
+  --orange: #fb923c;
+  --orange-soft: rgba(251, 146, 60, 0.14);
+  --orange-text: #fed7aa;
+  --pink: #f472b6;
+  --pink-soft: rgba(244, 114, 182, 0.14);
+  --pink-text: #fbcfe8;
+
   /* ---- type -------------------------------------------------------------- */
   --font: var(--font-sans);       /* --font-sans/--font-mono live in @theme (index.css) */
   --fs-xs: 12px;   /* meta: time, status, labels — the smallest size used */

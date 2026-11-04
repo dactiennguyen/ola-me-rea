@@ -20,7 +20,7 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
 
   const online = useMemo<Nick[]>(() => accounts
     .filter(a => live[a.id]?.status === 'ready')
-    .map(a => ({ id: a.id, label: a.label || live[a.id]?.me?.displayName || a.email })), [accounts, live]);
+    .map(a => ({ id: a.id, label: a.label || live[a.id]?.me?.displayName || a.email, color: a.color })), [accounts, live]);
   const clientFor = useCallback((id: string) => live[id]?.ola ?? null, [live]);
 
   const collector = useCollector({ online, clientFor });

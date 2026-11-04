@@ -60,7 +60,7 @@ export function useAutoSend({ dryRun, openChannel }: { dryRun: boolean; openChan
         const at = Date.now();
         const name = user.displayName || `${user.uid.slice(0, 10)}…`;
         setProgress({ done: i, total: targets.length, ok, fail, current: { name, photo: user.photoURL, nick: sender.label, text } });
-        const base = { id: `${at}-${user.uid}`, at, peerUid: user.uid, peerName: user.displayName, nick: sender.label, text };
+        const base = { id: `${at}-${user.uid}`, at, peerUid: user.uid, peerName: user.displayName, nick: sender.label, nickColor: sender.color, text };
         try {
           const { pushOk, note } = await sendOne({ sender, user, text, dryRun, openChannel });
           ok++;

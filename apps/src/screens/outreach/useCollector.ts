@@ -91,7 +91,7 @@ export function useCollector({ online, clientFor }: {
         if (cancel.current) break;
         const ola = clientFor(id);
         if (!ola) continue;
-        const by = online.find(a => a.id === id) ?? { id, label: id };
+        const by = online.find(a => a.id === id) ?? { id, label: id, color: 'var(--muted)' };
         try {
           if (f.source === 'explore') {
             const where = describeExplore(f);

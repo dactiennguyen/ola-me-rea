@@ -4,6 +4,12 @@ const WEEKDAYS = ['CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', '
 
 const two = (n: number) => String(n).padStart(2, '0');
 
+/** Full local date and time, for tooltips: "14:05 · 04/11/2026". */
+export function fullTime(ms: number): string {
+  const d = new Date(ms);
+  return `${clockTime(ms)} · ${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
 /** HH:mm today, "Hôm qua", weekday this week, else dd/MM. */
 export function shortTime(ms: number, now = Date.now()): string {
   if (!ms) return '';
@@ -16,6 +22,7 @@ export function shortTime(ms: number, now = Date.now()): string {
   return `${two(d.getDate())}/${two(d.getMonth() + 1)}`;
 }
 
+/** HH:mm, always (rows under a day header). */
 export const clockTime = (ms: number) => {
   const d = new Date(ms);
   return `${two(d.getHours())}:${two(d.getMinutes())}`;

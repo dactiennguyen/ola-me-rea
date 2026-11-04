@@ -60,6 +60,17 @@ Nhãn nút ghi rõ kết quả (*Bắt đầu gửi tới 8 người*, *Gửi 8 
 | `--info` · `--info-bg` | tương tự | `#22D3EE` | Thông tin |
 | `--danger` | `bg-danger` | `#B91C1C` | Nền nút phá huỷ (chữ trắng 6.5:1) |
 
+**Màu phân loại** (`src/ui/hue.ts`, prop `hue` / `tone`): giúp phân biệt các vùng, không mang nghĩa trạng thái. Tím chỉ dành cho nút chính, focus và tin đi, nên mỗi vùng dùng một màu riêng:
+
+| Token | Utility | Giá trị | Dùng cho (Auto gửi) |
+|---|---|---|---|
+| `--sky` | `bg-sky` · `bg-sky-soft` · `text-sky-text` | `#38BDF8` | ① Người nhận, checkbox chọn người |
+| `--teal` | tương tự | `#2DD4BF` | ② Gửi bằng nick |
+| `--orange` | tương tự | `#FB923C` | ③ Nội dung, mẫu tin |
+| `--pink` | tương tự | `#F472B6` | ④ Giãn cách |
+
+Mỗi nick có **màu nhận diện** riêng, lấy đúng màu avatar của tài khoản ở cột trái (`account.color`): chip nick có chấm màu (`ToggleChip color`), khi bật thì nhuốm màu đó; nhật ký và lịch sử ghi “qua <nick>” kèm chấm cùng màu. Mục đang chọn của `Segmented` và chip không có màu dùng nền xám nổi, không dùng tím.
+
 Màu avatar khi không có ảnh: `#BE123C #1D4ED8 #7C3AED #15803D #B45309 #0E7490 #BE185D #4338CA` (chữ trắng).
 
 Bảng màu sáng của hướng C (chưa dùng, để sau; token đã tách theo vai trò nên thêm được): nền `#F9FAFB`, bề mặt `#FFFFFF`, viền `#E5E7EB`, chữ `#111827`, chữ phụ `#4B5563`, nhấn `#7C3AED`, online `#047857`.
@@ -93,12 +104,12 @@ Số đếm và giờ dùng `tabular-nums` để không nhảy khi thay đổi.
 |---|---|
 | `Button` | `variant`, `size`, `icon`, `loading`, `block` |
 | `IconButton` | Bắt buộc `label`; `variant` outline / ghost / danger |
-| `ToggleChip`, `Tag` | Chip bật/tắt (`aria-pressed`, có dấu ✓) · giá trị đã chọn có nút bỏ |
+| `ToggleChip`, `Tag` | Chip bật/tắt (`aria-pressed`, có dấu ✓; `color` = màu nhận diện của nick) · giá trị đã chọn có nút bỏ |
 | `Badge`, `StatusDot` | Nhãn trạng thái/số đếm theo tông |
 | `Field`, `Input`, `Select`, `Textarea`, `NumberInput` | Nhãn luôn hiện phía trên, gợi ý/lỗi phía dưới; `NumberInput` có đơn vị và tự kẹp giá trị |
 | `Checkbox` | Checkbox thật, hỗ trợ trạng thái "chọn một phần" |
 | `Segmented` | Chọn 1 trong N (radio group, phím mũi tên), có số đếm |
-| `Modal` | Bẫy focus, Esc / bấm nền để đóng, trả focus về nút đã mở |
+| `Modal` | Bẫy focus, Esc / bấm nền để đóng, trả focus về nút đã mở; `size` md / lg / xl |
 | `ToastProvider` / `useToast` | Thông báo tạm ở góc phải dưới, tự ẩn 4 s (lỗi 7 s) |
 | `Notice`, `EmptyState`, `ProgressBar`, `Eyebrow`, `Spinner` | Phản hồi và trạng thái |
 | `VirtualList` | Danh sách dài, chỉ render dòng đang thấy (`@tanstack/react-virtual`) |

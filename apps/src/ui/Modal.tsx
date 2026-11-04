@@ -16,7 +16,7 @@ export function Modal({ title, description, onClose, children, footer, size = 'm
   children: ReactNode;
   /** Action buttons, right-aligned at the bottom. */
   footer?: ReactNode;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'xl';
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -55,7 +55,7 @@ export function Modal({ title, description, onClose, children, footer, size = 'm
         tabIndex={-1}
         className={cn(
           'flex max-h-[86vh] w-full flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-modal outline-none',
-          'animate-[pop-in_180ms_ease-out]', size === 'lg' ? 'max-w-xl' : 'max-w-md',
+          'animate-[pop-in_180ms_ease-out]', { md: 'max-w-md', lg: 'max-w-xl', xl: 'max-w-3xl' }[size],
         )}
       >
         <header className="flex items-start gap-2 border-b border-line px-5 py-3.5">

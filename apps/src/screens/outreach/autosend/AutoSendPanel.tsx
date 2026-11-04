@@ -8,6 +8,7 @@ import {
   Badge, Button, Checkbox, cn, EmptyState, Eyebrow, Field, Modal, Notice, NumberInput, ProgressBar,
   Segmented, Textarea, ToggleChip, useToast,
 } from '../../../ui/index.ts';
+import { HUE_SOFT, HUE_SOLID, HUE_TEXT, type Hue } from '../../../ui/hue.ts';
 import type { Nick, StatusText } from '../types.ts';
 import { estimateSeconds, formatDuration, messagesPerMinute, type Sender } from './engine.ts';
 import { HistoryDialog } from './HistoryDialog.tsx';
@@ -91,7 +92,10 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
   const run = async () => {
     setDialog(null);
     const job = {
-      senders: senders.map((id): Sender => ({ id, label: online.find(o => o.id === id)?.label ?? id, ola: live[id]!.ola!, me: live[id]!.me! })),
+      senders: senders.map((id): Sender => {
+        const nick = online.find(o => o.id === id);
+        return { id, label: nick?.label ?? id, color: nick?.color ?? 'var(--muted)', ola: live[id]!.ola!, me: live[id]!.me! };
+      }),
       targets,
       delaySec,
       pickText: mode === 'single'
@@ -119,12 +123,12 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
           </header>
 
           <ol className="flex flex-col px-5 pb-6">
-            <Step n={1} title="Người nhận" done={targets.length > 0} meta={`${targets.length} người`}>
+            <Step n={1} hue="sky" title="Người nhận" done={targets.length > 0} meta={`${targets.length} người`}>
               <p className="text-sm text-soft">
                 Sẽ gửi tới <strong className="tabular-nums text-strong">{targets.length}</strong> người
                 <span className="text-muted"> · đã tick {recipients.length}/{listCount} trong danh sách</span>
               </p>
-              <Checkbox checked={skipContacted} onChange={setSkipContacted} disabled={locked}>Bỏ qua người đã được nhắn trước đây</Checkbox>
+              <Checkbox hue="sky" checked={skipContacted} onChange={setSkipContacted} disabled={locked}>Bỏ qua người đã được nhắn trước đây</Checkbox>
               {skipContacted && skipped.length > 0 && (
                 <div className="rounded-md border border-line bg-surface">
                   <button
@@ -132,7 +136,7 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
                     aria-expanded={showSkipped}
                     aria-controls={skippedId}
                     onClick={() => setShowSkipped(v => !v)}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs font-semibold text-accent-text hover:bg-raised"
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs font-semibold text-sky-text hover:bg-raised"
                   >
                     <Icon name={showSkipped ? 'chevronDown' : 'chevronRight'} size={14} />
                     {skipped.length} người bị bỏ qua vì đã được nhắn
@@ -173,12 +177,13 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
               </Field>
             </Step>
 
-            <Step n={2} title="Gửi bằng nick" done={senders.length > 0} meta={`${senders.length} nick`}>
+            <Step n={2} hue="teal" title="Gửi bằng nick" done={senders.length > 0} meta={`${senders.length} nick`}>
               {online.length ? (
                 <div className="flex flex-wrap gap-1.5">
                   {online.map(o => (
                     <ToggleChip
                       key={o.id}
+                      color={o.color}
                       pressed={senderIds.includes(o.id)}
                       disabled={locked}
                       onPressedChange={on => setSenderIds(ids => (on ? [...ids, o.id] : ids.filter(x => x !== o.id)))}
@@ -193,7 +198,7 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
               )}
             </Step>
 
-            <Step n={3} title="Nội dung" done={hasMessage} meta={mode === 'single' ? '1 nội dung' : `${pool.length} mẫu`}>
+            <Step n={3} hue="orange" title="Nội dung" done={hasMessage} meta={mode === 'single' ? '1 nội dung' : `${pool.length} mẫu`}>
               <Segmented
                 label="Kiểu nội dung"
                 value={mode}
@@ -210,6 +215,7 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
                     {templates.map((t, i) => (
                       <li key={i}>
                         <Checkbox
+                          hue="orange"
                           checked={ticked.has(i)}
                           disabled={locked}
                           onChange={on => setTicked(s => { const n = new Set(s); if (on) n.add(i); else n.delete(i); return n; })}
@@ -227,7 +233,7 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
               )}
             </Step>
 
-            <Step n={4} title="Giãn cách" done meta={`${delaySec} giây/tin`}>
+            <Step n={4} hue="pink" title="Giãn cách" done meta={`${delaySec} giây/tin`}>
               <Field label="Mỗi tin cách nhau" hint={`Khoảng ${messagesPerMinute(delaySec, dryRun)} tin/phút.`}>
                 <NumberInput value={delaySec} onChange={setDelaySec} min={0} step={0.5} integer={false} unit="giây" disabled={locked} aria-label="Giãn cách giữa 2 tin (giây)" />
               </Field>
@@ -255,9 +261,9 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
             )}
             {mode === 'random' && !progress.current && previewText && <p className="self-end text-xs text-muted">Ví dụ mẫu đầu tiên · mỗi người nhận 1 mẫu ngẫu nhiên</p>}
             <div className="flex flex-wrap gap-1.5">
-              <Badge icon="users">{plannedCount} người</Badge>
-              <Badge icon="user">{senders.length} nick</Badge>
-              <Badge icon="clock">{delaySec} giây/tin</Badge>
+              <Badge tone="sky" icon="users">{plannedCount} người</Badge>
+              <Badge tone="teal" icon="user">{senders.length} nick</Badge>
+              <Badge tone="pink" icon="clock">{delaySec} giây/tin</Badge>
               {estimate > 0 && <Badge icon="history" title="Thời gian ước tính">≈ {formatDuration(estimate)}</Badge>}
             </div>
           </section>
@@ -327,18 +333,18 @@ export function AutoSendPanel({ recipients, listCount, contacts, online, recent,
 }
 
 /** A numbered step of the composer; the number turns into a check once it is complete. */
-function Step({ n, title, done, meta, children }: { n: number; title: string; done: boolean; meta?: ReactNode; children: ReactNode }) {
+function Step({ n, hue, title, done, meta, children }: { n: number; hue: Hue; title: string; done: boolean; meta?: ReactNode; children: ReactNode }) {
   return (
     <li className="flex flex-col gap-2.5 border-t border-line py-4 first:border-t-0">
       <div className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className={cn('grid size-5.5 shrink-0 place-items-center rounded-full text-xs font-bold', done ? 'bg-accent text-on-accent' : 'bg-accent-soft text-accent-text')}
+          className={cn('grid size-5.5 shrink-0 place-items-center rounded-full text-xs font-bold', done ? HUE_SOLID[hue] : HUE_SOFT[hue])}
         >
           {done ? <Icon name="check" size={12} /> : n}
         </span>
         <h3 className="flex-1 truncate">{title}</h3>
-        {meta && <span className="shrink-0 text-xs tabular-nums text-muted">{meta}</span>}
+        {meta && <span className={cn('shrink-0 text-xs font-semibold tabular-nums', HUE_TEXT[hue])}>{meta}</span>}
       </div>
       {children}
     </li>

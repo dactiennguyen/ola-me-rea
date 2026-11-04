@@ -39,7 +39,7 @@ export function RecipientList({
           <Input type="search" compact className="w-full pl-8" placeholder={`Lọc theo tên, UID, tỉnh · ${shown.length}/${found.length} người`} aria-label="Lọc theo tên, UID, tỉnh" value={query} onChange={e => onQuery(e.target.value)} />
         </div>
         <div className="flex items-center gap-1">
-          <ToggleChip pressed={hideContacted} onPressedChange={onHideContacted} title="Ẩn người đã được nhắn từ bất kỳ nick nào (lịch sử SQLite)">Ẩn đã nhắn</ToggleChip>
+          <ToggleChip pressed={hideContacted} onPressedChange={onHideContacted} title="Ẩn người đã được nhắn từ bất kỳ nick nào">Ẩn đã nhắn</ToggleChip>
           <span className="flex-1" />
           <Button size="sm" variant="subtle" icon="download" disabled={!shown.length} title="Xuất CSV (mở bằng Excel)" onClick={() => onExport('csv')}>CSV</Button>
           <Button size="sm" variant="subtle" icon="download" disabled={!shown.length} title="Xuất JSON" onClick={() => onExport('json')}>JSON</Button>
@@ -49,7 +49,7 @@ export function RecipientList({
 
       {shown.length > 0 && (
         <div className="flex items-center gap-2 border-y border-line bg-sidebar px-4 py-1">
-          <Checkbox checked={all} indeterminate={pickedCount > 0} onChange={on => (on ? onSelectAll() : onSelectNone())}>Chọn tất cả</Checkbox>
+          <Checkbox checked={all} indeterminate={pickedCount > 0} hue="sky" onChange={on => (on ? onSelectAll() : onSelectNone())}>Chọn tất cả</Checkbox>
           <span className="ml-auto text-xs tabular-nums text-muted">
             <strong className="font-semibold text-strong">{pickedCount}</strong>/{shown.length} được chọn
           </span>
@@ -90,7 +90,7 @@ function RecipientRow({ found: f, sent, picked, onToggle }: {
       title={`${f.via}${f.user.level ? ` · cấp ${f.user.level}` : ''}`}
       className={cn('flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-raised', !picked && 'opacity-60')}
     >
-      <Checkbox checked={picked} onChange={() => onToggle(f.user.uid)} aria-label={`Chọn ${name}`} />
+      <Checkbox hue="sky" checked={picked} onChange={() => onToggle(f.user.uid)} aria-label={`Chọn ${name}`} />
       <Avatar name={name} photo={f.user.photoURL} seed={f.user.uid} size={32} ring="var(--surface)" />
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-center gap-1 text-sm font-semibold text-fg">

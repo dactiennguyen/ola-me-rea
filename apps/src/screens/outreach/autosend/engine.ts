@@ -27,6 +27,8 @@ export interface SendLogEntry {
   peerName: string;
   /** Label of the sending nick. */
   nick: string;
+  /** The sending nick's identity color (account avatar color), when known. */
+  nickColor?: string;
   text: string;
   status: SendStatus;
   /** true: push sent · false: push failed · null: no push (no FCM token, dry run or failed send). */

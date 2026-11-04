@@ -75,7 +75,7 @@ export function CollectPanel({ collector, online }: { collector: Collector; onli
         {online.length ? (
           <div className="flex flex-wrap gap-1.5">
             {online.map(a => (
-              <ToggleChip key={a.id} pressed={collector.nicks.includes(a.id)} disabled={running} onPressedChange={() => collector.toggleNick(a.id)}>
+              <ToggleChip key={a.id} color={a.color} pressed={collector.nicks.includes(a.id)} disabled={running} onPressedChange={() => collector.toggleNick(a.id)}>
                 {a.label}
               </ToggleChip>
             ))}
