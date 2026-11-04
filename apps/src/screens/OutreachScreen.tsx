@@ -379,7 +379,7 @@ const AUTO_SOURCE = 'outreach-auto';
 interface Sender { id: string; label: string; ola: OlaClient; me: ChatProfile }
 
 type LogStatus = 'ok' | 'fail' | 'dry';
-interface LogItem { id: string; at: number; peerUid: string; peerName: string; nick: string; status: LogStatus; note?: string }
+interface LogItem { id: string; at: number; peerUid: string; peerName: string; nick: string; status: LogStatus; note?: string; pushOk?: boolean | null }
 
 /** Resolves once the channel connects; rejects after a timeout (it keeps retrying until then). */
 function connectChannel(channel: ChatChannel, timeoutMs = 15000): Promise<void> {
@@ -428,6 +428,13 @@ function AutoModal({ title, onClose, children }: { title: string; onClose: () =>
       </div>
     </div>
   );
+}
+
+/** Trạng thái thông báo đẩy (FCM) của một tin đã gửi. */
+function PushMark({ ok }: { ok: boolean | null | undefined }) {
+  if (ok === true) return <span className="push-mark tone-ok" title="Đã bắn thông báo đẩy (FCM)"><Icon name="bell" size={12} /></span>;
+  if (ok === false) return <span className="push-mark tone-warn" title="Thông báo đẩy lỗi"><Icon name="bell" size={12} /></span>;
+  return <span className="push-mark muted" title="Người nhận không có token FCM — không gửi được push"><Icon name="bellOff" size={12} /></span>;
 }
 
 function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logError, onSelectAll, onSelectNone }: {
@@ -509,7 +516,7 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logEr
     ? single.trim()
     : pool[Math.floor(Math.random() * pool.length)] ?? '');
 
-  const sendOne = async (sender: Sender, user: ChatUser, text: string): Promise<{ note?: string }> => {
+  const sendOne = async (sender: Sender, user: ChatUser, text: string): Promise<{ note?: string; pushOk: boolean | null }> => {
     const now = Date.now();
     if (dryRun) {
       const payload = directMessagePayload({ from: sender.me, text, now });
@@ -518,9 +525,12 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logEr
         peerUid: user.uid, peerName: user.displayName, messageId: String(payload.messageID), text,
         source: AUTO_SOURCE, pushOk: null, lastMessageOk: null, error: null, dryRun: true,
       });
-      return {};
+      return { pushOk: null };
     }
-    const peer = await loadChatUser(sender.ola, user.uid);
+    // Prefer any fcmToken the lookup returns; fall back to the one the collected
+    // user carried (some sources include it, Khám phá/phòng do not → no push).
+    const loaded = await loadChatUser(sender.ola, user.uid);
+    const peer = { ...loaded, fcmToken: loaded.fcmToken || user.fcmToken };
     const channel = openChannel(sender.id, peer.uid, sender.me.uid);
     if (!channel) throw new Error('Thiếu socket key (Cài đặt › Nâng cao).');
     try {
@@ -534,7 +544,7 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logEr
         source: AUTO_SOURCE, pushOk: stepOk('push'), lastMessageOk: stepOk('lastMessage'),
         error: failed.map(f => `${f.name}: ${f.error ?? 'lỗi'}`).join('; ') || null, dryRun: false,
       });
-      return { note: failed.length ? `Đã gửi; lỗi ${failed.map(f => f.name).join(', ')}` : undefined };
+      return { note: failed.length ? `Đã gửi; lỗi ${failed.map(f => f.name).join(', ')}` : undefined, pushOk: stepOk('push') };
     } finally {
       channel.close();
     }
@@ -564,9 +574,9 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logEr
         setNow({ name: user.displayName || user.uid.slice(0, 10), photo: user.photoURL, nick: sender.label, text });
         setProgress({ text: `Đang gửi ${i + 1}/${list.length} · ${sender.label} → ${user.displayName || user.uid.slice(0, 8)}…`, tone: 'idle' });
         try {
-          const { note } = await sendOne(sender, user, text);
+          const { note, pushOk } = await sendOne(sender, user, text);
           ok++;
-          add({ id: `${at}-${user.uid}`, at, peerUid: user.uid, peerName: user.displayName, nick: sender.label, status: dryRun ? 'dry' : 'ok', note });
+          add({ id: `${at}-${user.uid}`, at, peerUid: user.uid, peerName: user.displayName, nick: sender.label, status: dryRun ? 'dry' : 'ok', note, pushOk });
         } catch (e) {
           fail++;
           add({ id: `${at}-${user.uid}`, at, peerUid: user.uid, peerName: user.displayName, nick: sender.label, status: 'fail', note: (e as Error).message });
@@ -764,6 +774,7 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logEr
                   <span className="small">
                     <span className={`autosend-dot ${item.status}`} aria-hidden="true" />
                     {shortTime(item.at)} · {item.nick} → {item.peerName || item.peerUid.slice(0, 10)}
+                    {item.status !== 'dry' && <> <PushMark ok={item.pushOk} /></>}
                   </span>
                   {item.status === 'dry'
                     ? <span className="small muted">Chế độ thử (chưa gửi)</span>
@@ -772,7 +783,7 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logEr
               ))}
             </ul>
           ) : <p className="small muted">Chưa gửi tin nào trong phiên này.</p>}
-          <p className="live-logfoot">Mỗi tin được lưu vào SQLite <code>messages.db</code>.</p>
+          <p className="live-logfoot"><Icon name="bell" size={11} /> đã đẩy push · <Icon name="bellOff" size={11} /> người nhận không có token. Lưu vào SQLite <code>messages.db</code>.</p>
         </div>
 
         <div className="live-actions">
@@ -813,7 +824,7 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logEr
             <ul className="sent-list">
               {recent.map(r => (
                 <li key={r.id}>
-                  <span className="small muted">{shortTime(r.sentAt)} · {r.accountLabel} → {r.peerName || r.peerUid.slice(0, 10)}</span>
+                  <span className="small muted">{shortTime(r.sentAt)} · {r.accountLabel} → {r.peerName || r.peerUid.slice(0, 10)}{!r.dryRun && <> <PushMark ok={r.pushOk} /></>}</span>
                   <span className="ellipsis">{r.text}</span>
                   {(r.dryRun || r.error) && <span className={`small ${r.error ? 'tone-warn' : 'muted'}`}>{r.dryRun ? 'Chế độ thử (chưa gửi)' : r.error}</span>}
                 </li>

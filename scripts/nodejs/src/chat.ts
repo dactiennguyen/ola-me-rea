@@ -316,7 +316,12 @@ export interface ChatUser {
 /** getUserInfoForChatV2 / member rows / Explore items → ChatUser. */
 export function normalizeUser(raw: unknown, fallbackUid = ''): ChatUser {
   const outer = asObject(raw);
-  const nested = outer.data ?? outer.user ?? (Array.isArray(outer.list_data) ? outer.list_data[0] : undefined);
+  // getUserInfoForChatV2 wraps the user in `list_data` as a single OBJECT (not an
+  // array), so the fields (incl. fcmToken when the user exposes one) must be read
+  // from there; Explore/room rows pass the user object directly.
+  const ld = outer.list_data;
+  const nested = outer.data ?? outer.user
+    ?? (Array.isArray(ld) ? ld[0] : (ld && typeof ld === 'object' ? ld : undefined));
   const o = asObject(Array.isArray(nested) ? nested[0] : nested ?? outer);
   return {
     uid: str(o.uid) || fallbackUid,
