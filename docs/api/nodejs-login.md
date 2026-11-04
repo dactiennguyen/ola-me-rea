@@ -75,7 +75,8 @@ const ola = await OlaClient.login({
 - `ola.call(endpoint, input)`: validate → ký → gửi → kiểm tra cờ thành công → parse. Lỗi input là `InputError`; server báo thất bại là `ApiError` (`error.response` giữ JSON gốc).
 - `ola.request({ method, path, body, query })`: ký và gửi request thô.
 - `ola.session` (`localId`, `email`, `idToken`, ...), `ola.user` (Firebase `user.toJSON()`), `ola.profile` (hồ sơ Ola từ sync).
-- Mỗi request lấy ID token qua `firebaseUser.getIdToken()`, nên tiến trình chạy quá 1 giờ vẫn có token mới.
+- Mỗi request lấy ID token qua `getIdToken()` của lần đăng nhập (tự làm mới khi sắp hết hạn), nên tiến trình chạy quá 1 giờ vẫn có token mới.
+- `OlaClient.login({ ..., firebaseFetch })`: đăng nhập Firebase bằng REST API (`accounts:signInWithPassword` → `accounts:lookup` lấy `emailVerified`; làm mới token qua `securetoken.googleapis.com`) với `fetch` truyền vào, thay cho Firebase JS SDK (SDK luôn dùng `fetch` toàn cục). App desktop dùng cách này để đưa mọi request của một nick qua proxy của nick đó. Lỗi REST (`INVALID_LOGIN_CREDENTIALS`, `TOO_MANY_ATTEMPTS_TRY_LATER`, …) được đổi sang mã kiểu SDK (`auth/invalid-credential`, `auth/too-many-requests`, …).
 - Mỗi lần đăng nhập (`loginFromEnv()` / `OlaClient.login()`) có Firebase app riêng, nên có thể đăng nhập hai tài khoản cùng lúc (vd A và B trong [workflow chat](vi-du-chat-nodejs.md)); `close()` của client này không ảnh hưởng client kia.
 - `deviceId`/`ver` của `usersSync` lấy từ config của chính client (`loginFromEnv()` dùng `olaConfig` từ `.env`; `new OlaClient()` không truyền config thì dùng `olaDefaults`), luôn trùng header `deviceid` mà client ký.
 - Request được ký bằng giờ server. Client lấy độ lệch đồng hồ qua `napi/general/getTimes` **một lần** rồi dùng lại, thay vì gọi `getTimes` trước mỗi request.

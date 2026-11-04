@@ -10,7 +10,7 @@
 //   }
 
 import type { z } from 'zod';
-import { firebaseLogin } from './auth.ts';
+import { firebaseLogin, firebaseRestLogin } from './auth.ts';
 import { olaDefaults, type Account, type FirebaseConfig, type OlaConfig } from './defaults.ts';
 import {
   DRY_RUN_SESSION, type CallInput, type Endpoint, type InputArgs, type JsonObject, type OlaRequest, type SessionInfo,
@@ -44,6 +44,11 @@ export interface LoginOptions {
   config?: OlaConfig;
   firebaseConfig?: FirebaseConfig;
   fetch?: FetchLike;
+  /**
+   * Sign in to Firebase over REST with this fetch instead of the JS SDK (which
+   * always uses the global fetch), e.g. to send it through a proxy.
+   */
+  firebaseFetch?: FetchLike;
 }
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
@@ -92,13 +97,15 @@ export class OlaClient {
   }
 
   /** Signs in with `account` and, unless firebaseOnly, syncs the Ola profile. */
-  static async login({ account, firebaseOnly = false, firebaseConfig, ...options }: LoginOptions): Promise<OlaClient> {
-    const { session, user, firebaseUser, close } = await firebaseLogin(account, firebaseConfig);
-    const client = new OlaClient({ ...options, session, getToken: () => firebaseUser.getIdToken(), close });
+  static async login({ account, firebaseOnly = false, firebaseConfig, firebaseFetch, ...options }: LoginOptions): Promise<OlaClient> {
+    const { session, user, emailVerified, getIdToken, close } = firebaseFetch
+      ? await firebaseRestLogin(account, firebaseFetch, firebaseConfig)
+      : await firebaseLogin(account, firebaseConfig);
+    const client = new OlaClient({ ...options, session, getToken: getIdToken, close });
     client.user = user;
     if (firebaseOnly) return client;
     try {
-      if (!firebaseUser.emailVerified) {
+      if (!emailVerified) {
         throw new Error('Email is unverified; the app requires verification before Ola sync.');
       }
       client.profile = await client.sync();
