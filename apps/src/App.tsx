@@ -4,7 +4,7 @@ import { Icon } from './components/Icon.tsx';
 import { Sidebar, type Screen } from './components/Sidebar.tsx';
 import { onCloseAsked, setCloseAction } from './lib/platform.ts';
 import { useSession } from './lib/session.tsx';
-import { AccountsScreen } from './screens/AccountsScreen.tsx';
+import { AccountsScreen, type AccountsPanel, type AccountsRequest } from './screens/AccountsScreen.tsx';
 import { ExploreScreen } from './screens/ExploreScreen.tsx';
 import { MessagesScreen, type PeerTarget } from './screens/MessagesScreen.tsx';
 import { RoomsScreen } from './screens/RoomsScreen.tsx';
@@ -20,6 +20,13 @@ export function App() {
     setScreen('messages');
   }, []);
   const clearTarget = useCallback(() => setTarget(null), []);
+
+  // Sidebar shortcuts into Quản lý tài khoản (add / register / import-export).
+  const [accountsRequest, setAccountsRequest] = useState<AccountsRequest | null>(null);
+  const openAccounts = useCallback((panel: AccountsPanel) => {
+    setScreen('accounts');
+    setAccountsRequest(prev => ({ panel, n: (prev?.n ?? 0) + 1 }));
+  }, []);
 
   // The close button (src-tauri/src/tray.rs): Rust quits until it hears the setting.
   const [closeAsked, setCloseAsked] = useState(false);
@@ -42,9 +49,9 @@ export function App() {
 
   return (
     <div className="app">
-      <Sidebar screen={needsAccount ? 'accounts' : screen} onNavigate={setScreen} unread={unread} />
+      <Sidebar screen={needsAccount ? 'accounts' : screen} onNavigate={setScreen} onAccounts={openAccounts} unread={unread} />
       <div className="content">
-        {needsAccount || screen === 'accounts' ? <AccountsScreen /> : !ready ? <SessionGate onManage={() => setScreen('accounts')} /> : (
+        {needsAccount || screen === 'accounts' ? <AccountsScreen request={accountsRequest} /> : !ready ? <SessionGate onManage={() => setScreen('accounts')} /> : (
           <>
             {/* Messages stays mounted so unread counts and the open chat survive tab switches. */}
             <MessagesScreen

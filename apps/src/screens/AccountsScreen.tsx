@@ -1,31 +1,51 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Avatar } from '../components/Avatar.tsx';
 import { Icon } from '../components/Icon.tsx';
-import { newDeviceId, type StoredAccount } from '../lib/accounts.ts';
+import { DEVICE_DEFAULTS, deviceOverride, deviceValue, newDeviceId, type StoredAccount } from '../lib/accounts.ts';
 import { shortTime } from '../lib/format.ts';
 import { dataDir, isTauri } from '../lib/platform.ts';
 import { useSession } from '../lib/session.tsx';
 import { AccountsTransferPanel } from './AccountsTransferPanel.tsx';
 import { RegisterPanel } from './RegisterPanel.tsx';
-import { DEFAULT_SETTINGS, SERVERS, SIGN_IN_SETTINGS, type AppSettings, type CloseAction } from '../lib/settings.ts';
+import { DEFAULT_SETTINGS, SERVERS, type AppSettings, type CloseAction } from '../lib/settings.ts';
 
-interface Draft { id?: string; label: string; email: string; password: string; deviceId: string }
+interface Draft {
+  id?: string; label: string; email: string; password: string;
+  /** This account's device profile; an empty field means the APK default. */
+  deviceId: string; appVersion: string; androidVersion: string; publicKey: string;
+}
 
-const emptyDraft = (): Draft => ({ label: '', email: '', password: '', deviceId: newDeviceId() });
+const emptyDraft = (): Draft => ({
+  label: '', email: '', password: '', deviceId: newDeviceId(), appVersion: '', androidVersion: '', publicKey: '',
+});
+
+export type AccountsPanel = 'add' | 'register' | 'transfer';
+/** Opens a panel from outside (the sidebar); `n` changes on every request. */
+export interface AccountsRequest { panel: AccountsPanel; n: number }
 
 /** Sign-in failed or registration is pending because the email is not verified yet. */
 const needsVerification = (a: StoredAccount) => Boolean(a.verificationSentAt) || /xác minh/.test(a.lastError ?? '');
 
-export function AccountsScreen() {
+export function AccountsScreen({ request }: { request?: AccountsRequest | null }) {
   const { accounts, activeId, status, error, switchAccount, signOut, saveAccount, removeAccount, resendVerification } = useSession();
   const [draft, setDraft] = useState<Draft | null>(accounts.length ? null : emptyDraft());
   const [panel, setPanel] = useState<'register' | 'transfer' | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // A new or edited account form scrolls into view (it sits above the list).
+  useEffect(() => { formRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, [draft?.id, draft === null]);
+
+  useEffect(() => {
+    if (!request) return;
+    if (request.panel === 'add') { setPanel(null); setDraft(emptyDraft()); } else { setDraft(null); setPanel(request.panel); }
+  }, [request]);
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [resend, setResend] = useState<{ id: string; text: string; tone: string } | null>(null);
 
-  const openPanel = (next: 'register' | 'transfer') => { setDraft(null); setPanel(next); };
+  const openPanel = (next: 'register' | 'transfer') => { setDraft(null); setPanel(next); setNotice(null); };
 
   const doResend = async (a: StoredAccount) => {
     setResend({ id: a.id, text: 'Đang gửi…', tone: 'idle' });
@@ -38,7 +58,12 @@ export function AccountsScreen() {
   };
 
   const edit = (a: StoredAccount) => {
-    setDraft({ id: a.id, label: a.label, email: a.email, password: a.password, deviceId: a.deviceId });
+    setDraft({
+      id: a.id, label: a.label, email: a.email, password: a.password, deviceId: a.deviceId,
+      appVersion: a.appVersion ?? '', androidVersion: a.androidVersion ?? '', publicKey: a.publicKey ?? '',
+    });
+    setNotice(null);
+    setPanel(null);
     setFormError(null);
     setShowPassword(false);
   };
@@ -50,9 +75,20 @@ export function AccountsScreen() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Email không hợp lệ.'); return; }
     if (!draft.password) { setFormError('Nhập mật khẩu.'); return; }
     if (!/^[A-Za-z0-9_.-]{4,64}$/.test(draft.deviceId)) { setFormError('Device ID chỉ gồm chữ, số, _ . - (4–64 ký tự).'); return; }
-    const saved = await saveAccount({ ...draft, email, label: draft.label.trim() });
+    const before = draft.id ? accounts.find(a => a.id === draft.id) : undefined;
+    const device = {
+      deviceId: draft.deviceId.trim(),
+      appVersion: deviceOverride('appVersion', draft.appVersion),
+      androidVersion: deviceOverride('androidVersion', draft.androidVersion),
+      publicKey: deviceOverride('publicKey', draft.publicKey),
+    };
+    const saved = await saveAccount({ ...draft, ...device, email, label: draft.label.trim() });
     setDraft(null);
     setFormError(null);
+    // The signed-in client keeps the device profile it signed in with.
+    const deviceChanged = before && (Object.keys(device) as (keyof typeof device)[]).some(k => before[k] !== device[k]);
+    setNotice(!signIn && deviceChanged && before.id === activeId && status === 'ready'
+      ? 'Đã lưu. Thông tin thiết bị mới áp dụng từ lần đăng nhập sau (bấm Đăng xuất rồi Dùng).' : null);
     if (signIn) await switchAccount(saved.id);
   };
 
@@ -61,20 +97,20 @@ export function AccountsScreen() {
       <header className="page-head">
         <div>
           <h1>Quản lý tài khoản</h1>
-          <p className="muted small">Thêm tài khoản Ola (email + mật khẩu), chọn tài khoản đang dùng và cấu hình kết nối.</p>
+          <p className="muted small">Thêm, đăng ký hoặc nhập tài khoản Ola. Mỗi nick có thông tin thiết bị riêng; phần cài đặt cuối trang dùng chung cho app.</p>
         </div>
-        {!panel && !draft?.id && (
+        {!draft?.id && (
           <div className="form-actions">
-            {!draft && (
-              <button type="button" className="btn btn-primary" onClick={() => { setDraft(emptyDraft()); setFormError(null); }}>
+            {(!draft || panel) && (
+              <button type="button" className="btn btn-primary" onClick={() => { setPanel(null); setDraft(emptyDraft()); setFormError(null); setNotice(null); }}>
                 <Icon name="plus" size={16} /> Thêm tài khoản
               </button>
             )}
-            <button type="button" className="btn btn-ghost" onClick={() => openPanel('register')}>
+            <button type="button" className={`btn ${panel === 'register' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={panel === 'register'} onClick={() => openPanel('register')}>
               <Icon name="user" size={16} /> Đăng ký mới
             </button>
-            <button type="button" className="btn btn-ghost" onClick={() => openPanel('transfer')}>
-              <Icon name="refresh" size={16} /> Nhập / Xuất
+            <button type="button" className={`btn ${panel === 'transfer' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={panel === 'transfer'} onClick={() => openPanel('transfer')}>
+              <Icon name="arrowUpDown" size={16} /> Nhập / Xuất
             </button>
           </div>
         )}
@@ -84,7 +120,7 @@ export function AccountsScreen() {
       {panel === 'transfer' && <AccountsTransferPanel onClose={() => setPanel(null)} />}
 
       {draft && !panel && (
-        <form className="panel form-grid" onSubmit={e => void submit(e, true)} aria-label={draft.id ? 'Sửa tài khoản' : 'Thêm tài khoản'}>
+        <form ref={formRef} className="panel form-grid" onSubmit={e => void submit(e, true)} aria-label={draft.id ? 'Sửa tài khoản' : 'Thêm tài khoản'}>
           <h2 className="panel-title">{draft.id ? 'Sửa tài khoản' : 'Tài khoản mới'}</h2>
           <label className="field">
             <span>Tên hiển thị trong app</span>
@@ -103,14 +139,30 @@ export function AccountsScreen() {
               </button>
             </span>
           </label>
+          <div className="span-2 form-subhead">
+            <h3>Thiết bị của nick này</h3>
+            <p className="muted small">Gửi trong header của mọi request và đăng ký với server qua <code>users/sync</code>. Để trống = giá trị của app Android {DEVICE_DEFAULTS.appVersion}. Đổi xong áp dụng từ lần đăng nhập sau.</p>
+          </div>
           <label className="field">
-            <span>Device ID <span className="muted">(gửi trong header deviceid, mỗi tài khoản một mã)</span></span>
+            <span>Device ID <span className="muted">(header deviceid, mỗi nick một mã)</span></span>
             <span className="input-with-action">
               <input value={draft.deviceId} onChange={e => setDraft({ ...draft, deviceId: e.target.value })} />
               <button type="button" className="icon-btn" aria-label="Tạo device ID mới" title="Tạo mã mới" onClick={() => setDraft({ ...draft, deviceId: newDeviceId() })}>
                 <Icon name="refresh" size={16} />
               </button>
             </span>
+          </label>
+          <label className="field">
+            <span>App version <span className="muted">(header ver)</span></span>
+            <input value={draft.appVersion} placeholder={DEVICE_DEFAULTS.appVersion} onChange={e => setDraft({ ...draft, appVersion: e.target.value })} />
+          </label>
+          <label className="field">
+            <span>Android version <span className="muted">(ver trong users/sync)</span></span>
+            <input value={draft.androidVersion} placeholder={DEVICE_DEFAULTS.androidVersion} onChange={e => setDraft({ ...draft, androidVersion: e.target.value })} />
+          </label>
+          <label className="field">
+            <span>Key2 <span className="muted">(header key2)</span></span>
+            <input autoComplete="off" value={draft.publicKey} placeholder={DEVICE_DEFAULTS.publicKey} onChange={e => setDraft({ ...draft, publicKey: e.target.value })} />
           </label>
           {formError && <p className="notice notice-bad small span-2" role="alert">{formError}</p>}
           <div className="form-actions span-2">
@@ -120,6 +172,8 @@ export function AccountsScreen() {
           </div>
         </form>
       )}
+
+      {notice && <p className="notice small" role="status"><Icon name="info" size={15} /> {notice}</p>}
 
       {accounts.length > 0 && (
         <section className="panel" aria-label="Danh sách tài khoản">
@@ -139,9 +193,15 @@ export function AccountsScreen() {
                   <Avatar name={a.label || a.email} photo={a.photoURL} color={a.color} size={40} />
                   <div className="account-item-text">
                     <span className="strong">{a.label || a.email}{active && <span className="chip chip-sm">Đang dùng</span>}</span>
-                    <span className="muted small">{a.email}{a.uid ? ` · UID ${a.uid.slice(0, 8)}…` : ''} · device {a.deviceId}</span>
+                    <span className="muted small">{a.email}{a.uid ? ` · UID ${a.uid.slice(0, 8)}…` : ''}</span>
+                    <span className="muted small">
+                      device {a.deviceId} · ver {deviceValue(a, 'appVersion')} · Android {deviceValue(a, 'androidVersion')}
+                      {a.publicKey ? ' · key2 riêng' : ''}
+                    </span>
                     <span className={`status-line tone-${state.tone}`}><span className="status-dot" aria-hidden="true" />{state.text}</span>
-                    {resend?.id === a.id && <span className={`small tone-${resend.tone}`} role="status">{resend.text}</span>}
+                    {resend?.id === a.id && needsVerification(a) && !(active && status === 'ready') && (
+                      <span className={`small tone-${resend.tone}`} role="status">{resend.text}</span>
+                    )}
                   </div>
                   <div className="row-actions">
                     {needsVerification(a) && !(active && status === 'ready') && (
@@ -180,7 +240,7 @@ export function AccountsScreen() {
 }
 
 function SettingsPanel() {
-  const { settings, saveSettings, status } = useSession();
+  const { settings, saveSettings } = useSession();
   const [form, setForm] = useState<AppSettings>(settings);
   const [showKey, setShowKey] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -195,27 +255,16 @@ function SettingsPanel() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    // The signed-in client keeps the config it signed in with.
-    const needsSignIn = status === 'ready' && SIGN_IN_SETTINGS.some(key => form[key].trim() !== settings[key].trim());
     await saveSettings(form);
-    setSaved(needsSignIn ? 'Đã lưu. Phiên bản và key2 áp dụng từ lần đăng nhập sau.' : 'Đã lưu.');
+    setSaved('Đã lưu.');
   };
 
   return (
-    <form className="panel form-grid" onSubmit={e => void submit(e)} aria-label="Cài đặt">
-      <h2 className="panel-title">Cài đặt</h2>
-      <label className="field">
-        <span>App version (header ver)</span>
-        <input value={form.appVersion} onChange={e => set('appVersion', e.target.value)} />
-      </label>
-      <label className="field">
-        <span>Android version (users/sync)</span>
-        <input value={form.androidVersion} onChange={e => set('androidVersion', e.target.value)} />
-      </label>
-      <label className="field">
-        <span>Key2 (header key2)</span>
-        <input autoComplete="off" value={form.publicKey} onChange={e => set('publicKey', e.target.value)} />
-      </label>
+    <form className="panel form-grid" onSubmit={e => void submit(e)} aria-label="Cài đặt app">
+      <div className="span-2">
+        <h2 className="panel-title">Cài đặt app</h2>
+        <p className="muted small">Dùng chung cho mọi nick. Device ID, phiên bản và key2 nằm ở từng tài khoản (nút sửa ở danh sách).</p>
+      </div>
       <label className="checkbox span-2">
         <input type="checkbox" checked={form.dryRunSends} onChange={e => set('dryRunSends', e.target.checked)} />
         <span>Chế độ thử: không gửi tin thật (chỉ hiện trên máy này)</span>

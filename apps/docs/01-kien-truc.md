@@ -36,9 +36,11 @@ Rust (src-tauri/src/lib.rs): đăng ký plugin http + store; lệnh data_dir, re
 
 1. `tauri_plugin_http::init()`: webview gọi `fetch` của plugin; request đi bằng HTTP client phía Rust, không qua chính sách CORS của webview. `sgdev.vip` không trả header CORS và cần các header tuỳ biến (`key2`, `hash`, `timestamp`, `deviceid`, `os`, `ver`), nên đây là cách duy nhất gọi API từ webview.
 2. `tauri_plugin_store`: đọc/ghi file JSON trong thư mục dữ liệu app.
-3. Hai lệnh:
+3. Lệnh:
    - `data_dir()` trả đường dẫn thư mục dữ liệu, để màn Cài đặt hiển thị.
    - `restrict_data_file(name)` chạy `chmod 600` sau mỗi lần ghi `accounts.json`/`settings.json`. Chỉ nhận đúng 2 tên file cố định, nên tham số không thể trỏ ra ngoài thư mục dữ liệu.
+   - `export_accounts_file(name, content)` ghi file xuất danh sách tài khoản vào thư mục Downloads. Chỉ nhận tên `ola-accounts-YYYYMMDD-HHMMSS.json`, không ghi đè (trùng thì thêm `-2`, `-3`…), quyền 600 trên macOS/Linux.
+   - `set_close_action(action)` / `close_window(action)` cho nút đóng cửa sổ và icon ở khay (`tray.rs`).
 
 Quyền (capability) nằm ở [`capabilities/default.json`](../src-tauri/capabilities/default.json): `core:default`, `store:default`, `http:default` với `allow` chỉ `https://sgdev.vip/*`. CSP trong [`tauri.conf.json`](../src-tauri/tauri.conf.json) chỉ cho kết nối tới IPC của Tauri, Firebase Auth (`identitytoolkit`, `securetoken`), `sgdev.vip` và `wss://sgdev.vip:3001`; ảnh `https:`; không cho script ngoài.
 
@@ -64,7 +66,7 @@ Test `test/core.test.ts` duyệt đồ thị import từ `client.ts`, `chat.ts`,
 `session.tsx` → `OlaClient.login()` với:
 
 - `account`: email/mật khẩu từ `accounts.json`.
-- `config`: base URL, `key2`, phiên bản lấy từ Cài đặt + **Device ID riêng của tài khoản** (`olaConfigFor()`); `users/sync` đăng ký đúng Device ID đã ký.
+- `config`: base URL + **thông tin thiết bị riêng của tài khoản**: Device ID, `key2`, app version, Android version (`olaConfigFor(account)` trong `accounts.ts`; mục để trống dùng mặc định của APK). `users/sync` đăng ký đúng Device ID và Android version đã ký.
 - `fetch`: `apiFetch` (Tauri http plugin).
 
 Sau đó `chatProfile()` chỉ lấy `displayName`, `photoURL`, `isVip`, `level`, `isVerifyAvatar` từ profile. Profile gốc **có key `password`** nên không bao giờ được lưu (xem [bao-mat-va-luu-y.md](../../docs/api/bao-mat-va-luu-y.md)).
@@ -99,6 +101,7 @@ Tất cả nằm trong thư mục dữ liệu app (macOS: `~/Library/Application
         "email": "<email>",
         "password": "<mật khẩu, JSON thường>",
         "deviceId": "9f2c4e1a7b3d5f60",
+        "androidVersion": "14",
         "color": "#0E7490",
         "uid": "<Firebase UID, điền sau khi đăng nhập>",
         "displayName": "<tên Ola>",
@@ -110,7 +113,9 @@ Tất cả nằm trong thư mục dữ liệu app (macOS: `~/Library/Application
 }
 ```
 
-`settings.json`, quyền 600: `publicKey`, `appVersion`, `androidVersion`, `socketKey`, `dryRunSends`. Giá trị trống thì dùng mặc định trong `defaults.ts`, theo đúng quy tắc của biến `OLA_*` ở CLI (`olaConfigFor()` gọi `buildConfig()`). `publicKey`/`appVersion`/`androidVersion` được đọc lúc đăng nhập nên chỉ áp dụng từ lần đăng nhập sau.
+Thiết bị của từng nick nằm trong tài khoản: `deviceId` (bắt buộc) và tuỳ chọn `appVersion`, `androidVersion`, `publicKey` (key2). Ba mục tuỳ chọn chỉ được lưu khi khác mặc định của APK (`olaDefaults` trong `defaults.ts`); thiếu thì dùng mặc định, theo đúng quy tắc của biến `OLA_*` ở CLI (`olaConfigFor()` gọi `buildConfig()`). Chúng được đọc lúc đăng nhập nên chỉ áp dụng từ lần đăng nhập sau. Ví dụ trên: nick dùng Android 14, còn app version và key2 theo mặc định.
+
+`settings.json`, quyền 600, dùng chung mọi nick: `socketKey`, `dryRunSends`, `onClose`. File bản cũ có thêm `publicKey`/`appVersion`/`androidVersion` chung cho mọi nick: lần mở đầu tiên, giá trị nào khác mặc định được chép sang những nick chưa có giá trị riêng, rồi bị bỏ khỏi `settings.json`.
 
 Máy chủ (`https://sgdev.vip/`, `https://sgdev.vip:3001`) **không** nằm trong Cài đặt: scope của http plugin và CSP chỉ cho đúng hai host đó, nên host khác sẽ bị chặn lúc chạy. Muốn đổi máy chủ phải sửa cùng lúc `capabilities/default.json`, CSP trong `tauri.conf.json` và `defaults.ts`.
 

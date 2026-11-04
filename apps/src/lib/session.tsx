@@ -7,11 +7,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { ChatChannel, chatProfile, normalizeMessage, type ChannelState, type ChatMessage, type ChatProfile } from '@ola/core/chat.ts';
 import { OlaClient } from '@ola/core/client.ts';
 import { registerAccount, resendVerificationEmail, type RegisterInput } from '@ola/core/register.ts';
-import { loadAccounts, newAccount, newDeviceId, saveAccounts, type AccountsData, type StoredAccount } from './accounts.ts';
+import {
+  DEVICE_FIELDS, loadAccounts, newAccount, newDeviceId, olaConfigFor, saveAccounts, type AccountsData, type StoredAccount,
+} from './accounts.ts';
 import { planImport, type ImportPlan, type TransferAccount } from './accountsTransfer.ts';
 import { appendThread } from './messageCache.ts';
 import { apiFetch } from './platform.ts';
-import { DEFAULT_SETTINGS, firebaseDefaults, loadSettings, olaConfigFor, saveSettings, SERVERS, type AppSettings } from './settings.ts';
+import { DEFAULT_SETTINGS, firebaseDefaults, loadSettings, saveSettings, SERVERS, type AppSettings } from './settings.ts';
 
 export type SessionStatus = 'signed-out' | 'signing-in' | 'ready' | 'error';
 export type RealtimeState = 'off' | 'missing-key' | ChannelState;
@@ -160,7 +162,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       const client = await OlaClient.login({
         account: { email: account.email, password: account.password },
-        config: olaConfigFor(settingsRef.current, account.deviceId),
+        config: olaConfigFor(account),
         firebaseConfig: firebaseDefaults,
         fetch: apiFetch,
       });
@@ -208,7 +210,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // The new account's own device id signs checkEmail, as the app does on that phone.
     const deviceId = newDeviceId();
     const { email } = await registerAccount(input, {
-      config: olaConfigFor(settingsRef.current, deviceId),
+      config: olaConfigFor({ deviceId }),
       firebaseConfig: firebaseDefaults,
       fetch: apiFetch,
     });
@@ -241,6 +243,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     plan.added.forEach((entry, i) => accounts.push(newAccount({
       label: entry.label ?? '', email: entry.email, password: entry.password,
       ...(entry.deviceId && { deviceId: entry.deviceId }),
+      ...Object.fromEntries(DEVICE_FIELDS.filter(f => entry[f]).map(f => [f, entry[f]])),
     }, current.accounts.length + i)));
     await persist({ ...current, accounts });
     return plan;
@@ -270,8 +273,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [accounts, saved] = await Promise.all([loadAccounts(), loadSettings()]);
+      const [loadedAccounts, { settings: saved, legacyDevice }] = await Promise.all([loadAccounts(), loadSettings()]);
       if (cancelled) return;
+      let accounts = loadedAccounts;
+      // Older settings.json held one device profile for every account: give it to
+      // the accounts without their own, then drop it from settings.
+      if (Object.keys(legacyDevice).length) {
+        accounts = {
+          ...accounts,
+          accounts: accounts.accounts.map(a => {
+            const filled = { ...a };
+            for (const field of DEVICE_FIELDS) if (!filled[field] && legacyDevice[field]) filled[field] = legacyDevice[field];
+            return filled;
+          }),
+        };
+        await saveAccounts(accounts);
+        await saveSettings(saved);
+      }
       dataRef.current = accounts;
       settingsRef.current = saved;
       setData(accounts);

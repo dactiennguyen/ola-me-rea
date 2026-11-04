@@ -3,6 +3,7 @@
 // every save. Never store the Ola profile from users/sync here: it carries
 // fields such as a password value; only the few display fields below are kept.
 
+import { buildConfig, olaDefaults, type OlaConfig } from '@ola/core/defaults.ts';
 import { openJsonFile, restrictDataFile } from './platform.ts';
 
 export interface StoredAccount {
@@ -13,6 +14,13 @@ export interface StoredAccount {
   password: string;
   /** Signed into every request as `deviceid` and registered by users/sync. One per account. */
   deviceId: string;
+  /**
+   * This account's device profile; unset means the APK default (olaDefaults).
+   * Read at sign-in, so a change applies from the next sign-in.
+   */
+  appVersion?: string;
+  androidVersion?: string;
+  publicKey?: string;
   /** Avatar color when there is no photo. */
   color: string;
   uid?: string;
@@ -56,6 +64,37 @@ function randomHex(bytes: number): string {
 
 /** 16 hex chars, the shape of an Android ID. */
 export const newDeviceId = () => randomHex(8);
+
+/** The per-account device fields and the APK values they default to. */
+export const DEVICE_FIELDS = ['appVersion', 'androidVersion', 'publicKey'] as const;
+export type DeviceField = (typeof DEVICE_FIELDS)[number];
+export type DeviceProfile = Pick<StoredAccount, 'deviceId' | DeviceField>;
+
+export const DEVICE_DEFAULTS: Record<DeviceField, string> = {
+  appVersion: olaDefaults.appVersion,
+  androidVersion: olaDefaults.androidVersion,
+  publicKey: olaDefaults.publicKey,
+};
+
+/** The value this account signs with: its own, else the APK default. */
+export const deviceValue = (account: Partial<DeviceProfile>, field: DeviceField) =>
+  account[field]?.trim() || DEVICE_DEFAULTS[field];
+
+/** OlaConfig for one account: the CLI's OLA_* override rules applied to its own device profile. */
+export function olaConfigFor(account: DeviceProfile): OlaConfig {
+  const { ola } = buildConfig({
+    OLA_PUBLIC_KEY: deviceValue(account, 'publicKey'),
+    OLA_APP_VERSION: deviceValue(account, 'appVersion'),
+    OLA_ANDROID_VERSION: deviceValue(account, 'androidVersion'),
+  });
+  return { ...ola, deviceId: account.deviceId };
+}
+
+/** Keeps a device field only when it differs from the default, so defaults follow app updates. */
+export function deviceOverride(field: DeviceField, value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed && trimmed !== DEVICE_DEFAULTS[field] ? trimmed : undefined;
+}
 
 export function newAccount(input: Pick<StoredAccount, 'label' | 'email' | 'password'> & Partial<StoredAccount>, index: number): StoredAccount {
   return {

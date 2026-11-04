@@ -1,4 +1,5 @@
 import type { StoredAccount } from '../lib/accounts.ts';
+import type { AccountsPanel } from '../screens/AccountsScreen.tsx';
 import { shortTime } from '../lib/format.ts';
 import { useSession, type RealtimeState } from '../lib/session.tsx';
 import { Avatar } from './Avatar.tsx';
@@ -32,7 +33,13 @@ function accountStatus(account: StoredAccount, active: boolean, status: string, 
   return { text: 'Chưa đăng nhập', tone: 'idle' as const };
 }
 
-export function Sidebar({ screen, onNavigate, unread }: { screen: Screen; onNavigate: (s: Screen) => void; unread: number }) {
+export function Sidebar({ screen, onNavigate, onAccounts, unread }: {
+  screen: Screen;
+  onNavigate: (s: Screen) => void;
+  /** Opens Quản lý tài khoản with a panel (add, register, import/export). */
+  onAccounts: (panel: AccountsPanel) => void;
+  unread: number;
+}) {
   const { accounts, activeId, status, error, realtime, switchAccount } = useSession();
   const rt = REALTIME[realtime];
   return (
@@ -43,7 +50,12 @@ export function Sidebar({ screen, onNavigate, unread }: { screen: Screen; onNavi
       </div>
 
       <section className="sidebar-section">
-        <h2 className="section-label">Tài khoản</h2>
+        <div className="section-head">
+          <h2 className="section-label">Tài khoản</h2>
+          <button type="button" className="section-action" title="Nhập / xuất danh sách tài khoản" onClick={() => onAccounts('transfer')}>
+            <Icon name="arrowUpDown" size={14} /> Nhập / Xuất
+          </button>
+        </div>
         {accounts.map(account => {
           const active = account.id === activeId;
           const s = accountStatus(account, active, status, error);
@@ -64,7 +76,7 @@ export function Sidebar({ screen, onNavigate, unread }: { screen: Screen; onNavi
             </button>
           );
         })}
-        <button type="button" className="add-account" onClick={() => onNavigate('accounts')}>
+        <button type="button" className="add-account" onClick={() => onAccounts('add')}>
           <Icon name="plus" /> Thêm tài khoản
         </button>
       </section>

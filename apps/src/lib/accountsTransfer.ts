@@ -2,11 +2,11 @@
 // like accounts.json itself; the UI says so. Import also takes one account per
 // line ("email|mật khẩu", or tab, comma, semicolon or colon between them).
 
-import type { StoredAccount } from './accounts.ts';
+import { DEVICE_FIELDS, deviceOverride, type DeviceField, type StoredAccount } from './accounts.ts';
 
 export const EXPORT_FORMAT = 'ola-desktop-accounts';
 
-export interface TransferAccount {
+export interface TransferAccount extends Partial<Record<DeviceField, string>> {
   email: string;
   password: string;
   label?: string;
@@ -29,7 +29,10 @@ export function exportAccounts(accounts: StoredAccount[], now = new Date()): str
     format: EXPORT_FORMAT,
     version: 1,
     exportedAt: now.toISOString(),
-    accounts: accounts.map(a => ({ label: a.label, email: a.email, password: a.password, deviceId: a.deviceId })),
+    accounts: accounts.map(a => ({
+      label: a.label, email: a.email, password: a.password, deviceId: a.deviceId,
+      ...Object.fromEntries(DEVICE_FIELDS.filter(f => a[f]).map(f => [f, a[f]])),
+    })),
   }, null, 2)}\n`;
 }
 
@@ -59,11 +62,13 @@ function parseJson(text: string): ParsedImport {
   const out: ParsedImport = { accounts: [], problems: [] };
   list.forEach((item, i) => {
     const entry = item as Partial<Record<keyof TransferAccount, unknown>> | null;
+    const text = (key: keyof TransferAccount) => (typeof entry?.[key] === 'string' ? entry[key] as string : undefined);
     add(out, `Mục ${i + 1}`, {
-      email: typeof entry?.email === 'string' ? entry.email : '',
-      password: typeof entry?.password === 'string' ? entry.password : '',
-      label: typeof entry?.label === 'string' ? entry.label : undefined,
-      deviceId: typeof entry?.deviceId === 'string' ? entry.deviceId : undefined,
+      email: text('email') ?? '',
+      password: text('password') ?? '',
+      label: text('label'),
+      deviceId: text('deviceId'),
+      ...Object.fromEntries(DEVICE_FIELDS.map(f => [f, deviceOverride(f, text(f))]).filter(([, v]) => v)),
     });
   });
   return dedupe(out);
@@ -94,6 +99,7 @@ function add(out: ParsedImport, where: string, entry: TransferAccount) {
     email, password: entry.password,
     ...(entry.label?.trim() && { label: entry.label.trim() }),
     ...(deviceId && { deviceId }),
+    ...Object.fromEntries(DEVICE_FIELDS.filter(f => entry[f]).map(f => [f, entry[f]])),
   });
 }
 

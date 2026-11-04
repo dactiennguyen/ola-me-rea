@@ -8,17 +8,19 @@ import { useSession } from '../lib/session.tsx';
 // (docs/api/luong-dang-ky.md): same fields, rules and messages; checkEmail, then
 // Firebase creates the account and sends the verification email. The account is
 // saved to the list but can sign in only after the link in that email is opened.
+// Shorter than the phone form by the owner's choice: no "Nhập lại mật khẩu" and
+// no checkboxes; submitting confirms the terms and the 18+ age on the user's behalf.
 
 interface Form {
   label: string;
   email: string;
   password: string;
-  confirmPassword: string;
-  agreeTerms: boolean;
-  confirmAge: boolean;
 }
 
-const EMPTY: Form = { label: '', email: '', password: '', confirmPassword: '', agreeTerms: false, confirmAge: false };
+const EMPTY: Form = { label: '', email: '', password: '' };
+
+/** What the phone form asks the user to confirm, filled in for them. */
+const confirmed = (form: Form) => ({ ...form, confirmPassword: form.password, agreeTerms: true, confirmAge: true });
 
 export function RegisterPanel({ onClose }: { onClose: () => void }) {
   const { register } = useSession();
@@ -33,12 +35,13 @@ export function RegisterPanel({ onClose }: { onClose: () => void }) {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const problem = registrationProblem(form);
+    const input = confirmed(form);
+    const problem = registrationProblem(input);
     if (problem) { setError(problem); return; }
     setBusy(true);
     setError(null);
     try {
-      setCreated(await register(form));
+      setCreated(await register(input));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -89,22 +92,11 @@ export function RegisterPanel({ onClose }: { onClose: () => void }) {
           </button>
         </span>
       </label>
-      <label className="field">
-        <span>Nhập lại mật khẩu</span>
-        <input type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.confirmPassword} disabled={busy} onChange={e => set('confirmPassword', e.target.value)} />
-      </label>
-      <label className="checkbox span-2">
-        <input type="checkbox" checked={form.agreeTerms} disabled={busy} onChange={e => set('agreeTerms', e.target.checked)} />
-        <span>Tôi đã đọc và đồng ý với Điều khoản sử dụng</span>
-      </label>
       <p className="muted small span-2 terms-line">
-        Điều khoản sử dụng: <code className="break">{TERMS_URL}</code>
+        Bấm Đăng ký là tự xác nhận đồng ý Điều khoản sử dụng và đủ 18 tuổi (hai ô app điện thoại bắt tick).
+        <code className="break">{TERMS_URL}</code>
         <button type="button" className="btn btn-ghost btn-sm" onClick={copyTerms}>{copied ? 'Đã sao chép' : 'Sao chép link'}</button>
       </p>
-      <label className="checkbox span-2">
-        <input type="checkbox" checked={form.confirmAge} disabled={busy} onChange={e => set('confirmAge', e.target.checked)} />
-        <span>Tôi xác nhận mình đủ 18 tuổi trở lên</span>
-      </label>
       {error && <p className="notice notice-bad small span-2" role="alert">{error}</p>}
       <div className="form-actions span-2">
         <button type="submit" className="btn btn-primary" disabled={busy}>
