@@ -1,6 +1,6 @@
 {
   "name": "ola-desktop",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Ola Desktop: Tauri 2 app for managing Ola accounts, messages, explore and chat rooms",
   "license": "UNLICENSED",
