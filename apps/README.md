@@ -72,7 +72,15 @@ Tài khoản được lưu dạng **JSON thường, kể cả mật khẩu** (th
 apps/
 ├── index.html, vite.config.ts, tsconfig.json, package.json, yarn.lock, .yarnrc
 ├── src/
-│   ├── main.tsx, App.tsx, styles.css      # khung app + token design C
+│   ├── main.tsx, App.tsx    # khung app (SessionProvider + ToastProvider)
+│   ├── styles/              # Tailwind v4 + design token (docs/04-design.md)
+│   │   ├── index.css        # điểm vào: @import tailwindcss, @theme (ánh xạ token → utility)
+│   │   ├── tokens.css       # màu, cỡ chữ, khoảng cách, chiều cao control, chuyển động
+│   │   ├── base.css         # reset, chữ, tiện ích
+│   │   ├── components.css, layout.css, screens/*.css   # class cũ cho màn chưa chuyển sang Tailwind
+│   ├── ui/                  # bộ component dùng chung (Tailwind): Button, IconButton, ToggleChip, Tag, Badge,
+│   │                        #   Field/Input/Select/NumberInput/Textarea, Checkbox, Segmented, Modal, Toast,
+│   │                        #   Notice, EmptyState, ProgressBar, VirtualList, cn()
 │   ├── lib/
 │   │   ├── session.tsx      # mọi tài khoản online cùng lúc: OlaClient + kênh realtime của từng nick
 │   │   ├── accounts.ts      # accounts.json
@@ -85,7 +93,9 @@ apps/
 │   │   ├── provinces.ts     # danh sách phòng = mã tỉnh
 │   │   └── format.ts
 │   ├── components/          # AccountRail (cột tài khoản), Sidebar (của một nick), Avatar, MessageList, Composer, Icon
-│   └── screens/             # AccountView (màn của một nick), Messages, Explore, Rooms, Blog, Profile, Accounts, Settings, Outreach (Tìm người & nhắn)
+│   └── screens/             # AccountView (màn của một nick), Messages, Explore, Rooms, Blog, Profile, Accounts, Settings
+│       └── outreach/        # Tìm người & nhắn: OutreachScreen, CollectPanel, RecipientList, useCollector, useSentHistory, exportUsers
+│           └── autosend/    # Auto gửi: AutoSendPanel, SendLog, HistoryDialog, TemplatesDialog, useAutoSend, engine (không React)
 └── src-tauri/
     ├── Cargo.toml, build.rs, tauri.conf.json
     ├── capabilities/default.json   # quyền: http tới sgdev.vip, Firebase Auth REST, api.ipify.org; store

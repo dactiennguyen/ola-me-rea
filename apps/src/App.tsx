@@ -5,7 +5,7 @@ import { onCloseAsked, setCloseAction } from './lib/platform.ts';
 import { AccountProvider, useSession } from './lib/session.tsx';
 import { AccountsScreen, type AccountsPanel, type AccountsRequest } from './screens/AccountsScreen.tsx';
 import { AccountView } from './screens/AccountView.tsx';
-import { OutreachScreen } from './screens/OutreachScreen.tsx';
+import { OutreachScreen } from './screens/outreach/OutreachScreen.tsx';
 import { SettingsScreen } from './screens/SettingsScreen.tsx';
 
 export function App() {

@@ -21,11 +21,11 @@ export function Avatar({ name, photo, seed, color, size = 38, online, ring = 'va
   return (
     <span className="avatar" style={{ width: size, height: size, borderRadius: radius }}>
       {showPhoto ? (
-        <img src={photo} alt="" width={size} height={size} style={{ borderRadius: radius }} onError={() => setBroken(true)} />
+        <img src={photo} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: radius }} onError={() => setBroken(true)} />
       ) : (
         <span
           className="avatar-initials"
-          style={{ background: color ?? colorFor(seed ?? name), borderRadius: radius, fontSize: Math.max(11, Math.round(size * 0.34)) }}
+          style={{ background: color ?? colorFor(seed ?? name), borderRadius: radius, fontSize: Math.max(12, Math.round(size * 0.34)) }}
         >
           {initials(name)}
         </span>

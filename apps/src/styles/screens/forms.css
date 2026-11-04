@@ -1,0 +1,34 @@
+/* Quản lý tài khoản, Đăng ký, Nhập/Xuất, Thông tin tài khoản, Cài đặt. Legacy until P4. */
+
+@layer components {
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px var(--sp-4); }
+.form-grid .panel-title, .span-2 { grid-column: 1 / -1; }
+.input-with-action { display: flex; gap: 6px; }
+.input-with-action input { flex: 1; }
+.advanced-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+.advanced-toggle .btn-sm { padding-left: var(--sp-1); }
+
+.account-table { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.account-item { display: flex; align-items: center; gap: var(--sp-3); padding: 10px var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); }
+.account-item.is-active { border-color: var(--accent); background: var(--accent-soft); }
+.account-item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.account-item-text > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+
+.terms-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.transfer-block { display: flex; flex-direction: column; gap: 10px; padding-top: var(--sp-1); }
+.transfer-block + .transfer-block { padding-top: var(--sp-4); border-top: 1px solid var(--border); }
+.transfer-title { color: var(--text-strong); font-size: var(--fs-md); }
+.transfer-problems { display: block; margin: 0; padding-left: 28px; list-style: disc; }
+.file-pick { align-self: flex-start; cursor: pointer; }
+.file-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-pick:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.profile-card { max-width: 760px; }
+.profile-head { display: flex; align-items: center; gap: 14px; }
+.profile-head .panel-title { font-size: 18px; }
+.profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-6); margin: 0; }
+.profile-row { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.profile-row dd { margin: 0; color: var(--text-strong); overflow-wrap: anywhere; }
+.profile-uid { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+}

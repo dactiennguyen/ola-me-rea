@@ -1,0 +1,95 @@
+/* Ola Desktop — design tokens v2, hướng C "Đêm chuyên nghiệp" (docs/04-design.md).
+   Every color, size and duration in the app comes from here: components and
+   screens never write raw hex/px values. Text colors keep >= 4.5:1 on their surface. */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- neutral scale (slate-tinted, dark → light) ---------------------- */
+  --gray-950: #0b0f14;
+  --gray-900: #0f141b;
+  --gray-850: #111821;
+  --gray-800: #1a2230;
+  --gray-750: #1f2937;
+  --gray-700: #2b3646;
+  --gray-600: #374151;
+  --gray-400: #9ca3af;
+  --gray-300: #d1d5db;
+  --gray-200: #e5e7eb;
+  --gray-50: #f9fafb;
+
+  /* ---- surfaces ---------------------------------------------------------- */
+  --bg: var(--gray-950);          /* app background, chat thread */
+  --sidebar: var(--gray-900);     /* sidebar, chat header, composer */
+  --surface: var(--gray-850);     /* panels, lists, cards */
+  --raised: var(--gray-800);      /* hover, selected row, popovers */
+  --bubble-in: var(--gray-750);   /* incoming bubble, active nav */
+  --overlay: rgba(0, 0, 0, 0.6);  /* modal backdrop */
+
+  /* ---- lines ------------------------------------------------------------- */
+  --border: var(--gray-750);
+  --border-strong: var(--gray-600);
+
+  /* ---- text -------------------------------------------------------------- */
+  --text: var(--gray-200);
+  --text-strong: var(--gray-50);
+  --text-soft: var(--gray-300);
+  --muted: var(--gray-400);
+
+  /* ---- brand ------------------------------------------------------------- */
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-soft: rgba(124, 58, 237, 0.2);
+  --accent-text: #c4b5fd;
+  --on-accent: #ffffff;
+  --on-accent-soft: #ede9fe;
+  --focus: #a78bfa;
+
+  /* ---- status: a color for text/icons + a tinted background.
+     Status is never shown by color alone: always with an icon or a word. --- */
+  --ok: #34d399;
+  --ok-bg: rgba(52, 211, 153, 0.12);
+  --ok-text: #a7f3d0;
+  --warn: #fbbf24;
+  --warn-bg: rgba(251, 191, 36, 0.12);
+  --warn-text: #fde68a;
+  --bad: #f87171;
+  --bad-bg: rgba(248, 113, 113, 0.12);
+  --bad-text: #fecaca;
+  --info: #22d3ee;
+  --info-bg: rgba(34, 211, 238, 0.12);
+  --link: #22d3ee;
+  --danger: #b91c1c;              /* destructive button fill (white text 6.5:1) */
+  --danger-hover: #991b1b;
+
+  /* ---- type -------------------------------------------------------------- */
+  --font: var(--font-sans);       /* --font-sans/--font-mono live in @theme (index.css) */
+  --fs-xs: 12px;   /* meta: time, status, labels — the smallest size used */
+  --fs-sm: 13px;   /* UI: buttons, inputs, list secondary text */
+  --fs-md: 14px;   /* body, messages */
+  --fs-lg: 16px;   /* panel titles */
+  --fs-xl: 20px;   /* screen titles */
+
+  /* ---- space: 4 px grid, dense (dashboard) ------------------------------ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* ---- control heights: three sizes for the whole app ------------------- */
+  --h-sm: 28px;    /* chips, compact toolbars */
+  --h-md: 32px;    /* default buttons, inputs, tabs */
+  --h-lg: 40px;    /* the one main action of an area */
+
+  /* ---- shape: --radius-xs/sm/md/lg/full and --shadow-pop/modal are Tailwind
+     theme variables, defined once in index.css (@theme). ------------------- */
+  --radius: var(--radius-md);
+
+  /* ---- motion: subtle, and off under prefers-reduced-motion (base.css) --- */
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}

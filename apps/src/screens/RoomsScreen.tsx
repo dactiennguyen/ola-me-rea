@@ -41,7 +41,7 @@ export function RoomsScreen({ onMessage }: { onMessage: (peer: PeerTarget) => vo
               <button type="button" className={`room-row${room === p.code ? ' is-active' : ''}`} onClick={() => setRoom(p.code)}>
                 <span className="room-code" aria-hidden="true">{p.code}</span>
                 <span className="grow truncate">{p.name}</span>
-                {p.verified && <span className="muted small" title="Mã phòng đã kiểm chứng trên app">✓</span>}
+                {p.verified && <span className="muted" title="Mã phòng đã kiểm chứng trên app"><Icon name="check" size={14} label="Đã kiểm chứng" /></span>}
               </button>
             </li>
           ))}

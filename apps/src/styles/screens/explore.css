@@ -1,0 +1,16 @@
+/* Khám phá (ExploreScreen): filters and user cards. Legacy until P3. */
+
+@layer components {
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+.field-inline { display: flex; align-items: center; gap: var(--sp-2); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--sp-3); }
+.user-card { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); transition: border-color var(--dur-fast) var(--ease); }
+.user-card:hover { border-color: var(--border-strong); }
+.user-card-skeleton { pointer-events: none; }
+.user-card-body { display: flex; flex-direction: column; gap: var(--sp-1); width: 100%; min-width: 0; }
+.user-name { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 15px; }
+.verified { flex: none; display: inline-flex; color: var(--link); }
+.user-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text-soft); }
+.user-card .btn { width: 100%; margin-top: auto; }
+.load-more { display: flex; justify-content: center; min-height: 48px; padding: var(--sp-3); }
+}

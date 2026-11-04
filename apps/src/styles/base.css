@@ -1,0 +1,65 @@
+/* Reset, typography and single-purpose utilities. No component styles here. */
+
+@layer base {
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: var(--fs-xl); font-weight: 700; color: var(--text-strong); letter-spacing: -0.01em; }
+h2 { font-size: var(--fs-lg); font-weight: 700; color: var(--text-strong); }
+h3 { font-size: var(--fs-md); font-weight: 600; color: var(--text-strong); }
+code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  background: var(--raised);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+::selection { background: rgba(167, 139, 250, 0.35); }
+[hidden] { display: none !important; }
+input::placeholder, textarea::placeholder { color: var(--muted); }
+/* Tailwind preflight makes svg/img block; icons sit inside text, so keep svg inline. */
+svg { display: inline-block; flex: none; }
+
+/* Thin dark scrollbars: the default light ones break the theme on Windows/Linux. */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--radius-full); border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- utilities --------------------------------------------------------- */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.muted { color: var(--muted); }
+.small { font-size: var(--fs-xs); }
+.strong { font-weight: 600; color: var(--text-strong); }
+.grow { flex: 1; min-width: 0; }
+.truncate, .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tnum { font-variant-numeric: tabular-nums; }
+.break { word-break: break-all; }
+.pad { padding: var(--sp-3) 14px; }
+.tone-ok { color: var(--ok); }
+.tone-warn { color: var(--warn); }
+.tone-bad { color: var(--bad); }
+.tone-idle { color: var(--muted); }
+
+/* ---- motion off for people who ask for it ------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+}

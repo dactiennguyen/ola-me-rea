@@ -40,21 +40,22 @@ Dùng chung cho cả app, không theo tài khoản.
 
 ## Tìm người & nhắn
 
-Nút tin nhắn ở cuối cột tài khoản (trên *Quản lý tài khoản*). Màn giữ nguyên danh sách và chat đang mở khi chuyển màn khác.
+Nút gửi tin (máy bay giấy) ở cuối cột tài khoản. Màn giữ nguyên danh sách và phiên gửi khi chuyển màn khác. Cột trái lấy và chọn người, bên phải là **Auto gửi**.
 
 | Thao tác | Gọi | Ghi? |
 |---|---|---|
-| Lấy danh sách: **Khám phá** (tab Online / Đã xác thực / Ảnh có mặt, giới tính, tỉnh) | `getExploreOnlineV6` / `getExplore3` / `getExploreAvatarV4`, theo cursor, mỗi nick được chọn N trang | Không |
-| Lấy danh sách: **Phòng chat** (chọn phòng) | `apiAddToRoomV4 {state, page}`, mỗi nick N trang | Không |
-| Nhắn một người | Như chat 1-1 (socket → push → `addLastMessage5`) bằng nick chọn ở ô *Nhắn bằng* | **Có** |
+| Lấy danh sách: **Khám phá** (tab Online / Đã xác thực / Ảnh có mặt, giới tính, tỉnh) | `getExploreOnlineV6` / `getExplore3` / `getExploreAvatarV4`, theo cursor, mỗi nick N trang | Không |
+| Lấy danh sách: **Phòng chat** (chọn **nhiều phòng**) | `apiAddToRoomV4 {state, page}`, đọc hết mọi trang của từng phòng (tối đa 50 trang/phòng) | Không |
+| Auto gửi | Mỗi tin như chat 1-1: `getUserInfoForChatV2` → socket → push (khi người nhận có FCM token) → `addLastMessage5` | **Có** |
 
-- **Lấy bằng nick**: tick một hoặc nhiều nick đang online; mỗi nick lấy *Số trang mỗi nick* (1–50) trang, nghỉ 0,4 s giữa các trang, dừng sớm khi hết dữ liệu. Nút **Dừng** huỷ giữa chừng.
-- **Danh sách gộp, bỏ trùng theo UID**; mỗi người ghi *Tìm từ:* các nick đã thấy người đó và nguồn lần đầu (vd `Khám phá · Online · Nữ · Hà Nội`), kèm tỉnh, cấp, lần truy cập.
-- **Đã nhắn** (từ SQLite): `Đã nhắn: nick A (2 tin, 15:08)`; ô *Ẩn đã nhắn* lọc bỏ người đã được nhắn từ bất kỳ nick nào. Lọc theo tên / UID / tỉnh.
-- **Xuất** danh sách đang lọc ra `ola-users-YYYYMMDD-HHMMSS.csv` (UTF-8 có BOM, mở được bằng Excel) hoặc `.json` trong Downloads.
-- Bấm một người → mở chat 1-1 ở bên phải; ô **Nhắn bằng** chọn nick gửi (mặc định nick đã tìm thấy người đó). Gửi **từng tin bằng tay**; app không có gửi hàng loạt.
-- **Tin nhắn mẫu** (nút *Mẫu & lịch sử*): thêm / sửa / xoá, lưu trong `settings.json` (`messageTemplates`). Trong mọi ô chat 1-1 có nút mẫu chèn câu vào ô nhập tại con trỏ; vẫn phải tự bấm Gửi.
-- **Đã gửi gần đây**: 30 tin cuối từ SQLite.
+- **Lấy bằng nick**: bật một hoặc nhiều nick đang online; nghỉ 0,4 s giữa các trang, dừng sớm khi hết dữ liệu. Nút **Dừng lấy** huỷ giữa chừng.
+- **Danh sách gộp, bỏ trùng theo UID**; mỗi người ghi nick đã thấy người đó và nguồn lần đầu (vd `Khám phá · Online · Nữ · Hà Nội`), kèm tỉnh, lần truy cập, huy hiệu VIP/đã xác thực, và số tin đã nhắn (từ SQLite).
+- Mỗi hàng có checkbox: tick = nhận tin; *Chọn tất cả* (có trạng thái chọn một phần). Lọc theo tên / UID / tỉnh, *Ẩn đã nhắn*. **Xuất** danh sách đang lọc ra `ola-users-YYYYMMDD-HHMMSS.csv` (UTF-8 có BOM, mở được bằng Excel) hoặc `.json` trong Downloads.
+- **Auto gửi** theo 4 bước: (1) người nhận — số sẽ gửi, *Bỏ qua người đã được nhắn* (bấm xem được danh sách người bị bỏ và nick nào đã nhắn), *Gửi tối đa N người*; (2) nick gửi, nhiều nick thì xoay vòng; (3) nội dung: một nội dung, hoặc ngẫu nhiên giữa các mẫu đã tick; (4) giãn cách giữa 2 tin (giây). Bên phải: xem trước, ước tính thời gian, tiến độ, **nhật ký gửi** (lọc Tất cả / Thành công / Lỗi; mỗi dòng có trạng thái, nick, giờ, nội dung, thông báo đẩy, lỗi).
+- Gửi thật phải bấm xác nhận; **Dừng gửi** có tác dụng ngay cả trong lúc chờ giãn cách. *Chế độ thử* (Cài đặt) thì chỉ ghi log, không gửi.
+- **Thông báo đẩy**: chỉ bắn được khi server cấp FCM token của người nhận; người lấy từ Khám phá/phòng thường không có, nên nhật ký ghi *Không có thông báo đẩy* (tin vẫn tới trong app).
+- **Tin nhắn mẫu** (nút *Mẫu tin*): thêm / sửa / xoá, lưu trong `settings.json` (`messageTemplates`). Trong mọi ô chat 1-1 có nút mẫu chèn câu vào ô nhập.
+- **Lịch sử** (nút *Lịch sử*): 100 tin gần nhất từ SQLite, mọi màn hình, có nguồn gửi.
 
 ## Lịch sử gửi (SQLite)
 

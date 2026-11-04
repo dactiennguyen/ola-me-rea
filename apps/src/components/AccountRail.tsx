@@ -76,7 +76,7 @@ export function AccountRail({ view, unread, onAccount, onAdd, onOutreach, onMana
           </button>
         )}
         <button type="button" className={`rail-btn${view === 'outreach' ? ' is-active' : ''}`} title="Tìm người & nhắn" aria-label="Tìm người và nhắn" aria-current={view === 'outreach' ? 'page' : undefined} onClick={onOutreach}>
-          <Icon name="message" size={20} />
+          <Icon name="send" size={20} />
         </button>
         <button type="button" className={`rail-btn${view === 'accounts' ? ' is-active' : ''}`} title="Quản lý tài khoản" aria-label="Quản lý tài khoản" aria-current={view === 'accounts' ? 'page' : undefined} onClick={onManage}>
           <Icon name="users" size={20} />
