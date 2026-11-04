@@ -49,7 +49,7 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
   const [tab, setTab] = useState<Tab>('online');
   const [gender, setGender] = useState<Gender>('all');
   const [city, setCity] = useState('all');
-  const [room, setRoom] = useState('79');
+  const [rooms, setRooms] = useState<string[]>(['79']);
   const [pages, setPages] = useState(3);
   const [fetchWith, setFetchWith] = useState<string[]>([]);
   const [found, setFound] = useState<Found[]>([]);
@@ -67,7 +67,7 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
     ? ['Khám phá', TABS.find(t => t.id === tab)!.label,
       gender !== 'all' && GENDERS.find(g => g.value === gender)!.label,
       city !== 'all' && provinceName(city)].filter(Boolean).join(' · ')
-    : `Phòng ${provinceName(room)}`;
+    : rooms.length ? `Phòng ${rooms.map(provinceName).join(', ')}` : 'Phòng chat';
 
   // The list also lives in a ref: merge() counts new users synchronously, which a
   // setState updater cannot do (StrictMode runs updaters twice, React may run them later).
@@ -97,36 +97,46 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
     setRunning(true);
     // Each Lấy starts a fresh list; several nicks in the same run still merge into it.
     setList([]);
-    const where = via;
     let total = 0;
     let failed = '';
     try {
       for (const id of chosen) {
+        if (cancel.current) break;
         const ola = live[id]?.ola;
         if (!ola) continue;
         const by = { id, label: label(id) };
-        let next: ExploreNext | null = null;
-        for (let page = 0; page < pages && !cancel.current; page++) {
-          setProgress({ text: `Đang lấy trang ${page + 1}/${pages} bằng ${by.label}… (${total} người)`, tone: 'idle' });
-          let users: ChatUser[];
-          try {
-            if (source === 'explore') {
+        try {
+          if (source === 'explore') {
+            let next: ExploreNext | null = null;
+            for (let page = 0; page < pages && !cancel.current; page++) {
+              setProgress({ text: `Đang lấy trang ${page + 1}/${pages} bằng ${by.label}… (${total} người)`, tone: 'idle' });
               const input = page === 0
                 ? { page: 0, ...(gender !== 'all' && { gender }), ...(city !== 'all' && { cityID: city }) }
                 : next!;
               const result: ExploreResult = await ola.call(ENDPOINT[tab], input);
-              users = result.items.map(item => normalizeUser(item)).filter(u => u.uid);
+              const users = result.items.map(item => normalizeUser(item)).filter(u => u.uid);
               next = result.next;
-            } else {
-              users = (await loadRoomMembers(ola, room, page)).filter(u => u.uid);
+              total += merge(users, by, via);
+              if (!users.length || !next) break;
+              await sleep(PAGE_PAUSE_MS);
             }
-          } catch (e) {
-            failed = `${by.label}: ${(e as Error).message}`;
-            break;
+          } else {
+            // Phòng chat: lấy HẾT thành viên từng phòng đã chọn — tự chạy mọi trang
+            // tới khi hết (không dùng ô "trang"), tối đa MAX_PAGES/phòng cho an toàn.
+            for (const code of rooms) {
+              if (cancel.current) break;
+              const where = `Phòng ${provinceName(code)}`;
+              for (let page = 0; page < MAX_PAGES && !cancel.current; page++) {
+                setProgress({ text: `Đang lấy ${where} (trang ${page + 1}) bằng ${by.label}… (${total} người)`, tone: 'idle' });
+                const users = (await loadRoomMembers(ola, code, page)).filter(u => u.uid);
+                total += merge(users, by, where);
+                if (!users.length) break;
+                await sleep(PAGE_PAUSE_MS);
+              }
+            }
           }
-          total += merge(users, by, where);
-          if (!users.length || (source === 'explore' && !next)) break;
-          await sleep(PAGE_PAUSE_MS);
+        } catch (e) {
+          failed = `${by.label}: ${(e as Error).message}`;
         }
         if (cancel.current) break;
       }
@@ -209,11 +219,14 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
                 </button>
               ))}
             </div>
-            <label className="pages-input" title="Số trang mỗi nick lấy (1–50)">
-              <input type="number" min={1} max={MAX_PAGES} value={pages} aria-label="Số trang mỗi nick"
-                onChange={e => setPages(Math.max(1, Math.min(MAX_PAGES, Math.floor(Number(e.target.value) || 1))))} />
-              <span className="small muted">trang</span>
-            </label>
+            {source === 'explore' && (
+              <label className="pages-input" title="Số trang mỗi nick lấy (1–50)">
+                <input type="number" min={1} max={MAX_PAGES} value={pages} aria-label="Số trang mỗi nick"
+                  onChange={e => setPages(Math.max(1, Math.min(MAX_PAGES, Math.floor(Number(e.target.value) || 1))))} />
+                <span className="small muted">trang</span>
+              </label>
+            )}
+            {source === 'room' && <span className="small muted pages-input">lấy hết thành viên</span>}
           </div>
           <div className="outreach-line">
             {source === 'explore' ? (
@@ -230,11 +243,22 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
                 </select>
               </>
             ) : (
-              <select aria-label="Phòng" value={room} onChange={e => setRoom(e.target.value)}>
-                {PROVINCES.map(p => <option key={p.code} value={p.code}>Phòng {p.name}</option>)}
+              <select aria-label="Thêm phòng" value="" onChange={e => { const v = e.target.value; if (v) setRooms(rs => (rs.includes(v) ? rs : [...rs, v])); }}>
+                <option value="">+ Thêm phòng…</option>
+                {PROVINCES.filter(p => !rooms.includes(p.code)).map(p => <option key={p.code} value={p.code}>Phòng {p.name}</option>)}
               </select>
             )}
           </div>
+          {source === 'room' && (
+            <div className="outreach-line" role="group" aria-label="Phòng đã chọn">
+              {rooms.length ? rooms.map(code => (
+                <button key={code} type="button" className="nick-chip is-on" title="Bỏ phòng này" aria-label={`Bỏ phòng ${provinceName(code)}`}
+                  onClick={() => setRooms(rs => rs.filter(x => x !== code))}>
+                  Phòng {provinceName(code)} <Icon name="x" size={11} />
+                </button>
+              )) : <span className="small tone-warn">Chọn ít nhất một phòng để lấy.</span>}
+            </div>
+          )}
           <div className="outreach-line" role="group" aria-label="Lấy bằng nick">
             {online.length ? online.map(a => {
               const on = chosen.includes(a.id);
@@ -250,7 +274,7 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
             {running ? (
               <button type="button" className="btn btn-danger btn-sm" onClick={() => { cancel.current = true; }}><Icon name="stop" size={14} /> Dừng</button>
             ) : (
-              <button type="button" className="btn btn-primary btn-sm" disabled={!chosen.length} onClick={() => void collect()}><Icon name="download" size={14} /> Lấy</button>
+              <button type="button" className="btn btn-primary btn-sm" disabled={!chosen.length || (source === 'room' && !rooms.length)} onClick={() => void collect()}><Icon name="download" size={14} /> Lấy</button>
             )}
             {progress && <span className={`small ellipsis grow tone-${progress.tone}`} role="status" title={progress.text}>{progress.text}</span>}
           </div>
