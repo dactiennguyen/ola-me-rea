@@ -10,6 +10,7 @@ Phiên test: 2026-11-03, app `com.olaachat` 27.7.8 (versionCode 405), máy root 
 |---|---|---|
 | 1 | [auth-va-header.md](auth-va-header.md) | Host, bộ header chung, cách xác thực, `key2`/`timestamp`/`hash` |
 | 2 | [luong-dang-nhap-khoi-dong.md](luong-dang-nhap-khoi-dong.md) | Luồng Google/email → Firebase → backend; chuỗi 10 request lúc khởi động |
+| 2b | [luong-dang-ky.md](luong-dang-ky.md) | Đăng ký email (form, `checkEmail.php`, Firebase, mail xác thực), lỗi, quên mật khẩu — từ AOT |
 | 3 | [luong-chat-1-1.md](luong-chat-1-1.md) | Mở hội thoại, gõ, gửi tin 1-1 (3 bước: socket → push → HTTP) |
 | 4 | [luong-phong-chat.md](luong-phong-chat.md) | Vào phòng, tải lịch sử, gửi tin phòng, danh sách thành viên |
 | 5 | [socket-io.md](socket-io.md) | Server, query, danh sách event, shape payload |

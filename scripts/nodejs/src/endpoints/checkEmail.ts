@@ -1,6 +1,8 @@
 // faApi2/checkEmail.php — POST {email} -> kiểm tra một email đã đăng ký hay chưa.
 //
-// Dùng ở màn đăng nhập/đăng ký (ola_flutter_features_login_check_email_provider).
+// Theo AOT chỉ màn đăng ký gọi (RegisterScreenState._addUser, trước khi tạo tài
+// khoản Firebase, nên không có Bearer); app đọc response.valid (bool).
+// Luồng: ../../../../docs/api/luong-dang-ky.md
 // Body source: work/api_inventory.csv (check_email_provider.dart:202, key `email`).
 //   [Suy luận/AOT] — chưa bắt được trên dây trong phiên 2026-11-03.
 // Doc: ../../../../docs/api/endpoints/checkEmail.md

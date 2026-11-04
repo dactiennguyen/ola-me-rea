@@ -8,7 +8,7 @@ Danh sách những gì **chưa** bắt được hoặc chưa phân tích, xếp 
 |---|---|---|
 | 1 | **Socket query key và delivery ACK** | Chưa chốt nguồn key cho client Node và chưa kiểm thử giao nhận hai đầu |
 | 2 | **Response body** | Logger chỉ log request; Node đã nhận response login/sync. Cần thêm response interceptor cho các luồng khác |
-| 3 | **Apple, đăng ký, quên mật khẩu** | Email/mật khẩu đã được kiểm chứng trên app và Node |
+| 3 | **Apple; đăng ký và quên mật khẩu trên dây** | Đăng ký/quên mật khẩu đã viết từ AOT ([luong-dang-ky.md](luong-dang-ky.md)); còn thiếu response thật của `checkEmail.php` và bắt runtime với một email test (tạo tài khoản thật) |
 | 4 | **Đăng xuất** | Chưa thấy nút trong màn đã xem; AOT có hàm logout. Không thử xóa tài khoản |
 
 ## Ưu tiên trung bình

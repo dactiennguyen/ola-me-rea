@@ -17,7 +17,7 @@ Màn đăng nhập có Email/mật khẩu, Google, Apple, "Quên mật khẩu", 
 4. Mở 2 socket: `roomNo=Olame` (kênh chung) và `roomNo=<uid>` (kênh cá nhân).
 5. Chạy chuỗi khởi động bên dưới.
 
-Chưa bắt: Apple, đăng ký, quên mật khẩu. Trong màn Cài đặt đã xem chưa thấy nút đăng xuất; AOT có hàm logout nên không kết luận app không hỗ trợ đăng xuất. Không thử xóa tài khoản.
+Chưa bắt trên dây: Apple, đăng ký, quên mật khẩu. Đăng ký và quên mật khẩu đã phân tích từ AOT ở [luong-dang-ky.md](luong-dang-ky.md). Trong màn Cài đặt đã xem chưa thấy nút đăng xuất; AOT có hàm logout nên không kết luận app không hỗ trợ đăng xuất. Không thử xóa tài khoản.
 
 Xem thêm [socket-io.md](socket-io.md) cho chi tiết kết nối.
 

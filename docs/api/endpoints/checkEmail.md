@@ -1,12 +1,12 @@
 # faApi2/checkEmail.php
 
-Kiểm tra một email đã tồn tại / đã đăng ký trên hệ thống hay chưa. Dùng ở màn **đăng nhập / đăng ký** (provider `ola_flutter_features_login_check_email`), thường chạy **trước** bước Firebase Auth để quyết định hiện form đăng nhập hay đăng ký.
+Hỏi backend xem một email có được phép dùng để **đăng ký** không. Theo AOT, chỉ màn **đăng ký** gọi endpoint này (`RegisterScreenState._addUser`, qua `CheckEmailProvider`), **trước** `createUserWithEmailAndPassword`; màn đăng nhập không gọi. App đọc `response.data["valid"]` (bool): `true` thì tạo tài khoản Firebase, còn lại hiện "Email không hợp lệ, hãy chọn email khác". Xem [luồng đăng ký](../luong-dang-ky.md). [Suy luận/AOT]
 
 ## Method + path
 
 `POST https://sgdev.vip/faApi2/checkEmail.php`
 
-**Auth:** bộ header ký chung (Bearer nếu đã có phiên + `key2`/`timestamp`/`hash`/`deviceid`/`os`/`ver`). Xem [header xác thực](../auth-va-header.md). Ở luồng thật endpoint này có thể chạy trước khi có `Authorization`.
+**Auth:** bộ header ký chung `key2`/`timestamp`/`hash`/`deviceid`/`os`/`ver`. Xem [header xác thực](../auth-va-header.md). Ở luồng đăng ký, endpoint chạy khi **chưa có phiên Firebase**, nên app gửi không có `Authorization`.
 
 ## Request body
 
@@ -24,7 +24,7 @@ Client Node mặc định lấy `session.email` của phiên đăng nhập; truy
 
 ## Response
 
-**Chưa bắt response** — endpoint không xuất hiện trên dây trong phiên capture 2026-11-03. Chạy `node scripts/nodejs/ola.ts checkEmail --email you@example.com --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
+**Chưa bắt response** — endpoint không xuất hiện trên dây trong phiên capture 2026-11-03. Theo AOT (`CheckEmailProvider.checkEmail` `0xad6c00`), app chỉ đọc key **`valid`** và ép kiểu `bool`; chưa biết các key khác và trường hợp nào trả `false`. Chạy `node scripts/nodejs/ola.ts checkEmail --email you@example.com --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
 
 ## Dùng Node.js
 
