@@ -419,19 +419,91 @@ select { height: 36px; border: 1px solid var(--border); border-radius: var(--rad
 .viewer-nav:disabled { visibility: hidden; }
 .viewer-caption { margin: 0; padding: 12px 24px 20px; text-align: center; white-space: pre-wrap; color: var(--text-soft); max-height: 25vh; overflow-y: auto; }
 
-/* Auto gửi (OutreachScreen) */
+/* ===== Chọn người nhận ở danh sách trái (OutreachScreen) ===== */
 .pick-box { flex: none; width: 20px; height: 20px; border: 1px solid var(--border-strong); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--on-accent); background: transparent; }
 .pick-box.is-on { background: var(--accent); border-color: transparent; }
 .outreach-row.is-unpicked .conv-text, .outreach-row.is-unpicked .avatar { opacity: 0.5; }
-.autosend .panel { gap: 12px; }
-.autosend-field { display: flex; flex-direction: column; gap: 8px; }
-.autosend-label { font-size: 13px; font-weight: 600; color: var(--text-strong); }
-.autosend-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 13px; }
+
+/* ===== Auto gửi — trình soạn chiến dịch 2 cột ===== */
+.autosend-campaign { flex: 1; min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(300px, 1.15fr) minmax(290px, .85fr); background: var(--bg); overflow: hidden; container-type: inline-size; }
+
+/* Cột trái: cấu hình, tự cuộn */
+.campaign-config { min-width: 0; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); }
+.campaign-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 16px 20px 12px; background: var(--bg); border-bottom: 1px solid var(--border); }
+.campaign-head .panel-title { flex: none; }
+.campaign-head-tools { display: flex; align-items: center; gap: 6px; }
+.campaign-fields { list-style: none; margin: 0; display: flex; flex-direction: column; padding: 0 20px 20px; }
+.cfg-block { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; }
+.cfg-block + .cfg-block { border-top: 1px solid var(--border); }
+.cfg-block-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cfg-block-head h3 { font-size: 14px; }
+.cfg-num { flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-text); font-size: 12px; font-weight: 700; }
+.cfg-num.is-done { background: var(--accent); color: var(--on-accent); }
+.cfg-count { flex: none; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cfg-subrow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.cfg-caplabel { font-size: 13px; color: var(--text-soft); }
+.campaign-config .pages-input { margin-left: 0; }
+.campaign-config .pages-input input { background: var(--surface); width: 64px; }
+.autosend-textarea { width: 100%; min-height: 84px; max-height: 220px; resize: vertical; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); padding: 10px 12px; font: inherit; line-height: 1.45; }
 .autosend-templates { max-height: 200px; overflow-y: auto; }
 .autosend-templates .checkbox { align-items: flex-start; gap: 8px; min-height: 0; }
 .autosend-templates .template-text { white-space: normal; overflow-wrap: anywhere; }
-.autosend-log { max-height: 340px; overflow-y: auto; }
+.link-btn { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; text-decoration: underline; }
+
+/* Accordion người bị bỏ qua */
+.disclosure { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px 0 4px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--accent-text); font-size: 12px; font-weight: 600; }
+.disclosure:hover { background: var(--raised); }
+.skip-list { list-style: none; margin: 0; padding: 4px; max-height: 184px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+.skip-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); }
+.skip-list li:hover { background: var(--raised); }
+.skip-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+
+/* Cột phải: xem trước + nhật ký (đứng yên khi cột trái cuộn) */
+.campaign-live { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--border); }
+.live-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.live-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.live-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.preview-bubble { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--accent); color: var(--on-accent); padding: 8px 12px; border-radius: var(--radius-lg) var(--radius-lg) 3px var(--radius-lg); font-size: 13px; line-height: 1.5; }
+.preview-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.preview-meta strong { color: var(--text-strong); }
+.live-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 18px 8px; }
+.live-now { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+
+/* Nhật ký co giãn, chiếm hết chỗ còn lại của cột phải */
+.live-log { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 14px 16px; gap: 8px; }
+.live-log .live-head { margin-bottom: 0; }
+.live-log .autosend-log { flex: 1; min-height: 0; max-height: none; overflow-y: auto; }
+.live-logfoot { font-size: 11px; color: var(--muted); }
+.autosend-log { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
 .autosend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; background: var(--muted); }
 .autosend-dot.ok { background: var(--ok); }
 .autosend-dot.fail { background: var(--bad); }
 .autosend-dot.dry { background: var(--border-strong); }
+
+/* Thanh hành động dính đáy cột phải */
+.live-actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 14px; border-top: 1px solid var(--border); background: var(--surface); }
+.send-summary { font-size: 12px; color: var(--text-soft); line-height: 1.5; }
+.send-summary strong { color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.send-summary.is-blocked { display: flex; align-items: flex-start; gap: 6px; color: var(--warn); }
+.send-summary.is-blocked svg { flex: none; margin-top: 2px; }
+.btn-run { width: 100%; height: 46px; font-size: 15px; }
+.progress { height: 6px; border-radius: 999px; background: var(--raised); overflow: hidden; }
+.progress-fill { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .25s ease; }
+.progress-fill.tone-bad { background: var(--bad); }
+.progress-text { display: flex; align-items: center; gap: 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* Modal lịch sử / mẫu */
+.autosend-modal { width: min(460px, 100%); max-height: 82vh; overflow-y: auto; }
+.autosend-modal .sent-list { max-height: 56vh; overflow-y: auto; }
+
+@keyframes autosendLogIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.autosend-log li { animation: autosendLogIn .2s ease; }
+
+/* Dồn 1 cột khi panel hẹp */
+@container (max-width: 720px) {
+  .autosend-campaign { grid-template-columns: 1fr; overflow-y: auto; }
+  .campaign-config { overflow: visible; }
+  .campaign-live { border-left: 0; border-top: 1px solid var(--border); }
+  .live-log .autosend-log { max-height: 300px; }
+}
+@media (prefers-reduced-motion: reduce) { .autosend-log li { animation: none; } .progress-fill { transition: none; } }

@@ -3,7 +3,7 @@
 // log), and open a 1-1 chat with any of them from a chosen account. Every
 // message is typed or inserted from a template and sent by hand, one at a time.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   directMessagePayload, loadChatUser, loadRoomMembers, normalizeUser, sendDirectMessage,
   type ChatChannel, type ChatProfile, type ChatUser,
@@ -17,9 +17,8 @@ import { lastSeenLabel, shortTime } from '../lib/format.ts';
 import { saveExportFile } from '../lib/platform.ts';
 import { PROVINCES, provinceName } from '../lib/provinces.ts';
 import { logSent, onSentLogged, recentSent, sentContacts, type Contact, type SentRow } from '../lib/sentLog.ts';
-import { AccountProvider, useSession } from '../lib/session.tsx';
+import { useSession } from '../lib/session.tsx';
 import { ENDPOINT, GENDERS, TABS, type Gender, type Tab } from './ExploreScreen.tsx';
-import { DirectChat } from './MessagesScreen.tsx';
 
 type Source = 'explore' | 'room';
 
@@ -168,9 +167,7 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
         || provinceName(f.user.state).toLowerCase().includes(q)));
   }, [found, query, hideContacted, contacts]);
 
-  // ---- manual chat vs auto send; in auto mode a row toggles whether the person
-  // is in the send list (everyone shown is in it until unticked).
-  const [mode, setMode] = useState<'manual' | 'auto'>('manual');
+  // Recipients for auto-send: everyone shown is included until unticked in the list.
   const [excluded, setExcluded] = useState<Set<string>>(() => new Set());
   const autoPicked = useMemo(() => shown.filter(f => !excluded.has(f.user.uid)), [shown, excluded]);
   const togglePick = (uid: string) => setExcluded(s => { const n = new Set(s); if (n.has(uid)) n.delete(uid); else n.add(uid); return n; });
@@ -196,37 +193,13 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
     }
   };
 
-  // ---- chat
-  const [selected, setSelected] = useState<Found | null>(null);
-  const [sendWith, setSendWith] = useState('');
-  const select = (f: Found) => {
-    setSelected(f);
-    const keep = online.some(a => a.id === sendWith);
-    if (!keep) setSendWith(f.by.find(b => online.some(a => a.id === b.id))?.id ?? online[0]?.id ?? '');
-  };
-  const sender = online.some(a => a.id === sendWith) ? sendWith : '';
-
   return (
     <div className="screen screen-split outreach" hidden={hidden}>
       <section className="outreach-side" aria-label="Lấy danh sách người dùng">
         <div className="outreach-collect">
           <div className="list-title-row">
             <h1>Tìm người &amp; nhắn</h1>
-            {mode === 'manual' && (
-              <button type="button" className="icon-btn icon-btn-sm" onClick={() => setSelected(null)} title="Tin nhắn mẫu và lịch sử đã gửi" aria-label="Tin nhắn mẫu và lịch sử đã gửi">
-                <Icon name="template" size={16} />
-              </button>
-            )}
-          </div>
-          <div className="outreach-line">
-            <div className="tabs tabs-sm" role="tablist" aria-label="Chế độ nhắn">
-              {(['manual', 'auto'] as const).map(m => (
-                <button key={m} type="button" role="tab" aria-selected={mode === m} className={`tab${mode === m ? ' is-active' : ''}`} onClick={() => setMode(m)}>
-                  {m === 'manual' ? 'Nhắn tay' : 'Auto gửi'}
-                </button>
-              ))}
-            </div>
-            {mode === 'auto' && <span className="small muted">{autoPicked.length} người được chọn</span>}
+            <span className="muted small">{autoPicked.length} người được chọn</span>
           </div>
           <div className="outreach-line">
             <div className="tabs tabs-sm" role="tablist" aria-label="Nguồn">
@@ -291,24 +264,21 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
           <button type="button" className={`nick-chip${hideContacted ? ' is-on' : ''}`} aria-pressed={hideContacted} title="Ẩn người đã được nhắn từ bất kỳ nick nào (lịch sử SQLite)" onClick={() => setHideContacted(v => !v)}>Ẩn đã nhắn</button>
           <button type="button" className="icon-btn icon-btn-sm" disabled={!shown.length} title="Xuất CSV (mở bằng Excel)" aria-label="Xuất CSV" onClick={() => void exportList('csv')}>CSV</button>
           <button type="button" className="icon-btn icon-btn-sm" disabled={!shown.length} title="Xuất JSON" aria-label="Xuất JSON" onClick={() => void exportList('json')}>JSON</button>
-          <button type="button" className="icon-btn icon-btn-sm" disabled={!found.length || running} title="Xoá danh sách đã lấy" aria-label="Xoá danh sách" onClick={() => { setList([]); setSelected(null); setProgress(null); }}><Icon name="trash" size={15} /></button>
+          <button type="button" className="icon-btn icon-btn-sm" disabled={!found.length || running} title="Xoá danh sách đã lấy" aria-label="Xoá danh sách" onClick={() => { setList([]); setProgress(null); }}><Icon name="trash" size={15} /></button>
         </div>
         <ul className="conv-list">
           {shown.map(f => {
             const sent = contacts.get(f.user.uid) ?? [];
             const name = f.user.displayName || `${f.user.uid.slice(0, 10)}…`;
             const meta = [f.user.state && provinceName(f.user.state), f.user.lastSeen ? lastSeenLabel(f.user.lastSeen) : '', `từ ${f.by.map(b => b.label).join(', ')}`];
-            const picked = mode === 'auto' && !excluded.has(f.user.uid);
-            const rowClass = mode === 'auto'
-              ? (picked ? '' : ' is-unpicked')
-              : (selected?.user.uid === f.user.uid ? ' is-active' : '');
+            const picked = !excluded.has(f.user.uid);
             return (
               <li key={f.user.uid}>
-                <button type="button" className={`conv-row outreach-row${rowClass}`}
-                  onClick={() => (mode === 'auto' ? togglePick(f.user.uid) : select(f))}
-                  aria-pressed={mode === 'auto' ? picked : undefined}
+                <button type="button" className={`conv-row outreach-row${picked ? '' : ' is-unpicked'}`}
+                  onClick={() => togglePick(f.user.uid)}
+                  aria-pressed={picked}
                   title={`${f.via}${f.user.level ? ` · cấp ${f.user.level}` : ''}`}>
-                  {mode === 'auto' && <span className={`pick-box${picked ? ' is-on' : ''}`} aria-hidden="true">{picked ? '✓' : ''}</span>}
+                  <span className={`pick-box${picked ? ' is-on' : ''}`} aria-hidden="true">{picked ? '✓' : ''}</span>
                   <Avatar name={name} photo={f.user.photoURL} seed={f.user.uid} size={34} ring="var(--surface)" />
                   <span className="conv-text">
                     <span className="conv-name">{name}{f.user.isVip && <span className="vip-tag">VIP</span>}{f.user.verified && <Icon name="badgeCheck" size={13} />}</span>
@@ -328,63 +298,22 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
         </ul>
       </section>
 
-      {mode === 'auto' ? (
-        <AutoSendPanel
-          recipients={autoPicked.map(f => f.user)}
-          shownCount={shown.length}
-          contacts={contacts}
-          online={onlineLite}
-          onSelectAll={pickAll}
-          onSelectNone={pickNone}
-        />
-      ) : selected && sender ? (
-        <AccountProvider id={sender}>
-          <DirectChat
-            key={`${sender}:${selected.user.uid}`}
-            target={{ uid: selected.user.uid, name: selected.user.displayName, photo: selected.user.photoURL }}
-            source="outreach"
-            actions={(
-              <label className="chip outreach-sender" title="Nick dùng để nhắn người này">
-                Nhắn bằng
-                <select value={sender} onChange={e => setSendWith(e.target.value)} aria-label="Nick dùng để nhắn">
-                  {online.map(a => <option key={a.id} value={a.id}>{label(a.id)}{selected.by.some(b => b.id === a.id) ? '' : ' (không tìm thấy người này)'}</option>)}
-                </select>
-              </label>
-            )}
-          />
-        </AccountProvider>
-      ) : selected ? (
-        <main className="chat-panel chat-placeholder">
-          <Icon name="user" size={32} />
-          <p>Cần ít nhất một nick đang online để nhắn {selected.user.displayName || selected.user.uid}.</p>
-        </main>
-      ) : (
-        <main className="chat-panel outreach-side-panels">
-          <TemplatesPanel />
-          <section className="panel" aria-label="Đã gửi gần đây">
-            <h2 className="panel-title">Đã gửi gần đây</h2>
-            <p className="muted small">Mọi tin 1-1 đã gửi, lưu trong SQLite <code>messages.db</code>.</p>
-            {logError && <p className="notice notice-bad small">Không đọc được lịch sử: {logError}</p>}
-            {recent.length ? (
-              <ul className="sent-list">
-                {recent.map(r => (
-                  <li key={r.id}>
-                    <span className="small muted">{shortTime(r.sentAt)} · {r.accountLabel} → {r.peerName || r.peerUid.slice(0, 10)}</span>
-                    <span className="ellipsis">{r.text}</span>
-                    {(r.dryRun || r.error) && <span className={`small ${r.error ? 'tone-warn' : 'muted'}`}>{r.dryRun ? 'Chế độ thử (chưa gửi)' : r.error}</span>}
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="small muted">Chưa gửi tin nào.</p>}
-          </section>
-        </main>
-      )}
+      <AutoSendPanel
+        recipients={autoPicked.map(f => f.user)}
+        shownCount={shown.length}
+        contacts={contacts}
+        online={onlineLite}
+        recent={recent}
+        logError={logError}
+        onSelectAll={pickAll}
+        onSelectNone={pickNone}
+      />
     </div>
   );
 }
 
 /** Tin nhắn mẫu (settings.json): the composer's Mẫu button inserts them; sending stays manual. */
-function TemplatesPanel() {
+function TemplatesPanel({ embedded = false }: { embedded?: boolean }) {
   const { settings, saveSettings } = useSession();
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState<number | null>(null);
@@ -408,10 +337,9 @@ function TemplatesPanel() {
     setEditing(null);
   };
 
-  return (
-    <section className="panel" aria-label="Tin nhắn mẫu">
-      <h2 className="panel-title">Tin nhắn mẫu</h2>
-      <p className="muted small">Nút <Icon name="template" size={13} /> trong ô chat chèn mẫu; bạn tự bấm Gửi.</p>
+  const body = (
+    <>
+      <p className="muted small">Những mẫu này dùng cho “Ngẫu nhiên từ mẫu” khi auto gửi.</p>
       {templates.length ? (
         <ul className="template-list">
           {templates.map((t, i) => (
@@ -423,12 +351,20 @@ function TemplatesPanel() {
           ))}
         </ul>
       ) : <p className="small muted">Chưa có mẫu nào.</p>}
-      <textarea className="transfer-text template-input" rows={2} maxLength={4000} placeholder="Nội dung mẫu mới" value={draft} onChange={e => setDraft(e.target.value)} />
+      <textarea className="autosend-textarea template-input" rows={2} maxLength={4000} placeholder="Nội dung mẫu mới" value={draft} onChange={e => setDraft(e.target.value)} />
       <div className="form-actions">
         <button type="button" className="btn btn-primary btn-sm" disabled={!draft.trim()} onClick={() => void submit()}>{editing === null ? 'Thêm mẫu' : 'Lưu mẫu'}</button>
         {editing !== null && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setEditing(null); setDraft(''); }}>Huỷ</button>}
       </div>
       {error && <p className="notice notice-bad small" role="alert">{error}</p>}
+    </>
+  );
+
+  if (embedded) return body;
+  return (
+    <section className="panel" aria-label="Tin nhắn mẫu">
+      <h2 className="panel-title">Tin nhắn mẫu</h2>
+      {body}
     </section>
   );
 }
@@ -469,11 +405,38 @@ function cancellableSleep(ms: number, cancel: { current: boolean }): Promise<voi
   });
 }
 
-function AutoSendPanel({ recipients, shownCount, contacts, online, onSelectAll, onSelectNone }: {
+/** Giây → "45s" hoặc "2p05". */
+function estLabel(sec: number): string {
+  return sec < 60 ? `${sec}s` : `${Math.floor(sec / 60)}p${String(sec % 60).padStart(2, '0')}`;
+}
+
+/** Overlay nhỏ (.modal-backdrop + .modal): Esc hoặc bấm nền để đóng. */
+function AutoModal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal panel autosend-modal" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="list-title-row">
+          <h2 className="panel-title">{title}</h2>
+          <button type="button" className="icon-btn icon-btn-sm" onClick={onClose} aria-label="Đóng"><Icon name="x" size={16} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function AutoSendPanel({ recipients, shownCount, contacts, online, recent, logError, onSelectAll, onSelectNone }: {
   recipients: ChatUser[];
   shownCount: number;
   contacts: Map<string, Contact[]>;
   online: { id: string; label: string }[];
+  recent: SentRow[];
+  logError: string | null;
   onSelectAll: () => void;
   onSelectNone: () => void;
 }) {
@@ -503,28 +466,44 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, onSelectAll, 
   );
 
   const [delaySec, setDelaySec] = useState(1);
+  const [cap, setCap] = useState(0); // 0 = không giới hạn (gửi hết)
   const [skipContacted, setSkipContacted] = useState(true);
+  const [showSkip, setShowSkip] = useState(false);
+  const [modal, setModal] = useState<null | 'history' | 'templates'>(null);
 
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<{ text: string; tone: string } | null>(null);
+  const [counts, setCounts] = useState<{ ok: number; fail: number }>({ ok: 0, fail: 0 });
+  const [runSize, setRunSize] = useState(0);
+  const [now, setNow] = useState<{ name: string; photo: string; nick: string; text: string } | null>(null);
   const [log, setLog] = useState<LogItem[]>([]);
   const cancel = useRef(false);
-  // Leaving auto mode (switching back to Nhắn tay) stops a run instead of letting it send on in the background.
+  // Unmounting (e.g. leaving the screen) stops a run instead of letting it send on in the background.
   useEffect(() => () => { cancel.current = true; }, []);
 
+  // People excluded because they were already messaged (shown when "bỏ qua" is on).
+  const skipped = useMemo(
+    () => (skipContacted ? recipients.filter(u => contacts.has(u.uid)) : []),
+    [recipients, skipContacted, contacts],
+  );
   const targets = useMemo(
     () => (skipContacted ? recipients.filter(u => !contacts.has(u.uid)) : recipients),
     [recipients, skipContacted, contacts],
   );
+  const sendCount = cap > 0 ? Math.min(cap, targets.length) : targets.length;
   const senders = useMemo(
     () => senderIds.filter(id => live[id]?.status === 'ready' && live[id]?.ola && live[id]?.me),
     [senderIds, live],
   );
   const haveMessage = msgMode === 'single' ? Boolean(single.trim()) : pool.length > 0;
-  const reason = !targets.length ? 'Chưa chọn người nhận nào.'
+  const reason = !sendCount ? 'Chưa có người nhận nào.'
     : !senders.length ? 'Chọn ít nhất một nick đang online để gửi.'
       : !haveMessage ? (msgMode === 'single' ? 'Nhập nội dung tin nhắn.' : 'Chọn ít nhất một mẫu tin.')
         : null;
+
+  // Thời gian ước tính: mỗi tin ~1.8s (kết nối + gửi) + giãn cách giữa các tin.
+  const estSec = sendCount > 0 ? Math.round(sendCount * (dryRun ? 0.2 : 1.8) + Math.max(0, sendCount - 1) * delaySec) : 0;
+  const previewText = running ? (now?.text ?? '') : (msgMode === 'single' ? single.trim() : (pool[0] ?? ''));
 
   const pickMessage = () => (msgMode === 'single'
     ? single.trim()
@@ -566,11 +545,13 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, onSelectAll, 
     cancel.current = false;
     setRunning(true);
     setLog([]);
-    // Snapshot the senders and targets so a mid-run state change cannot shift them.
+    setCounts({ ok: 0, fail: 0 });
+    // Snapshot the senders and the capped target list so a mid-run state change cannot shift them.
     const pool2: Sender[] = senders.map(id => ({
       id, label: online.find(o => o.id === id)?.label ?? id, ola: live[id]!.ola!, me: live[id]!.me!,
     }));
-    const list = targets;
+    const list = cap > 0 ? targets.slice(0, cap) : targets;
+    setRunSize(list.length);
     const add = (item: LogItem) => setLog(l => [item, ...l].slice(0, 1000));
     let ok = 0, fail = 0;
     try {
@@ -580,6 +561,7 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, onSelectAll, 
         const sender = pool2[i % pool2.length]!;
         const text = pickMessage();
         const at = Date.now();
+        setNow({ name: user.displayName || user.uid.slice(0, 10), photo: user.photoURL, nick: sender.label, text });
         setProgress({ text: `Đang gửi ${i + 1}/${list.length} · ${sender.label} → ${user.displayName || user.uid.slice(0, 8)}…`, tone: 'idle' });
         try {
           const { note } = await sendOne(sender, user, text);
@@ -589,6 +571,7 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, onSelectAll, 
           fail++;
           add({ id: `${at}-${user.uid}`, at, peerUid: user.uid, peerName: user.displayName, nick: sender.label, status: 'fail', note: (e as Error).message });
         }
+        setCounts({ ok, fail });
         if (i < list.length - 1 && !cancel.current) await cancellableSleep(delaySec * 1000, cancel);
       }
       const stopped = cancel.current;
@@ -599,62 +582,117 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, onSelectAll, 
         tone: fail ? 'bad' : stopped ? 'warn' : 'ok',
       });
     } finally {
+      setNow(null);
       setRunning(false);
     }
   };
 
+  const total = counts.ok + counts.fail;
+  const pct = runSize ? Math.min(100, Math.round((total / runSize) * 100)) : 0;
+  const nickNames = senders.map(id => online.find(o => o.id === id)?.label ?? id);
+
   return (
-    <main className="chat-panel outreach-side-panels autosend" aria-label="Auto gửi">
-      <section className="panel">
-        <div className="list-title-row">
+    <main className="autosend-campaign" aria-label="Auto gửi">
+      <div className="campaign-config">
+        <div className="campaign-head">
           <h2 className="panel-title">Auto gửi</h2>
           {dryRun && <span className="chip tone-warn">Chế độ thử</span>}
-        </div>
-
-        <div className="autosend-field">
-          <div className="autosend-label">Người nhận</div>
-          <div className="autosend-row">
-            <span><strong>{targets.length}</strong> người sẽ nhận</span>
-            <span className="muted small">chọn {recipients.length}/{shownCount} đã lọc</span>
-            <span className="grow" />
-            <button type="button" className="nick-chip" disabled={running || !shownCount} onClick={onSelectAll}>Chọn tất cả</button>
-            <button type="button" className="nick-chip" disabled={running || !shownCount} onClick={onSelectNone}>Bỏ chọn</button>
+          <span className="grow" />
+          <div className="campaign-head-tools">
+            <button type="button" className="icon-btn icon-btn-sm" aria-label="Quản lý tin nhắn mẫu" title="Tin nhắn mẫu" onClick={() => setModal('templates')}><Icon name="template" size={15} /></button>
+            <button type="button" className="icon-btn icon-btn-sm" aria-label="Lịch sử đã gửi gần đây" title="Lịch sử đã gửi (SQLite)" onClick={() => setModal('history')}><Icon name="toTray" size={15} /></button>
           </div>
-          <label className="checkbox small">
-            <input type="checkbox" checked={skipContacted} disabled={running} onChange={e => setSkipContacted(e.target.checked)} />
-            Bỏ qua người đã được nhắn (theo lịch sử SQLite)
-          </label>
-          <p className="muted small">Tích/bỏ tích từng người ở danh sách bên trái, hoặc lọc rồi “Chọn tất cả”.</p>
         </div>
 
-        <div className="autosend-field">
-          <div className="autosend-label">Gửi bằng nick{senders.length > 1 ? ' (xoay vòng lần lượt)' : ''}</div>
-          <div className="outreach-line">
-            {online.length ? online.map(o => {
-              const on = senderIds.includes(o.id);
-              return (
-                <button key={o.id} type="button" className={`nick-chip${on ? ' is-on' : ''}`} aria-pressed={on} disabled={running}
-                  onClick={() => setSenderIds(ids => (on ? ids.filter(x => x !== o.id) : [...ids, o.id]))}>
-                  {o.label}
+        <ol className="campaign-fields">
+          <li className="cfg-block">
+            <div className="cfg-block-head">
+              <span className={`cfg-num${sendCount > 0 ? ' is-done' : ''}`} aria-hidden="true">1</span>
+              <h3 className="grow">Người nhận</h3>
+              <span className="cfg-count">{sendCount} người</span>
+            </div>
+            <div className="cfg-subrow">
+              <span className="muted small">chọn {recipients.length}/{shownCount} đã lọc</span>
+              <span className="grow" />
+              <button type="button" className="icon-btn icon-btn-sm" disabled={running || !shownCount} onClick={onSelectAll}>Chọn tất cả</button>
+              <button type="button" className="icon-btn icon-btn-sm" disabled={running || !shownCount} onClick={onSelectNone}>Bỏ chọn</button>
+            </div>
+            <label className="checkbox small">
+              <input type="checkbox" checked={skipContacted} disabled={running} onChange={e => setSkipContacted(e.target.checked)} />
+              Bỏ qua người đã được nhắn
+            </label>
+            {skipContacted && skipped.length > 0 && (
+              <>
+                <button type="button" className="disclosure" aria-expanded={showSkip} aria-controls="autosend-skip" onClick={() => setShowSkip(v => !v)}>
+                  <Icon name={showSkip ? 'chevronDown' : 'chevronRight'} size={14} />
+                  {skipped.length} người bị bỏ qua
                 </button>
-              );
-            }) : <span className="small tone-warn">Chưa có nick nào online. Đăng nhập một nick để gửi.</span>}
-          </div>
-        </div>
+                {showSkip && (
+                  <ul id="autosend-skip" className="skip-list">
+                    {skipped.map(u => {
+                      const cs = contacts.get(u.uid) ?? [];
+                      const n = cs.reduce((s, c) => s + c.count, 0);
+                      const who = cs.map(c => c.accountLabel).join(', ');
+                      return (
+                        <li key={u.uid}>
+                          <Avatar name={u.displayName || u.uid} photo={u.photoURL} seed={u.uid} size={26} ring="var(--bg)" />
+                          <span className="skip-who">
+                            <span className="ellipsis">{u.displayName || `${u.uid.slice(0, 10)}…`}</span>
+                            <span className="small muted ellipsis">đã nhắn bởi {who || '—'} · {n} tin</span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
+            <label className="cfg-subrow cfg-caplabel">
+              Gửi tối đa
+              <span className="pages-input">
+                <input type="number" min={0} max={Math.max(0, targets.length)} value={cap || ''} placeholder="tất cả" disabled={running} aria-label="Gửi tối đa bao nhiêu người (trống = tất cả)"
+                  onChange={e => setCap(Math.max(0, Math.floor(Number(e.target.value) || 0)))} />
+                <span className="small muted">người</span>
+              </span>
+              {cap > 0 && targets.length > cap && <span className="small muted">bỏ {targets.length - cap} người cuối</span>}
+            </label>
+          </li>
 
-        <div className="autosend-field">
-          <div className="autosend-label">Nội dung</div>
-          <div className="tabs tabs-sm">
-            {(['single', 'random'] as const).map(m => (
-              <button key={m} type="button" className={`tab${msgMode === m ? ' is-active' : ''}`} disabled={running} onClick={() => setMsgMode(m)}>
-                {m === 'single' ? 'Một nội dung' : 'Ngẫu nhiên từ mẫu'}
-              </button>
-            ))}
-          </div>
-          {msgMode === 'single' ? (
-            <textarea className="transfer-text" rows={3} maxLength={4000} placeholder="Nội dung gửi cho mọi người" value={single} disabled={running} onChange={e => setSingle(e.target.value)} />
-          ) : templates.length ? (
-            <>
+          <li className="cfg-block">
+            <div className="cfg-block-head">
+              <span className={`cfg-num${senders.length > 0 ? ' is-done' : ''}`} aria-hidden="true">2</span>
+              <h3 className="grow">Gửi bằng nick{senders.length > 1 ? ' · xoay vòng' : ''}</h3>
+              <span className="cfg-count">{senders.length} nick</span>
+            </div>
+            <div className="outreach-line">
+              {online.length ? online.map(o => {
+                const on = senderIds.includes(o.id);
+                return (
+                  <button key={o.id} type="button" className={`nick-chip${on ? ' is-on' : ''}`} aria-pressed={on} disabled={running}
+                    onClick={() => setSenderIds(ids => (on ? ids.filter(x => x !== o.id) : [...ids, o.id]))}>
+                    {o.label}
+                  </button>
+                );
+              }) : <span className="small tone-warn">Chưa có nick nào online. Đăng nhập một nick để gửi.</span>}
+            </div>
+          </li>
+
+          <li className="cfg-block">
+            <div className="cfg-block-head">
+              <span className={`cfg-num${haveMessage ? ' is-done' : ''}`} aria-hidden="true">3</span>
+              <h3 className="grow">Nội dung</h3>
+              <span className="cfg-count">{msgMode === 'single' ? '1 nội dung' : `${pool.length} mẫu`}</span>
+            </div>
+            <div className="segmented" role="tablist" aria-label="Kiểu nội dung">
+              {(['single', 'random'] as const).map(m => (
+                <button key={m} type="button" role="tab" aria-selected={msgMode === m} className={msgMode === m ? 'is-active' : ''} disabled={running} onClick={() => setMsgMode(m)}>
+                  {m === 'single' ? 'Một nội dung' : 'Ngẫu nhiên từ mẫu'}
+                </button>
+              ))}
+            </div>
+            {msgMode === 'single' ? (
+              <textarea className="autosend-textarea" rows={3} maxLength={4000} placeholder="Nội dung gửi cho mọi người" value={single} disabled={running} onChange={e => setSingle(e.target.value)} />
+            ) : templates.length ? (
               <ul className="template-list autosend-templates">
                 {templates.map((t, i) => (
                   <li key={i}>
@@ -666,57 +704,130 @@ function AutoSendPanel({ recipients, shownCount, contacts, online, onSelectAll, 
                   </li>
                 ))}
               </ul>
-              <p className="muted small">Mỗi người nhận một mẫu ngẫu nhiên trong {pool.length} mẫu đã chọn.</p>
-            </>
-          ) : <p className="small muted">Chưa có mẫu nào. Thêm mẫu ở tab “Nhắn tay”.</p>}
+            ) : (
+              <p className="small muted">Chưa có mẫu — <button type="button" className="link-btn" onClick={() => setModal('templates')}>thêm mẫu</button>.</p>
+            )}
+          </li>
+
+          <li className="cfg-block">
+            <div className="cfg-block-head">
+              <span className="cfg-num is-done" aria-hidden="true">4</span>
+              <h3 className="grow">Giãn cách</h3>
+              <span className="cfg-count">{delaySec}s/tin</span>
+            </div>
+            <label className="cfg-subrow cfg-caplabel">
+              Mỗi tin cách nhau
+              <span className="pages-input">
+                <input type="number" min={0} step={0.5} value={delaySec} disabled={running} aria-label="Giãn cách mỗi tin (giây)"
+                  onChange={e => setDelaySec(Math.max(0, Number(e.target.value) || 0))} />
+                <span className="small muted">giây</span>
+              </span>
+            </label>
+          </li>
+        </ol>
+      </div>
+
+      <div className="campaign-live">
+        <div className="live-section">
+          <div className="live-head"><span className="live-eyebrow">Xem trước</span></div>
+          {running && now && (
+            <div className="live-now">
+              <Avatar name={now.name} photo={now.photo} seed={now.name} size={34} ring="var(--surface)" />
+              <span className="skip-who">
+                <span className="small muted ellipsis">{now.nick} → đang gửi</span>
+                <strong className="ellipsis">{now.name}</strong>
+              </span>
+            </div>
+          )}
+          {previewText
+            ? <div className="preview-bubble">{previewText}</div>
+            : <p className="live-empty">{msgMode === 'single' ? 'Nhập nội dung để xem trước.' : 'Chọn mẫu để xem trước.'}</p>}
+          <div className="preview-meta">
+            <span><strong>{running ? runSize : sendCount}</strong> người</span>
+            <span><strong>{senders.length}</strong> nick</span>
+            <span>{delaySec}s/tin</span>
+            <span>{estSec > 0 ? `~${estLabel(estSec)}` : '—'}</span>
+          </div>
         </div>
 
-        <div className="autosend-field">
-          <div className="autosend-label">Giãn cách giữa 2 tin</div>
-          <label className="pages-input">
-            <input type="number" min={0} step={0.5} value={delaySec} disabled={running} aria-label="Giãn cách mỗi tin (giây)"
-              onChange={e => setDelaySec(Math.max(0, Number(e.target.value) || 0))} />
-            <span className="small muted">giây/tin</span>
-          </label>
+        <div className="live-log">
+          <div className="live-head">
+            <span className="live-eyebrow grow">Nhật ký{log.length ? ` (${log.length})` : ''}</span>
+            {log.length > 0 && !running && (
+              <button type="button" className="icon-btn icon-btn-sm" onClick={() => setLog([])} aria-label="Xoá log phiên này"><Icon name="trash" size={14} /></button>
+            )}
+          </div>
+          {log.length ? (
+            <ul className="sent-list autosend-log">
+              {log.map(item => (
+                <li key={item.id}>
+                  <span className="small">
+                    <span className={`autosend-dot ${item.status}`} aria-hidden="true" />
+                    {shortTime(item.at)} · {item.nick} → {item.peerName || item.peerUid.slice(0, 10)}
+                  </span>
+                  {item.status === 'dry'
+                    ? <span className="small muted">Chế độ thử (chưa gửi)</span>
+                    : item.note && <span className={`small ${item.status === 'fail' ? 'tone-bad' : 'tone-warn'}`}>{item.note}</span>}
+                </li>
+              ))}
+            </ul>
+          ) : <p className="small muted">Chưa gửi tin nào trong phiên này.</p>}
+          <p className="live-logfoot">Mỗi tin được lưu vào SQLite <code>messages.db</code>.</p>
         </div>
 
-        <div className="form-actions">
+        <div className="live-actions">
           {running ? (
-            <button type="button" className="btn btn-danger btn-sm" onClick={() => { cancel.current = true; }}><Icon name="stop" size={14} /> Dừng</button>
+            <>
+              <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={runSize} aria-valuenow={total}>
+                <span className={`progress-fill${counts.fail ? ' tone-bad' : ''}`} style={{ width: `${pct}%` }} />
+              </div>
+              <span className="progress-text" role="status" aria-live="polite">
+                <span className="grow ellipsis tone-idle">{progress?.text}</span>
+                <span className="tone-ok">✓{counts.ok}</span>
+                {counts.fail > 0 && <span className="tone-bad">✕{counts.fail}</span>}
+              </span>
+            </>
+          ) : reason ? (
+            <p className="send-summary is-blocked"><Icon name="info" size={14} />{reason}</p>
           ) : (
-            <button type="button" className="btn btn-primary btn-sm" disabled={Boolean(reason)} title={reason ?? ''} onClick={() => void run()}>
-              <Icon name="send" size={14} /> {dryRun ? 'Chạy thử' : 'Bắt đầu gửi'}
+            <p className="send-summary">
+              Gửi tới <strong>{sendCount}</strong> người, mỗi <strong>{delaySec}s</strong>, bằng <strong>{senders.length}</strong> nick{nickNames.length ? ` (${nickNames.join(', ')})` : ''}, {msgMode === 'single' ? '1 nội dung' : `ngẫu nhiên ${pool.length} mẫu`}.
+            </p>
+          )}
+          {!running && progress && <span className={`small tone-${progress.tone}`} role="status">{progress.text}</span>}
+          {running ? (
+            <button type="button" className="btn btn-danger btn-run" onClick={() => { cancel.current = true; }}><Icon name="stop" size={16} /> Dừng</button>
+          ) : (
+            <button type="button" className="btn btn-primary btn-run" disabled={Boolean(reason)} title={reason ?? ''} onClick={() => void run()}>
+              <Icon name="send" size={16} /> {dryRun ? 'Chạy thử' : 'Bắt đầu gửi'}
             </button>
           )}
-          {progress && <span className={`small grow ellipsis tone-${progress.tone}`} role="status" title={progress.text}>{progress.text}</span>}
         </div>
-        {reason && !running && <p className="small muted" role="status">{reason}</p>}
-      </section>
+      </div>
 
-      <section className="panel">
-        <div className="list-title-row">
-          <h2 className="panel-title">Log gửi</h2>
-          {log.length > 0 && !running && (
-            <button type="button" className="icon-btn icon-btn-sm" onClick={() => setLog([])} aria-label="Xoá log phiên này"><Icon name="trash" size={14} /></button>
-          )}
-        </div>
-        <p className="muted small">Mỗi dòng là một lần gửi trong phiên; tất cả được lưu vào SQLite <code>messages.db</code>.</p>
-        {log.length ? (
-          <ul className="sent-list autosend-log">
-            {log.map(item => (
-              <li key={item.id}>
-                <span className="small">
-                  <span className={`autosend-dot ${item.status}`} aria-hidden="true" />
-                  {shortTime(item.at)} · {item.nick} → {item.peerName || item.peerUid.slice(0, 10)}
-                </span>
-                {item.status === 'dry'
-                  ? <span className="small muted">Chế độ thử (chưa gửi)</span>
-                  : item.note && <span className={`small ${item.status === 'fail' ? 'tone-bad' : 'tone-warn'}`}>{item.note}</span>}
-              </li>
-            ))}
-          </ul>
-        ) : <p className="small muted">Chưa gửi tin nào trong phiên này.</p>}
-      </section>
+      {modal === 'history' && (
+        <AutoModal title="Đã gửi gần đây" onClose={() => setModal(null)}>
+          <p className="muted small">Mọi tin 1-1 đã gửi, lưu trong SQLite <code>messages.db</code>.</p>
+          {logError && <p className="notice notice-bad small">Không đọc được lịch sử: {logError}</p>}
+          {recent.length ? (
+            <ul className="sent-list">
+              {recent.map(r => (
+                <li key={r.id}>
+                  <span className="small muted">{shortTime(r.sentAt)} · {r.accountLabel} → {r.peerName || r.peerUid.slice(0, 10)}</span>
+                  <span className="ellipsis">{r.text}</span>
+                  {(r.dryRun || r.error) && <span className={`small ${r.error ? 'tone-warn' : 'muted'}`}>{r.dryRun ? 'Chế độ thử (chưa gửi)' : r.error}</span>}
+                </li>
+              ))}
+            </ul>
+          ) : <p className="small muted">Chưa gửi tin nào.</p>}
+        </AutoModal>
+      )}
+
+      {modal === 'templates' && (
+        <AutoModal title="Tin nhắn mẫu" onClose={() => setModal(null)}>
+          <TemplatesPanel embedded />
+        </AutoModal>
+      )}
     </main>
   );
 }
