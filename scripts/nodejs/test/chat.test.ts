@@ -108,6 +108,19 @@ describe('normalizers', () => {
     assert.equal(wrapped.at, 1700000000999);
   });
 
+  it('drops control signals and empty payloads, not real messages', () => {
+    // Profile-view ping: a new message carrying an action + reserved mess token.
+    assert.equal(normalizeMessage({ message: { mess: 'REQUEST_MOFIFY_MESSAGE', action: 'VIEW_PROFILE', uid: 'u2', displayName: 'Tuan' } }, 'me-uid'), null);
+    // Reserved tokens without an action.
+    assert.equal(normalizeMessage({ mess: 'REMOVE_MESS', userID: 'u2' }, 'me-uid'), null);
+    assert.equal(normalizeMessage({ mess: 'THA_TIM', userID: 'u2' }, 'me-uid'), null);
+    // Empty text, no media: a system/presence ping.
+    assert.equal(normalizeMessage({ userID: 'u2', mess: '' }, 'me-uid'), null);
+    // A real message and a sticker (empty text but a media flag) still pass.
+    assert.equal(normalizeMessage({ mess: 'hello', userID: 'u2' }, 'me-uid')?.text, 'hello');
+    assert.equal(normalizeMessage({ mess: '', isSticker: 1, userID: 'u2' }, 'me-uid')?.kind, 'sticker');
+  });
+
   it('finds the peer in a conversation row whichever side sent it', () => {
     const rows = { is_success: true, data: [
       { uid: 'me-uid', userID: 'peer-a', content: 'mine', timestamp: '1700000000000' },

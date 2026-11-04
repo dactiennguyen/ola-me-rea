@@ -217,7 +217,24 @@ export interface ChatMessage {
   isVip: boolean;
 }
 
-/** A `new message` event or a stored message (room history) as a ChatMessage. */
+/**
+ * Control/presence signals that ride the `new message` event instead of being
+ * chat text: the payload carries an `action` (e.g. `VIEW_PROFILE`) and/or a
+ * reserved `mess` token. The app acts on them (profile view, reaction, recall)
+ * rather than showing them, so normalizeMessage drops them. `MOFIFY` is the
+ * app's own spelling (observed in the APK and on the wire).
+ */
+const CONTROL_MESS = new Set([
+  'REQUEST_MOFIFY_MESSAGE', // profile view / modify signal (carries `action`)
+  'REMOVE_MESS',            // message recall
+  'THA_TIM',                // heart reaction
+  'REACT_ROOM',             // room reaction
+]);
+
+/**
+ * A `new message` event or a stored message (room history) as a ChatMessage, or
+ * null for control signals and empty payloads (so they never render as bubbles).
+ */
 export function normalizeMessage(raw: unknown, myUid: string): ChatMessage | null {
   const outer = asObject(raw);
   const m = outer.message && typeof outer.message === 'object' ? asObject(outer.message) : outer;
@@ -228,6 +245,11 @@ export function normalizeMessage(raw: unknown, myUid: string): ChatMessage | nul
   const text = str(m.mess) || str(m.content);
   const kind: MessageKind = truthy(m.isImage) ? 'image' : truthy(m.isSticker) ? 'sticker'
     : truthy(m.isGift) ? 'gift' : truthy(m.isAudio) ? 'audio' : 'text';
+  // Control signal (has an action, or a reserved mess token): not a chat message.
+  if (str(m.action) || CONTROL_MESS.has(text)) return null;
+  // Text message with nothing to show (empty mess, no media): a system/presence
+  // ping, not something to render.
+  if (!text && kind === 'text') return null;
   return {
     // Without an id the fallback must not depend on when it was loaded, or the
     // same stored message gets a new id (and a duplicate row) on every load.
@@ -361,6 +383,18 @@ async function step(steps: SendResult['steps'], name: string, run: () => unknown
 }
 
 /**
+ * The local echo of a text message this client just sent. Built directly (not
+ * through normalizeMessage) so it is never dropped, even if the user typed text
+ * that happens to equal a control token. Also used by the app's dry-run mode.
+ */
+export function localTextMessage(id: string, from: ChatProfile, text: string, at: number): ChatMessage {
+  return {
+    id, text, fromUid: from.uid, fromName: from.displayName, fromPhoto: from.photoURL,
+    at, outgoing: true, kind: 'text', isVip: from.isVip,
+  };
+}
+
+/**
  * 1-1 send in the app's order: socket emit on the peer channel, push via
  * napi/general/send-notification (only with the recipient's FCM token), then
  * addLastMessage5. Stops before HTTP when the emit fails (nothing was delivered).
@@ -370,7 +404,7 @@ export async function sendDirectMessage(ola: OlaClient, channel: ChatChannel, {
 }: { from: ChatProfile; peer: ChatUser; text: string; now?: number }): Promise<SendResult> {
   const payload = directMessagePayload({ from, text, recipientFcmToken: peer.fcmToken, now });
   const steps: SendResult['steps'] = [];
-  const message = normalizeMessage(payload, from.uid)!;
+  const message = localTextMessage(String(payload.messageID), from, text, now);
   channel.emitMessage(payload);
   steps.push({ name: 'socket', ok: true });
   if (peer.fcmToken) {
@@ -395,7 +429,7 @@ export async function sendRoomMessage(ola: OlaClient, channel: ChatChannel, {
 }: { from: ChatProfile; roomID: string; deviceId: string; text: string; now?: number }): Promise<SendResult> {
   const payload = roomMessagePayload({ from, deviceId, text, now });
   const steps: SendResult['steps'] = [];
-  const message = normalizeMessage(payload, from.uid)!;
+  const message = localTextMessage(String(payload.id), from, text, now);
   channel.emitMessage(payload);
   steps.push({ name: 'socket', ok: true });
   await step(steps, 'save', () => ola.call(apiAddMessageRoom2, {

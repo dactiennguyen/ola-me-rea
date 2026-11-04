@@ -37,7 +37,7 @@ export function MessageList({ messages, showSender = false, typingName, pending 
         lastDay = day;
         const prev = messages[i - 1];
         const firstOfRun = divider || !prev || prev.fromUid !== m.fromUid;
-        const body = m.text || KIND_TEXT[m.kind] || '…';
+        const body = m.text || KIND_TEXT[m.kind];
         const problem = problems.get(m.id);
         return (
           <Fragment key={m.id}>

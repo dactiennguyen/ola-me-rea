@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  enterRoom, loadRoomMembers, normalizeMessage, roomMessagePayload, sendRoomMessage,
+  enterRoom, loadRoomMembers, localTextMessage, normalizeMessage, roomMessagePayload, sendRoomMessage,
   type ChannelState, type ChatChannel, type ChatMessage, type ChatUser,
 } from '@ola/core/chat.ts';
 import { Avatar } from '../components/Avatar.tsx';
@@ -109,7 +109,8 @@ function RoomView({ roomID, onMessage }: { roomID: string; onMessage: (peer: Pee
   const send = async (text: string) => {
     const now = Date.now();
     if (settings.dryRunSends) {
-      const message = normalizeMessage(roomMessagePayload({ from: me, deviceId, text, now }), me.uid)!;
+      const payload = roomMessagePayload({ from: me, deviceId, text, now });
+      const message = localTextMessage(String(payload.id), me, text, now);
       merge([message]);
       setPending(p => [...p, { id: message.id, error: 'Chế độ thử: chưa gửi lên server.' }]);
       return;
@@ -130,7 +131,7 @@ function RoomView({ roomID, onMessage }: { roomID: string; onMessage: (peer: Pee
 
   const disabledReason = blocked ? 'Tài khoản đang bị cấm chat trong phòng'
     : settings.dryRunSends ? null
-      : !settings.socketKey.trim() ? 'Cần socket key (Quản lý tài khoản › Cài đặt) để nhắn tin realtime'
+      : !settings.socketKey.trim() ? 'Socket key đang trống (Cài đặt › Nâng cao) nên chưa nhắn tin realtime được'
         : channelState !== 'connected' ? 'Đang chờ kết nối realtime…' : null;
 
   return (

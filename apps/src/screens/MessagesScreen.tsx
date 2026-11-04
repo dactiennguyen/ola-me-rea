@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
-  directMessagePayload, loadChatUser, loadConversations, normalizeMessage, sendDirectMessage,
+  directMessagePayload, loadChatUser, loadConversations, localTextMessage, normalizeMessage, sendDirectMessage,
   type ChannelState, type ChatChannel, type ChatMessage, type ChatUser, type Conversation,
 } from '@ola/core/chat.ts';
 import { Avatar } from '../components/Avatar.tsx';
@@ -266,7 +266,8 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
   const send = async (text: string) => {
     const now = Date.now();
     if (settings.dryRunSends) {
-      const message = normalizeMessage(directMessagePayload({ from: me, text, now }), me.uid)!;
+      const payload = directMessagePayload({ from: me, text, now });
+      const message = localTextMessage(String(payload.messageID), me, text, now);
       await merge([message]);
       setPending(p => [...p, { id: message.id, error: 'Chế độ thử: chưa gửi lên server.' }]);
       return;
@@ -290,7 +291,7 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
 
   const name = peer?.displayName || target.name || `${target.uid.slice(0, 10)}…`;
   const disabledReason = settings.dryRunSends ? null
-    : !settings.socketKey.trim() ? 'Cần socket key (Quản lý tài khoản › Cài đặt) để nhắn tin realtime'
+    : !settings.socketKey.trim() ? 'Socket key đang trống (Cài đặt › Nâng cao) nên chưa nhắn tin realtime được'
       : channelState !== 'connected' ? 'Đang chờ kết nối realtime…'
         : !peer ? (peerError ? 'Không tải được thông tin người nhận' : 'Đang tải thông tin người nhận…')
           : null;
