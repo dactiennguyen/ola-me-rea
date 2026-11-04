@@ -144,8 +144,10 @@ function SettingsPanel() {
   const { settings, saveSettings, status } = useSession();
   const [form, setForm] = useState<AppSettings>(settings);
   const [showKey, setShowKey] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
   const [folder, setFolder] = useState<string | null>(null);
+  const keyIsDefault = form.socketKey === DEFAULT_SETTINGS.socketKey;
 
   useEffect(() => { setForm(settings); }, [settings]);
   useEffect(() => { void dataDir().then(setFolder).catch(() => setFolder(null)); }, []);
@@ -163,15 +165,6 @@ function SettingsPanel() {
   return (
     <form className="panel form-grid" onSubmit={e => void submit(e)} aria-label="Cài đặt">
       <h2 className="panel-title">Cài đặt</h2>
-      <label className="field span-2">
-        <span>Socket key <span className="muted">(giá trị <code>key</code> trong kết nối Socket.IO của app; cần cho nhắn tin realtime)</span></span>
-        <span className="input-with-action">
-          <input type={showKey ? 'text' : 'password'} autoComplete="off" value={form.socketKey} placeholder="Chưa có" onChange={e => set('socketKey', e.target.value)} />
-          <button type="button" className="icon-btn" aria-label={showKey ? 'Ẩn key' : 'Hiện key'} onClick={() => setShowKey(v => !v)}>
-            <Icon name={showKey ? 'eyeOff' : 'eye'} size={16} />
-          </button>
-        </span>
-      </label>
       <label className="field">
         <span>App version (header ver)</span>
         <input value={form.appVersion} onChange={e => set('appVersion', e.target.value)} />
@@ -188,9 +181,37 @@ function SettingsPanel() {
         <input type="checkbox" checked={form.dryRunSends} onChange={e => set('dryRunSends', e.target.checked)} />
         <span>Chế độ thử: không gửi tin thật (chỉ hiện trên máy này)</span>
       </label>
+
+      <div className="advanced-toggle span-2">
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={showAdvanced} onClick={() => setShowAdvanced(v => !v)}>
+          <Icon name={showAdvanced ? 'chevronDown' : 'chevronRight'} size={15} /> Nâng cao
+        </button>
+        {!showAdvanced && (
+          <span className="muted small">
+            Socket key cho nhắn tin realtime {keyIsDefault ? 'đã có sẵn, không cần nhập' : 'đã được chỉnh'}.
+          </span>
+        )}
+      </div>
+      {showAdvanced && (
+        <label className="field span-2">
+          <span>Socket key <span className="muted">(hằng số <code>key</code> của Socket.IO, đã có mặc định; chỉ đổi khi app gốc đổi key)</span></span>
+          <span className="input-with-action">
+            <input type={showKey ? 'text' : 'password'} autoComplete="off" value={form.socketKey} placeholder="Trống = không kết nối realtime" onChange={e => set('socketKey', e.target.value)} />
+            <button type="button" className="icon-btn" aria-label={showKey ? 'Ẩn key' : 'Hiện key'} onClick={() => setShowKey(v => !v)}>
+              <Icon name={showKey ? 'eyeOff' : 'eye'} size={16} />
+            </button>
+            {!keyIsDefault && (
+              <button type="button" className="icon-btn" aria-label="Khôi phục socket key mặc định" title="Dùng key mặc định" onClick={() => set('socketKey', DEFAULT_SETTINGS.socketKey)}>
+                <Icon name="refresh" size={16} />
+              </button>
+            )}
+          </span>
+        </label>
+      )}
+
       <div className="form-actions span-2">
         <button type="submit" className="btn btn-primary">Lưu cài đặt</button>
-        <button type="button" className="btn btn-ghost" onClick={() => setForm({ ...DEFAULT_SETTINGS, socketKey: form.socketKey })}>Khôi phục mặc định</button>
+        <button type="button" className="btn btn-ghost" onClick={() => setForm(DEFAULT_SETTINGS)}>Khôi phục mặc định</button>
         {saved && <span className="tone-ok small" role="status">{saved}</span>}
       </div>
       <p className="muted small span-2">

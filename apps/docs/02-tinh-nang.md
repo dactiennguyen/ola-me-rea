@@ -6,7 +6,7 @@ Phạm vi bản này: **tài khoản, danh sách tin nhắn, chat 1-1, Khám ph�
 
 - Danh sách tài khoản đã lưu kèm trạng thái: *Đang hoạt động*, *Đang đăng nhập…*, lỗi (thông báo đã dịch sang tiếng Việt), hoặc thời điểm đăng nhập lần cuối. Bấm vào tài khoản khác để chuyển.
 - Mục: Tin nhắn (badge số tin chưa đọc), Khám phá, Phòng chat, Quản lý tài khoản.
-- Ô *Kết nối realtime* phản ánh kênh hộp thư cá nhân: *Ổn định*, *Đang kết nối…*, *Mất kết nối*, *Thiếu socket key*.
+- Ô *Kết nối realtime* phản ánh kênh hộp thư cá nhân: *Ổn định*, *Đang kết nối…*, *Mất kết nối*. Socket key đã có mặc định nên kênh tự kết nối sau khi đăng nhập, không cần nhập gì (*Thiếu socket key* chỉ hiện nếu người dùng tự xoá key trong Cài đặt › Nâng cao).
 
 ## Quản lý tài khoản
 
@@ -18,7 +18,7 @@ Phạm vi bản này: **tài khoản, danh sách tin nhắn, chat 1-1, Khám ph�
 
 - Form: tên hiển thị (trống thì dùng tên Ola), email, mật khẩu (nút hiện/ẩn), Device ID (16 hex, nút tạo mới).
 - Email chưa xác minh bị từ chối, giống app (lõi kiểm tra `emailVerified` trước `sync`).
-- **Cài đặt**: socket key, app version, Android version, key2 (ba mục này áp dụng từ lần đăng nhập sau), *Chế độ thử* (tin chỉ hiện trên máy, không gửi), *Khôi phục mặc định* (giữ socket key). Hiển thị máy chủ API/socket (cố định, xem [01 · Kiến trúc](01-kien-truc.md#file-dữ-liệu)) và thư mục dữ liệu.
+- **Cài đặt**: app version, Android version, key2 (ba mục áp dụng từ lần đăng nhập sau), *Chế độ thử* (tin chỉ hiện trên máy, không gửi), *Khôi phục mặc định*. Socket key **không** nằm ở phần chính vì đã có mặc định chạy được; nó nằm trong mục **Nâng cao** (ẩn mặc định), chỉ cần đổi khi app gốc đổi key. Hiển thị máy chủ API/socket (cố định, xem [01 · Kiến trúc](01-kien-truc.md#file-dữ-liệu)) và thư mục dữ liệu.
 
 ## Tin nhắn: danh sách hội thoại
 

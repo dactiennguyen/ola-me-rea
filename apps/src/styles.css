@@ -239,6 +239,8 @@ select { height: 36px; border: 1px solid var(--border); border-radius: var(--rad
 .checkbox { display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 32px; }
 .checkbox input { width: 18px; height: 18px; accent-color: var(--accent); }
 .form-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.advanced-toggle { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 12px; }
+.advanced-toggle .btn-sm { padding-left: 4px; }
 .notice { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-radius: var(--radius); background: var(--raised); color: var(--text-soft); line-height: 1.5; }
 .notice svg { flex: none; margin-top: 2px; }
 .notice-bad { background: rgba(248, 113, 113, 0.1); color: #fecaca; }
