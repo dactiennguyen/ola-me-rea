@@ -197,4 +197,5 @@ jobs:
           name: bundles-${{ matrix.target }}
           path: staged/*
           if-no-files-found: error
-          retention-days: 14
+          # release.yml publishes them within the same run; a short life keeps Actions storage small.
+          retention-days: 3
