@@ -92,6 +92,8 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
   const collect = async () => {
     cancel.current = false;
     setRunning(true);
+    // Each Lấy starts a fresh list; several nicks in the same run still merge into it.
+    setList([]);
     const where = via;
     let total = 0;
     let failed = '';
@@ -102,7 +104,7 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
         const by = { id, label: label(id) };
         let next: ExploreNext | null = null;
         for (let page = 0; page < pages && !cancel.current; page++) {
-          setProgress({ text: `Đang lấy trang ${page + 1}/${pages} bằng ${by.label}… (${total} người mới)`, tone: 'idle' });
+          setProgress({ text: `Đang lấy trang ${page + 1}/${pages} bằng ${by.label}… (${total} người)`, tone: 'idle' });
           let users: ChatUser[];
           try {
             if (source === 'explore') {
@@ -126,10 +128,10 @@ export function OutreachScreen({ hidden }: { hidden: boolean }) {
         if (cancel.current) break;
       }
       setProgress(cancel.current
-        ? { text: `Đã dừng. Thêm ${total} người mới.`, tone: 'warn' }
+        ? { text: `Đã dừng. Lấy được ${total} người.`, tone: 'warn' }
         : failed
-          ? { text: `Thêm ${total} người mới; lỗi ${failed}`, tone: 'bad' }
-          : { text: `Xong: thêm ${total} người mới.`, tone: 'ok' });
+          ? { text: `Lấy được ${total} người; lỗi ${failed}`, tone: 'bad' }
+          : { text: `Xong: lấy được ${total} người.`, tone: 'ok' });
     } finally {
       setRunning(false);
     }

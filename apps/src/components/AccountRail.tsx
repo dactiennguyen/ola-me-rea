@@ -35,7 +35,12 @@ export function AccountRail({ view, unread, onAccount, onAdd, onOutreach, onMana
   onManage: () => void;
   onSettings: () => void;
 }) {
-  const { accounts, selectedId, live } = useSession();
+  const { accounts, selectedId, live, connectAll } = useSession();
+  // Something to sign in: an account that is neither online nor already signing in.
+  const needsLogin = accounts.some(a => {
+    const status = (live[a.id] ?? OFFLINE).status;
+    return status !== 'ready' && status !== 'signing-in';
+  });
   return (
     <nav className="rail" aria-label="Tài khoản">
       <div className="rail-accounts">
@@ -65,6 +70,11 @@ export function AccountRail({ view, unread, onAccount, onAdd, onOutreach, onMana
         </button>
       </div>
       <div className="rail-bottom">
+        {needsLogin && (
+          <button type="button" className="rail-btn rail-login-all" title="Đăng nhập tất cả tài khoản" aria-label="Đăng nhập tất cả tài khoản" onClick={() => void connectAll()}>
+            <Icon name="logIn" size={20} />
+          </button>
+        )}
         <button type="button" className={`rail-btn${view === 'outreach' ? ' is-active' : ''}`} title="Tìm người & nhắn" aria-label="Tìm người và nhắn" aria-current={view === 'outreach' ? 'page' : undefined} onClick={onOutreach}>
           <Icon name="message" size={20} />
         </button>

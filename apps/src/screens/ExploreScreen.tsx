@@ -129,6 +129,7 @@ export function ExploreScreen({ onMessage }: { onMessage: (peer: PeerTarget) => 
       {error && <p className="notice notice-bad">Không tải được danh sách: {error}</p>}
 
       <div className="card-grid">
+        {loading && !users.length && !error && Array.from({ length: 8 }, (_, i) => <UserCardSkeleton key={`sk-${i}`} />)}
         {users.map(u => (
           <article key={u.uid} className="user-card">
             <Avatar name={u.displayName || u.uid} photo={u.photoURL} seed={u.uid} size={64} online={tab === 'online'} ring="var(--surface)" />
@@ -153,7 +154,7 @@ export function ExploreScreen({ onMessage }: { onMessage: (peer: PeerTarget) => 
       </div>
 
       <div ref={sentinel} className="load-more">
-        {loading && <span className="muted small">Đang tải…</span>}
+        {loading && users.length > 0 && <span className="muted small">Đang tải…</span>}
         {!loading && done && users.length > 0 && <span className="muted small">Đã hết danh sách.</span>}
         {!loading && !done && users.length > 0 && (
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => void load(false)}>Tải thêm</button>
@@ -161,5 +162,19 @@ export function ExploreScreen({ onMessage }: { onMessage: (peer: PeerTarget) => 
         {!loading && !error && done && !users.length && <span className="muted small">Không có ai khớp bộ lọc.</span>}
       </div>
     </div>
+  );
+}
+
+/** Placeholder card shown while the first page of Khám phá loads. */
+function UserCardSkeleton() {
+  return (
+    <article className="user-card user-card-skeleton" aria-hidden="true">
+      <div className="skeleton sk-avatar" />
+      <div className="user-card-body">
+        <div className="skeleton sk-line sk-line-lg" />
+        <div className="skeleton sk-line sk-line-sm" />
+      </div>
+      <div className="skeleton sk-btn" />
+    </article>
   );
 }

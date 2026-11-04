@@ -60,6 +60,21 @@ export function RoomsScreen({ onMessage }: { onMessage: (peer: PeerTarget) => vo
   );
 }
 
+/** Placeholder bubbles shown while entering a room. */
+function ThreadSkeleton() {
+  const rows = [false, true, false, false, true, false];
+  return (
+    <div className="thread" aria-hidden="true">
+      {rows.map((out, i) => (
+        <div key={i} className={`msg-row${out ? ' out' : ''}`}>
+          {!out && <div className="skeleton sk-avatar-sm" />}
+          <div className={`skeleton sk-bubble sk-bubble-${i % 3}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RoomView({ roomID, onMessage }: { roomID: string; onMessage: (peer: PeerTarget) => void }) {
   const { ola, me, deviceId } = useOla();
   const { settings } = useSession();
@@ -155,7 +170,7 @@ function RoomView({ roomID, onMessage }: { roomID: string; onMessage: (peer: Pee
         </header>
         {error && <p className="notice notice-bad small composer-notice">{error}</p>}
         {loading
-          ? <div className="thread thread-empty"><p className="muted">Đang vào phòng…</p></div>
+          ? <ThreadSkeleton />
           : <MessageList messages={messages} showSender pending={pending} empty="Phòng chưa có tin nhắn." />}
         <Composer placeholder={`Nhắn vào phòng ${name}`} disabledReason={disabledReason} onSend={send} />
       </main>
