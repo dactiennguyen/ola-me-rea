@@ -16,7 +16,7 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 | `os` | string | Luôn `"android"` | [Quan sát] |
 | `page` | number | Trang, bắt đầu từ 0; tăng 1 sau mỗi response có danh sách | [Quan sát] |
 | `condition` | number | Cố định `1` cho tab Đã xác thực | [Quan sát] |
-| `gender` | number | Bộ lọc giới tính: `0`=Nữ, `1`=Nam, `2`=LGBT; "Tất cả" thì bỏ key | [Suy luận/AOT] |
+| `gender` | number | Bộ lọc giới tính: `0`=Nữ, `1`=Nam, `2`=LGBT; "Tất cả" thì bỏ key | [Quan sát] `0`, `2`; [Suy luận/AOT] `1` |
 | `cityID` | string | Mã tỉnh theo dữ liệu app (vd `"1"`=Hà Nội); "Tất cả" thì bỏ key | [Suy luận/AOT] |
 
 Tab này **không** gửi `lastSeenPaging` (chỉ tab Online dùng cursor).
@@ -33,7 +33,7 @@ Tab này **không** gửi `lastSeenPaging` (chỉ tab Online dùng cursor).
 { is_success, message, list_data: [ UserModel, ... ] }
 ```
 
-Mỗi phần tử `list_data` có `uid`, `lastSeen`, `displayName`, `photoURL`, `isVerifyAvatar`, `isVip`, `level`, `state`. Danh sách rỗng = hết dữ liệu. Chi tiết schema và phân trang: [Khám phá](../luong-kham-pha.md).
+Mỗi phần tử `list_data` có `uid`, `lastSeen`, `displayName`, `photoURL`, `isVerifyAvatar`, `isVip`, `level`, `state`. Danh sách rỗng = hết dữ liệu; khi không ai khớp bộ lọc, server trả `{is_success: false, message: "", list_data: []}` và client coi là kết quả rỗng, không phải lỗi. Chi tiết schema và phân trang: [Khám phá](../luong-kham-pha.md).
 
 ## Dùng Node.js
 

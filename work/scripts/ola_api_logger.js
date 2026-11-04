@@ -303,6 +303,8 @@ function onExploreResponse(ctx) {
     console.log('EXPLORE-RESPONSE ' + JSON.stringify({
         status: decodeCompressed(field(response, 0x14), 1),
         keys: data && typeof data === 'object' ? Object.keys(data) : [],
+        isSuccess: data && data.is_success,
+        message: data && typeof data.message === 'string' ? data.message.slice(0, 120) : data && data.message,
         decodedItems: Array.isArray(list) ? (truncated ? 64 : list.length) : null,
         truncated: truncated,
         lastSeenPaging: data && data.lastSeenPaging,

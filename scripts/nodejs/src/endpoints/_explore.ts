@@ -3,7 +3,7 @@
 // Flow + paging: ../../../../docs/api/luong-kham-pha.md
 
 import { z } from 'zod';
-import { defineEndpoint, int, text, type JsonObject, type OlaRequest } from '../endpoint.ts';
+import { ApiError, defineEndpoint, int, text, type JsonObject, type OlaRequest } from '../endpoint.ts';
 
 export type ExploreTab = 'online' | 'verified' | 'avatar';
 
@@ -57,12 +57,23 @@ export function defineExplore(spec: { name: string; summary: string; path: strin
       if (tab === 'online') body.lastSeenPaging = lastSeenPaging ?? 0;
       return { body };
     },
+    // is_success is checked in exploreResult: false with an empty list means no match.
+    success: false,
     parse: (raw, request) => exploreResult(tab, raw, request),
   });
 }
 
+const FAILED: unknown[] = [false, 0, '0', 'false'];
+
 function exploreResult(tab: ExploreTab, raw: unknown, request: OlaRequest): ExploreResult {
   const data = raw as JsonObject;
+  // A filter nobody matches comes back as {is_success:false, message:"", list_data:[]}
+  // (seen on the wire 2026-11-04, Ảnh có mặt + LGBT + one province); the app shows
+  // "Không tìm thấy người dùng nào". Only that shape is an empty result.
+  if (FAILED.includes(data?.is_success)) {
+    const empty = Array.isArray(data.list_data) && data.list_data.length === 0;
+    if (!empty) throw new ApiError(`${request.path}: API reported is_success=false.`, raw);
+  }
   if (!Array.isArray(data?.list_data)) throw new Error(`${request.path}: expected list_data array.`);
   const body = request.body!;
   const page = body.page as number;

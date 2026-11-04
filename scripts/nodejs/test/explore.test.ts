@@ -4,6 +4,7 @@ import { main, parseCli } from '../explore.ts';
 import type { OlaClient } from '../src/client.ts';
 import type { AnyEndpoint, JsonObject, OlaRequest } from '../src/endpoint.ts';
 import { getExplore3 } from '../src/endpoints/getExplore3.ts';
+import { getExploreAvatarV4 } from '../src/endpoints/getExploreAvatarV4.ts';
 import { getExploreOnlineV6 } from '../src/endpoints/getExploreOnlineV6.ts';
 
 const SESSION = { localId: 'me' };
@@ -28,7 +29,17 @@ describe('explore paging', () => {
     assert.equal((online.handle({ list_data: [] }, request) as { next: unknown }).next, null);
     assert.throws(() => online.handle({ is_success: true }, request), /expected list_data array/);
     assert.throws(() => online.handle({ list_data: [{}], lastSeenPaging: -1 }, request), /lastSeenPaging/);
-    assert.throws(() => online.handle({ is_success: false, list_data: [] }, request), /is_success=false/);
+    assert.throws(() => online.handle({ is_success: false }, request), /is_success=false/);
+    assert.throws(() => online.handle({ is_success: false, list_data: [{}] }, request), /is_success=false/);
+  });
+
+  it('no match: is_success false with an empty list is an empty last page', () => {
+    const avatar = getExploreAvatarV4 as unknown as AnyEndpoint;
+    const request = avatar.build(SESSION, { gender: 2, cityID: '6' });
+    assert.deepEqual(request.body, { uid: 'me', os: 'android', page: 0, gender: 2, cityID: '6' });
+    const raw = { is_success: false, message: '', list_data: [] };
+    assert.deepEqual(avatar.handle(raw, request), { tab: 'avatar', page: 0, items: [], next: null, raw });
+    assert.deepEqual((online.handle({ is_success: 0, list_data: [] }, online.build(SESSION, {})) as { items: unknown[] }).items, []);
   });
 
   it('verified tab has no cursor', () => {

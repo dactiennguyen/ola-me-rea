@@ -40,7 +40,7 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 { is_success, message, list_data: [ UserModel, ... ], lastSeenPaging: <integer> }
 ```
 
-Mỗi phần tử `list_data` có các key quan sát được: `uid`, `lastSeen`, `displayName`, `photoURL`, `isVerifyAvatar`, `isVip`, `level` (string cho uid/tên/URL; `isVip`/`isVerifyAvatar` là number). Danh sách rỗng = hết dữ liệu; không suy ra hết trang vì nhận ít hơn 50 phần tử. Chi tiết schema và phân trang: [Khám phá](../luong-kham-pha.md).
+Mỗi phần tử `list_data` có các key quan sát được: `uid`, `lastSeen`, `displayName`, `photoURL`, `isVerifyAvatar`, `isVip`, `level` (string cho uid/tên/URL; `isVip`/`isVerifyAvatar` là number). Danh sách rỗng = hết dữ liệu; không suy ra hết trang vì nhận ít hơn 50 phần tử. Khi không ai khớp bộ lọc, server trả `{is_success: false, message: "", list_data: []}` và client coi là kết quả rỗng, không phải lỗi. Chi tiết schema và phân trang: [Khám phá](../luong-kham-pha.md).
 
 ## Dùng Node.js
 

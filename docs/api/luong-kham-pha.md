@@ -27,7 +27,7 @@ Cả ba API đều có thể thêm `gender` và `cityID`. App chỉ thêm key kh
 | Hà Nội | `cityID: "1"` |
 | Tất cả tỉnh thành | Bỏ key `cityID` |
 
-Nữ + Hà Nội đã được bắt trực tiếp trên cả ba tab. Mapping Nam/LGBT/Tất cả đối chiếu enum Gender và các nhánh tạo body trong AOT. `cityID` là **chuỗi mã trong dữ liệu tỉnh thành của app**; không tự thay bằng tên tỉnh hoặc mã của nguồn khác.
+Nữ + Hà Nội đã được bắt trực tiếp trên cả ba tab. LGBT = `gender: 2` đã bắt trực tiếp ngày 2026-11-04 trên Ảnh có mặt và Đã xác thực (kể cả LGBT + Bắc Kạn = `cityID: "6"`). Nam = `1` vẫn chỉ đối chiếu enum Gender và các nhánh tạo body trong AOT. `cityID` là **chuỗi mã trong dữ liệu tỉnh thành của app**; không tự thay bằng tên tỉnh hoặc mã của nguồn khác.
 
 Ví dụ request Online với bộ lọc đã kiểm chứng:
 
@@ -54,6 +54,8 @@ Online:       {is_success, message, list_data: [...], lastSeenPaging: <integer>}
 Đã xác thực:  {is_success, message, list_data: [...]}
 Ảnh có mặt:   {is_success, message, list_data: [...]}
 ```
+
+**Không ai khớp bộ lọc** thì server vẫn trả HTTP 200 nhưng `is_success` là **false**: `{is_success: false, message: "", list_data: []}` (bắt ngày 2026-11-04, Ảnh có mặt + LGBT + Bắc Kạn). App gốc không coi đó là lỗi mà hiện "Không tìm thấy người dùng nào". `message` cũng không phải thông báo lỗi: các lần thành công đã thấy `"done"`, `""`, `-1`, `2`.
 
 Danh sách nằm ở **`response.data.list_data` khi dùng Dio**, hoặc **`result.raw.list_data` (đã tách sẵn thành `result.items`) với `ola.call()` trong Node**. Mỗi phần tử được chuyển qua `UserModel.fromJson()` rồi hiển thị thành thẻ người dùng.
 
@@ -153,7 +155,7 @@ try {
 - Input: `page`, `gender`, `cityID`, `lastSeenPaging` (chỉ tab Online); các giá trị số phải là integer an toàn, không âm. `gender` nhận number 0/1/2 hoặc chuỗi `all`; `cityID` nhận chuỗi mã hoặc `all`. Field khác bị từ chối.
 - Kết quả: `{tab, page, items, next, raw}`. `items` là `raw.list_data`, giữ nguyên toàn bộ trường. `next` là input của trang kế tiếp (giữ `uid` và bộ lọc, tăng page, kèm cursor với tab Online) — truyền lại nguyên cho cùng endpoint; chỉ dừng khi danh sách rỗng, không dựa vào số lượng ít hơn 50.
 - `getExploreOnlineV6.build(session, input)` chỉ tạo `{method, path, body}`, không gọi mạng.
-- HTTP lỗi, `is_success` biểu thị false, thiếu mảng `list_data`, hoặc Online có dữ liệu nhưng thiếu cursor hợp lệ đều gây lỗi. Không suy ra thành công chỉ từ HTTP 200.
+- `is_success` false kèm `list_data: []` là **kết quả rỗng** (không ai khớp, `next: null`), không phải lỗi. HTTP lỗi, `is_success` false mà thiếu `list_data` hoặc vẫn có phần tử, thiếu mảng `list_data`, hoặc Online có dữ liệu nhưng thiếu cursor hợp lệ đều gây lỗi. Không suy ra thành công chỉ từ HTTP 200.
 
 `--help` và `--dry-run` của explore.ts kiểm tra input mà không đăng nhập hay gọi mạng.
 
