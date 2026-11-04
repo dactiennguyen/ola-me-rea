@@ -53,7 +53,8 @@ Inter Variable (đóng gói sẵn, có subset tiếng Việt).
 
 | Thành phần | File |
 |---|---|
-| Sidebar (tài khoản, mục, ô realtime) | `src/components/Sidebar.tsx` |
+| Cột tài khoản (avatar, chấm trạng thái, số chưa đọc; Thêm, Quản lý, Cài đặt) | `src/components/AccountRail.tsx` |
+| Thanh bên của một nick (nick, mục, ô realtime) | `src/components/Sidebar.tsx` |
 | Avatar (ảnh → chữ cái đầu, chấm online) | `src/components/Avatar.tsx` |
 | Danh sách tin (vạch ngày, nhóm theo người gửi, đang gõ, cảnh báo gửi) | `src/components/MessageList.tsx` |
 | Ô soạn tin (Enter gửi, lý do khi bị khoá) | `src/components/Composer.tsx` |

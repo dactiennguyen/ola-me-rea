@@ -7,7 +7,7 @@ import { useSession } from '../lib/session.tsx';
 // Xuất / nhập danh sách tài khoản (lib/accountsTransfer.ts). Both carry
 // passwords in plain text, like accounts.json.
 
-export function AccountsTransferPanel({ onClose }: { onClose: () => void }) {
+export function AccountsTransferPanel({ onClose }: { onClose?: () => void }) {
   const { accounts, importAccounts } = useSession();
   const [text, setText] = useState('');
   const [exported, setExported] = useState<string | null>(null);
@@ -66,9 +66,9 @@ export function AccountsTransferPanel({ onClose }: { onClose: () => void }) {
       <div className="span-2 transfer-block">
         <h3 className="transfer-title">Xuất</h3>
         <p className="muted small">
-          Lưu {accounts.length} tài khoản (email, mật khẩu, tên, device ID) ra file JSON trong thư mục Downloads.
+          Lưu {accounts.length} tài khoản (email, mật khẩu, tên, thông tin thiết bị, proxy) ra file JSON trong thư mục Downloads.
         </p>
-        <p className="notice small"><Icon name="info" size={15} /> File chứa mật khẩu dạng chữ thường. Giữ kín, đừng gửi lên nơi công khai.</p>
+        <p className="notice small"><Icon name="info" size={15} /> File chứa mật khẩu và proxy (kể cả user/pass proxy) dạng chữ thường. Giữ kín, đừng gửi lên nơi công khai.</p>
         <div className="form-actions">
           <button type="button" className="btn btn-primary" disabled={!accounts.length} onClick={() => void doExport()}>Xuất ra file</button>
           <button type="button" className="btn btn-ghost" disabled={!accounts.length} onClick={copyExport}>Sao chép JSON</button>
@@ -80,8 +80,9 @@ export function AccountsTransferPanel({ onClose }: { onClose: () => void }) {
         <h3 className="transfer-title">Nhập</h3>
         <p className="muted small">
           Chọn file xuất từ app này, hoặc dán danh sách mỗi dòng một tài khoản <code>email|mật khẩu</code> (cũng nhận
-          tab, <code>,</code>, <code>;</code> hoặc <code>:</code>). Email đã có trong danh sách thì cập nhật mật khẩu, giữ
-          nguyên device ID; email mới được thêm vào.
+          tab, <code>,</code>, <code>;</code> hoặc <code>:</code>); thêm proxy bằng <code>email|mật khẩu|proxy</code>.
+          Email đã có trong danh sách thì cập nhật mật khẩu (và proxy nếu có), giữ nguyên device ID; email mới được thêm
+          vào (chưa đăng nhập).
         </p>
         <label className="btn btn-ghost btn-sm file-pick">
           <input type="file" accept=".json,.txt,.csv,application/json,text/plain" onChange={e => { void readFile(e.target.files?.[0]); e.target.value = ''; }} />
@@ -91,7 +92,7 @@ export function AccountsTransferPanel({ onClose }: { onClose: () => void }) {
           className="transfer-text"
           rows={6}
           spellCheck={false}
-          placeholder={'a@example.com|matkhau1\nb@example.com|matkhau2'}
+          placeholder={'a@example.com|matkhau1\nb@example.com|matkhau2|1.2.3.4:8080:user:pass'}
           value={text}
           onChange={e => { setText(e.target.value); setResult(null); }}
         />
@@ -113,7 +114,7 @@ export function AccountsTransferPanel({ onClose }: { onClose: () => void }) {
         )}
         <div className="form-actions">
           <button type="button" className="btn btn-primary" disabled={busy || !changes} onClick={() => void doImport()}>Nhập vào danh sách</button>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Đóng</button>
+          {onClose && <button type="button" className="btn btn-ghost" onClick={onClose}>Đóng</button>}
         </div>
       </div>
       {error && <p className="notice notice-bad small span-2" role="alert">{error}</p>}

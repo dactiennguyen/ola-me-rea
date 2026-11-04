@@ -30,6 +30,11 @@ export interface StoredAccount {
   lastError?: string;
   /** Set when this app registered the account or resent the verification email; cleared at the first sign-in. */
   verificationSentAt?: number;
+  /**
+   * Proxy for everything this account sends (Firebase, Ola API, sockets), as
+   * typed: see parseProxy() in proxy.ts. Read at sign-in.
+   */
+  proxy?: string;
 }
 
 export interface AccountsData {

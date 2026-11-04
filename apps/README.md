@@ -30,7 +30,7 @@ yarn app:dev           # mở cửa sổ app (Vite dev server + Tauri)
 
 `yarn app:build`, `yarn tauri build` và CI chuyển nguyên lệnh cho Tauri CLI, nên bản phát hành vẫn là Ola Desktop với identifier `dev.olamerea.desktop`. Lưu ý: hai bản có hai danh sách tài khoản riêng; đăng nhập cùng một nick ở cả hai bản thì server có thể đá phiên trước.
 
-**Nút đóng cửa sổ** ([tray.rs](src-tauri/src/tray.rs)): mặc định hỏi **Thu nhỏ vào khay** (chạy nền, vẫn giữ đăng nhập và nhận tin; mở lại bằng icon ở khay) hay **Thoát ứng dụng**, có ô "Ghi nhớ lựa chọn". Đổi lại trong Quản lý tài khoản → Cài đặt → "Khi bấm nút đóng cửa sổ". Menu của icon ở khay có Mở cửa sổ và Thoát. Máy không tạo được icon ở khay (ví dụ Linux thiếu AppIndicator) thì "Thu nhỏ vào khay" chỉ thu nhỏ xuống taskbar.
+**Nút đóng cửa sổ** ([tray.rs](src-tauri/src/tray.rs)): mặc định hỏi **Thu nhỏ vào khay** (chạy nền, vẫn giữ đăng nhập và nhận tin; mở lại bằng icon ở khay) hay **Thoát ứng dụng**, có ô "Ghi nhớ lựa chọn". Đổi lại trong Cài đặt (bánh răng cuối cột tài khoản) → "Khi bấm nút đóng cửa sổ". Menu của icon ở khay có Mở cửa sổ và Thoát. Máy không tạo được icon ở khay (ví dụ Linux thiếu AppIndicator) thì "Thu nhỏ vào khay" chỉ thu nhỏ xuống taskbar.
 
 `.yarnrc` trong thư mục này bật `ignore-engines`: Firebase 13 khai báo Node ≥ 24.12, nhưng trong app Firebase chạy trong webview; Node chỉ chạy Vite, `tsc` và Tauri CLI.
 
@@ -55,7 +55,7 @@ yarn build             # bundle frontend vào dist/
 
 1. **Quản lý tài khoản › Thêm tài khoản**: nhập email + mật khẩu Ola (tài khoản email/mật khẩu đã xác minh). Mỗi tài khoản có một Device ID riêng, tự sinh.
 2. **Lưu và đăng nhập**: app đăng nhập Firebase, gọi `napi/users/sync`, rồi mở Tin nhắn.
-3. **Nhắn tin realtime** (gửi/nhận tin, đang gõ, người trong phòng) dùng socket key đã có sẵn mặc định (`6Q5AY7RZVR06LFAA07TC`, hằng số tĩnh của app, [socket-io.md](../docs/api/socket-io.md#key-được-tạo-như-thế-nào)), không cần nhập gì. Nếu app gốc đổi key, dán giá trị mới vào **Cài đặt › Socket key**. Để trống key thì các màn đọc dữ liệu vẫn chạy nhưng ô nhập tin bị khoá.
+3. **Nhắn tin realtime** (gửi/nhận tin, đang gõ, người trong phòng) dùng socket key đã có sẵn mặc định (`6Q5AY7RZVR06LFAA07TC`, hằng số tĩnh của app, [socket-io.md](../docs/api/socket-io.md#key-được-tạo-như-thế-nào)), không cần nhập gì. Nếu app gốc đổi key, dán giá trị mới vào **Cài đặt › Nâng cao › Socket key**. Để trống key thì các màn đọc dữ liệu vẫn chạy nhưng ô nhập tin bị khoá.
 4. Muốn thử giao diện gửi tin mà không gửi thật: bật **Chế độ thử** trong Cài đặt.
 
 Tài khoản được lưu dạng **JSON thường, kể cả mật khẩu** (theo yêu cầu, không dùng Keychain) trong thư mục dữ liệu của app, quyền `600`:
@@ -74,20 +74,22 @@ apps/
 ├── src/
 │   ├── main.tsx, App.tsx, styles.css      # khung app + token design C
 │   ├── lib/
-│   │   ├── session.tsx      # tài khoản đang dùng, OlaClient, kênh realtime cá nhân
+│   │   ├── session.tsx      # mọi tài khoản online cùng lúc: OlaClient + kênh realtime của từng nick
 │   │   ├── accounts.ts      # accounts.json
-│   │   ├── settings.ts      # settings.json (server, socket key, chế độ thử)
+│   │   ├── settings.ts      # settings.json (socket key, chế độ thử, nút đóng)
+│   │   ├── proxy.ts         # proxy từng nick: đọc/chuẩn hoá, fetch qua proxy, kiểm tra IP
+│   │   ├── rustSocket.ts    # socket.io-client 2.x tối giản trên WebSocket phía Rust (nick có proxy)
 │   │   ├── messageCache.ts  # chat-<uid>.json: lịch sử 1-1 trên máy
 │   │   ├── platform.ts      # fetch của Tauri, file JSON, lệnh Rust
 │   │   ├── provinces.ts     # danh sách phòng = mã tỉnh
 │   │   └── format.ts
-│   ├── components/          # Sidebar, Avatar, MessageList, Composer, Icon
-│   └── screens/             # Messages, Explore, Rooms, Accounts
+│   ├── components/          # AccountRail (cột tài khoản), Sidebar (của một nick), Avatar, MessageList, Composer, Icon
+│   └── screens/             # AccountView (màn của một nick), Messages, Explore, Rooms, Profile, Accounts, Settings
 └── src-tauri/
     ├── Cargo.toml, build.rs, tauri.conf.json
-    ├── capabilities/default.json   # quyền: http chỉ tới https://sgdev.vip/*, store
+    ├── capabilities/default.json   # quyền: http tới sgdev.vip, Firebase Auth REST, api.ipify.org; store
     ├── icons/
-    └── src/lib.rs, main.rs         # plugin http + store, lệnh data_dir / restrict_data_file
+    └── src/lib.rs, socket.rs, tray.rs, main.rs  # plugin http + store, lệnh dữ liệu, WebSocket qua proxy, khay
 ```
 
 Lõi gọi API (đăng nhập, ký request, endpoint, Socket.IO, payload chat) **không nằm trong app**: app import thẳng `scripts/nodejs/src` qua alias `@ola/core`, nên CLI Node và app desktop luôn dùng cùng một code đã có test.

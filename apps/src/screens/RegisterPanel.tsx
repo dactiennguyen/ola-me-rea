@@ -59,8 +59,10 @@ export function RegisterPanel({ onClose }: { onClose: () => void }) {
         <h2 className="panel-title">Đã tạo tài khoản</h2>
         <p className="notice small">
           <Icon name="info" size={15} />
-          Một email xác thực đã được gửi tới <b>{created.email}</b>. Mở link trong email, rồi bấm <b>Dùng</b> ở tài
+          <span>
+          Một email xác thực đã được gửi tới <b>{created.email}</b>. Mở link trong email, rồi bấm <b>Đăng nhập</b> ở tài
           khoản này trong danh sách để đăng nhập. Chưa thấy email thì xem thư mục Spam, hoặc bấm "Gửi lại email xác thực".
+          </span>
         </p>
         <div className="form-actions">
           <button type="button" className="btn btn-primary" onClick={onClose}>Xong</button>

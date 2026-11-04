@@ -1,8 +1,10 @@
-// Import/export of the account list. The export is plain JSON with passwords,
-// like accounts.json itself; the UI says so. Import also takes one account per
-// line ("email|mật khẩu", or tab, comma, semicolon or colon between them).
+// Import/export of the account list. The export is plain JSON with passwords
+// and proxies, like accounts.json itself; the UI says so. Import also takes one
+// account per line ("email|mật khẩu", or tab, comma, semicolon or colon between
+// them; "email|mật khẩu|proxy" adds a proxy).
 
 import { DEVICE_FIELDS, deviceOverride, type DeviceField, type StoredAccount } from './accounts.ts';
+import { parseProxy } from './proxy.ts';
 
 export const EXPORT_FORMAT = 'ola-desktop-accounts';
 
@@ -11,6 +13,8 @@ export interface TransferAccount extends Partial<Record<DeviceField, string>> {
   password: string;
   label?: string;
   deviceId?: string;
+  /** Normalized proxy URL (parseProxy). */
+  proxy?: string;
 }
 
 export interface ParsedImport {
@@ -32,6 +36,7 @@ export function exportAccounts(accounts: StoredAccount[], now = new Date()): str
     accounts: accounts.map(a => ({
       label: a.label, email: a.email, password: a.password, deviceId: a.deviceId,
       ...Object.fromEntries(DEVICE_FIELDS.filter(f => a[f]).map(f => [f, a[f]])),
+      ...(a.proxy && { proxy: a.proxy }),
     })),
   }, null, 2)}\n`;
 }
@@ -68,6 +73,7 @@ function parseJson(text: string): ParsedImport {
       password: text('password') ?? '',
       label: text('label'),
       deviceId: text('deviceId'),
+      proxy: text('proxy'),
       ...Object.fromEntries(DEVICE_FIELDS.map(f => [f, deviceOverride(f, text(f))]).filter(([, v]) => v)),
     });
   });
@@ -84,7 +90,15 @@ function parseLines(text: string): ParsedImport {
       out.problems.push(`Dòng ${i + 1}: thiếu mật khẩu (dạng email|mật khẩu).`);
       return;
     }
-    add(out, `Dòng ${i + 1}`, { email: line.slice(0, at), password: line.slice(at + 1) });
+    let password = line.slice(at + 1);
+    let proxy: string | undefined;
+    // "email|mật khẩu|proxy": the part after the last | is a proxy when it reads as one.
+    const last = password.lastIndexOf('|');
+    if (line[at] === '|' && last > 0) {
+      const tail = parseProxy(password.slice(last + 1));
+      if (tail && 'url' in tail) { proxy = tail.url; password = password.slice(0, last); }
+    }
+    add(out, `Dòng ${i + 1}`, { email: line.slice(0, at), password, ...(proxy && { proxy }) });
   });
   return dedupe(out);
 }
@@ -95,8 +109,11 @@ function add(out: ParsedImport, where: string, entry: TransferAccount) {
   if (!entry.password) { out.problems.push(`${where}: thiếu mật khẩu.`); return; }
   const deviceId = entry.deviceId?.trim();
   if (deviceId && !DEVICE_ID.test(deviceId)) { out.problems.push(`${where}: device ID không hợp lệ.`); return; }
+  const proxy = parseProxy(entry.proxy);
+  if (proxy && 'error' in proxy) { out.problems.push(`${where}: ${proxy.error}.`); return; }
   out.accounts.push({
     email, password: entry.password,
+    ...(proxy && { proxy: proxy.url }),
     ...(entry.label?.trim() && { label: entry.label.trim() }),
     ...(deviceId && { deviceId }),
     ...Object.fromEntries(DEVICE_FIELDS.filter(f => entry[f]).map(f => [f, entry[f]])),
@@ -112,7 +129,7 @@ function dedupe(out: ParsedImport): ParsedImport {
 
 export interface ImportPlan {
   added: TransferAccount[];
-  /** Existing accounts (same email) whose password or label changes. */
+  /** Existing accounts (same email) whose password, label or proxy changes. */
   updated: TransferAccount[];
   unchanged: number;
 }
@@ -123,7 +140,8 @@ export function planImport(existing: StoredAccount[], incoming: TransferAccount[
   for (const entry of incoming) {
     const current = byEmail.get(entry.email.toLowerCase());
     if (!current) plan.added.push(entry);
-    else if (current.password !== entry.password || (entry.label && entry.label !== current.label)) plan.updated.push(entry);
+    else if (current.password !== entry.password || (entry.label && entry.label !== current.label)
+      || (entry.proxy && entry.proxy !== current.proxy)) plan.updated.push(entry);
     else plan.unchanged++;
   }
   return plan;

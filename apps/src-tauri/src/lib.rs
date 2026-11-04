@@ -7,6 +7,7 @@
 //   - exposes two small commands for the JSON files that hold passwords;
 //   - owns the tray icon and the close button (tray.rs).
 
+mod socket;
 mod tray;
 
 use std::path::PathBuf;
@@ -122,6 +123,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(tray::CloseAction::default())
+        .manage(std::sync::Arc::new(socket::Sockets::default()))
         .setup(|app| {
             // tauri.dev.conf.json renames the dev app but cannot change the window
             // title without repeating the whole window, so the title is set here.
@@ -139,7 +141,10 @@ pub fn run() {
             restrict_data_file,
             export_accounts_file,
             tray::set_close_action,
-            tray::close_window
+            tray::close_window,
+            socket::ws_open,
+            socket::ws_send,
+            socket::ws_close
         ])
         .build(tauri::generate_context!())
         .expect("error while building Ola Desktop")

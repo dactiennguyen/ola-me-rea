@@ -10,7 +10,7 @@ import { MessageList, type PendingState } from '../components/MessageList.tsx';
 import { mergeMessages } from '../lib/messageCache.ts';
 import { lastSeenLabel } from '../lib/format.ts';
 import { PROVINCES, provinceName } from '../lib/provinces.ts';
-import { useOla, useSession } from '../lib/session.tsx';
+import { useAccount, useOla, useSession } from '../lib/session.tsx';
 import type { PeerTarget } from './MessagesScreen.tsx';
 
 export function RoomsScreen({ onMessage }: { onMessage: (peer: PeerTarget) => void }) {
@@ -62,7 +62,8 @@ export function RoomsScreen({ onMessage }: { onMessage: (peer: PeerTarget) => vo
 
 function RoomView({ roomID, onMessage }: { roomID: string; onMessage: (peer: PeerTarget) => void }) {
   const { ola, me, deviceId } = useOla();
-  const { openChannel, settings } = useSession();
+  const { settings } = useSession();
+  const { openChannel } = useAccount();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

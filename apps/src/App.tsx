@@ -1,32 +1,33 @@
 import { useCallback, useEffect, useState } from 'react';
+import { AccountRail, type AppView } from './components/AccountRail.tsx';
 import { CloseDialog } from './components/CloseDialog.tsx';
-import { Icon } from './components/Icon.tsx';
-import { Sidebar, type Screen } from './components/Sidebar.tsx';
 import { onCloseAsked, setCloseAction } from './lib/platform.ts';
-import { useSession } from './lib/session.tsx';
+import { AccountProvider, useSession } from './lib/session.tsx';
 import { AccountsScreen, type AccountsPanel, type AccountsRequest } from './screens/AccountsScreen.tsx';
-import { ExploreScreen } from './screens/ExploreScreen.tsx';
-import { MessagesScreen, type PeerTarget } from './screens/MessagesScreen.tsx';
-import { RoomsScreen } from './screens/RoomsScreen.tsx';
+import { AccountView } from './screens/AccountView.tsx';
+import { SettingsScreen } from './screens/SettingsScreen.tsx';
 
 export function App() {
   const session = useSession();
-  const [screen, setScreen] = useState<Screen>('messages');
-  const [target, setTarget] = useState<PeerTarget | null>(null);
-  const [unread, setUnread] = useState(0);
+  const { accounts, selectedId, select } = session;
+  const [view, setView] = useState<AppView>('account');
+  const [unread, setUnread] = useState<Record<string, number>>({});
 
-  const messagePeer = useCallback((peer: PeerTarget) => {
-    setTarget(peer);
-    setScreen('messages');
+  const onUnread = useCallback((id: string, count: number) => {
+    setUnread(all => (all[id] === count ? all : { ...all, [id]: count }));
   }, []);
-  const clearTarget = useCallback(() => setTarget(null), []);
 
-  // Sidebar shortcuts into Quản lý tài khoản (add / register / import-export).
+  // Quản lý tài khoản, opened on a panel (add / register / import-export / edit one account).
   const [accountsRequest, setAccountsRequest] = useState<AccountsRequest | null>(null);
-  const openAccounts = useCallback((panel: AccountsPanel) => {
-    setScreen('accounts');
-    setAccountsRequest(prev => ({ panel, n: (prev?.n ?? 0) + 1 }));
+  const openAccounts = useCallback((panel: AccountsPanel, id?: string) => {
+    setView('accounts');
+    setAccountsRequest(prev => ({ panel, id, n: (prev?.n ?? 0) + 1 }));
   }, []);
+  const editAccount = useCallback((id: string) => openAccounts('edit', id), [openAccounts]);
+  const showAccount = useCallback((id: string) => {
+    void select(id);
+    setView('account');
+  }, [select]);
 
   // The close button (src-tauri/src/tray.rs): Rust quits until it hears the setting.
   const [closeAsked, setCloseAsked] = useState(false);
@@ -44,62 +45,29 @@ export function App() {
     return <div className="splash"><span className="muted">Đang mở Ola Desktop…</span></div>;
   }
 
-  const needsAccount = screen !== 'accounts' && !session.accounts.length;
-  const ready = session.status === 'ready' && session.ola && session.me;
+  // No account to show yet: the account manager stands in for it.
+  const current = view === 'account' && !accounts.some(a => a.id === selectedId) ? 'accounts' : view;
 
   return (
     <div className="app">
-      <Sidebar screen={needsAccount ? 'accounts' : screen} onNavigate={setScreen} onAccounts={openAccounts} unread={unread} />
-      <div className="content">
-        {needsAccount || screen === 'accounts' ? <AccountsScreen request={accountsRequest} /> : !ready ? <SessionGate onManage={() => setScreen('accounts')} /> : (
-          <>
-            {/* Messages stays mounted so unread counts and the open chat survive tab switches. */}
-            <MessagesScreen
-              key={session.me!.uid}
-              hidden={screen !== 'messages'}
-              target={target}
-              onTargetOpened={clearTarget}
-              onUnreadChange={setUnread}
-            />
-            {screen === 'explore' && <ExploreScreen key={session.me!.uid} onMessage={messagePeer} />}
-            {screen === 'rooms' && <RoomsScreen key={session.me!.uid} onMessage={messagePeer} />}
-          </>
-        )}
-      </div>
+      <AccountRail
+        view={current}
+        unread={unread}
+        onAccount={showAccount}
+        onAdd={() => openAccounts('add')}
+        onManage={() => setView('accounts')}
+        onSettings={() => setView('settings')}
+      />
+      {accounts.map(account => (
+        <AccountProvider key={account.id} id={account.id}>
+          <AccountView hidden={!(current === 'account' && account.id === selectedId)} onUnread={onUnread} onEdit={editAccount} />
+        </AccountProvider>
+      ))}
+      {current === 'accounts' && (
+        <div className="content content-page"><AccountsScreen request={accountsRequest} onOpen={showAccount} /></div>
+      )}
+      {current === 'settings' && <div className="content content-page"><SettingsScreen /></div>}
       {closeAsked && <CloseDialog onDone={closeDialogDone} />}
     </div>
-  );
-}
-
-function SessionGate({ onManage }: { onManage: () => void }) {
-  const { status, error, activeId, accounts, switchAccount } = useSession();
-  const account = accounts.find(a => a.id === activeId);
-  return (
-    <main className="gate">
-      {status === 'signing-in' && (
-        <>
-          <span className="spinner" aria-hidden="true" />
-          <p>Đang đăng nhập {account?.label || account?.email}…</p>
-        </>
-      )}
-      {status === 'error' && (
-        <>
-          <Icon name="info" size={28} />
-          <p className="strong">Không đăng nhập được {account?.label || account?.email}</p>
-          <p className="muted">{error}</p>
-          <div className="form-actions">
-            {activeId && <button type="button" className="btn btn-primary" onClick={() => void switchAccount(activeId)}>Thử lại</button>}
-            <button type="button" className="btn btn-ghost" onClick={onManage}>Quản lý tài khoản</button>
-          </div>
-        </>
-      )}
-      {status === 'signed-out' && (
-        <>
-          <Icon name="user" size={28} />
-          <p>Chọn một tài khoản ở thanh bên để bắt đầu.</p>
-          <button type="button" className="btn btn-ghost" onClick={onManage}>Quản lý tài khoản</button>
-        </>
-      )}
-    </main>
   );
 }

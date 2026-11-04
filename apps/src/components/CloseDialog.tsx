@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { closeWindow } from '../lib/platform.ts';
-import { useSession } from '../lib/session.tsx';
+import { anyOnline, useSession } from '../lib/session.tsx';
 import { Icon } from './Icon.tsx';
 
 /**
  * Đóng cửa sổ, shown when the close button is pressed and Cài đặt says to ask
  * (src-tauri/src/tray.rs). Thu nhỏ vào khay hides the window and keeps the
- * account signed in; Thoát ứng dụng quits. Ghi nhớ saves the choice as
- * `onClose`, changeable again in Quản lý tài khoản → Cài đặt. Huỷ or Escape
+ * accounts signed in; Thoát ứng dụng quits. Ghi nhớ saves the choice as
+ * `onClose`, changeable again in Cài đặt. Huỷ or Escape
  * leaves the window open.
  */
 export function CloseDialog({ onDone }: { onDone: () => void }) {
-  const { settings, saveSettings, status } = useSession();
+  const { settings, saveSettings, live } = useSession();
   const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +37,7 @@ export function CloseDialog({ onDone }: { onDone: () => void }) {
     }
   };
 
-  const signedIn = status === 'ready';
+  const signedIn = anyOnline(live);
   return (
     <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onDone(); }}>
       <div className="modal panel" role="dialog" aria-modal="true" aria-labelledby="close-dialog-title">

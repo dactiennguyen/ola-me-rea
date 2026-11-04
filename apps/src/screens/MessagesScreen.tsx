@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   directMessagePayload, loadChatUser, loadConversations, localTextMessage, normalizeMessage, sendDirectMessage,
   type ChannelState, type ChatChannel, type ChatMessage, type ChatUser, type Conversation,
@@ -9,7 +9,7 @@ import { Icon } from '../components/Icon.tsx';
 import { MessageList, type PendingState } from '../components/MessageList.tsx';
 import { lastSeenLabel, shortTime } from '../lib/format.ts';
 import { appendThread, loadThread, loadThreadPeers, mergeMessages, rememberPeer } from '../lib/messageCache.ts';
-import { useOla, useSession } from '../lib/session.tsx';
+import { useAccount, useOla, useSession } from '../lib/session.tsx';
 
 export interface PeerTarget { uid: string; name?: string; photo?: string }
 
@@ -24,7 +24,8 @@ export function MessagesScreen({ hidden, target, onTargetOpened, onUnreadChange 
   onUnreadChange: (count: number) => void;
 }) {
   const { ola, me } = useOla();
-  const { onIncoming } = useSession();
+  const { onIncoming } = useAccount();
+  const ids = useId();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,8 +150,8 @@ export function MessagesScreen({ hidden, target, onTargetOpened, onUnreadChange 
           <div className="list-tools">
             <div className="search">
               <Icon name="search" size={16} />
-              <label className="sr-only" htmlFor="conv-search">Tìm hội thoại</label>
-              <input id="conv-search" type="search" placeholder="Tìm hội thoại" value={query} onChange={e => setQuery(e.target.value)} />
+              <label className="sr-only" htmlFor={`${ids}-search`}>Tìm hội thoại</label>
+              <input id={`${ids}-search`} type="search" placeholder="Tìm hội thoại" value={query} onChange={e => setQuery(e.target.value)} />
             </div>
             <button type="button" className="icon-btn" aria-label="Nhắn tin mới theo UID" title="Nhắn tin mới theo UID" onClick={() => setShowNew(v => !v)}>
               <Icon name="plus" />
@@ -161,8 +162,8 @@ export function MessagesScreen({ hidden, target, onTargetOpened, onUnreadChange 
           </div>
           {showNew && (
             <form className="inline-form" onSubmit={startNew}>
-              <label className="sr-only" htmlFor="new-uid">UID người nhận</label>
-              <input id="new-uid" placeholder="UID người nhận (28 ký tự)" value={newUid} onChange={e => setNewUid(e.target.value)} autoFocus />
+              <label className="sr-only" htmlFor={`${ids}-uid`}>UID người nhận</label>
+              <input id={`${ids}-uid`} placeholder="UID người nhận (28 ký tự)" value={newUid} onChange={e => setNewUid(e.target.value)} autoFocus />
               <button type="submit" className="btn btn-primary btn-sm">Mở</button>
             </form>
           )}
@@ -213,7 +214,8 @@ export function MessagesScreen({ hidden, target, onTargetOpened, onUnreadChange 
 
 function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: ChatUser, message: ChatMessage) => void }) {
   const { ola, me } = useOla();
-  const { openChannel, onIncoming, settings, accounts, activeId } = useSession();
+  const { settings } = useSession();
+  const { account, onIncoming, openChannel } = useAccount();
   const [peer, setPeer] = useState<ChatUser | null>(null);
   const [peerError, setPeerError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -221,7 +223,6 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
   const [peerTyping, setPeerTyping] = useState(false);
   const [pending, setPending] = useState<PendingState[]>([]);
   const channelRef = useRef<ChatChannel | null>(null);
-  const account = accounts.find(a => a.id === activeId);
 
   const merge = useCallback(async (incoming: ChatMessage[]) => {
     const merged = await appendThread(me.uid, target.uid, incoming);
@@ -307,7 +308,7 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
           <p className="muted small">{peerError ? `Lỗi tải hồ sơ: ${peerError}` : lastSeen || target.uid}</p>
         </div>
         <span className="chip" title="Tài khoản đang gửi">
-          <span className="chip-swatch" style={{ background: account?.color }} aria-hidden="true" />
+          <span className="chip-swatch" style={{ background: account.color }} aria-hidden="true" />
           Gửi bằng: {me.displayName}
         </span>
         <span className={`chip tone-${channelState === 'connected' ? 'ok' : channelState === 'none' ? 'warn' : 'idle'}`}>

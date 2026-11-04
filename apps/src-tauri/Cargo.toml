@@ -16,7 +16,22 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
-tauri-plugin-http = "2"
+# socks: SOCKS5 proxies for accounts that have one (HTTP proxies work without it).
+tauri-plugin-http = { version = "2", features = ["socks"] }
 tauri-plugin-store = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Rust-side WebSocket (socket.rs) for accounts with a proxy.
+tokio = { version = "1", features = ["net", "io-util", "sync", "time", "macros"] }
+tokio-tungstenite = { version = "0.26", default-features = false, features = ["connect", "rustls-tls-webpki-roots"] }
+tokio-socks = "0.5"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "0.26"
+url = "2"
+percent-encoding = "2"
+base64 = "0.22"
+
+[dev-dependencies]
+# socket.rs live test builds its own runtime.
+tokio = { version = "1", features = ["rt"] }

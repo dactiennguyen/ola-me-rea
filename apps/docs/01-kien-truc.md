@@ -27,24 +27,38 @@
 │   ├─ endpoints/  getLastMessage2, getExplore*, getMessageByRoom, …     │
 │   └─ chat.ts     ChatChannel(io từ socket.io-client 2.5) ─────────────────────────────► wss://sgdev.vip:3001
 └─────────────────────────────────────────────────────────────────────────┘
-Rust (src-tauri/src/lib.rs): đăng ký plugin http + store; lệnh data_dir, restrict_data_file
+Rust (src-tauri/src/lib.rs): đăng ký plugin http + store; lệnh data_dir, restrict_data_file, …
+Rust (src-tauri/src/socket.rs): WebSocket qua proxy cho nick có proxy (ws_open / ws_send / ws_close)
 ```
 
 ## Phần Rust
 
-[`src-tauri/src/lib.rs`](../src-tauri/src/lib.rs) chỉ làm 3 việc:
+[`src-tauri/src/lib.rs`](../src-tauri/src/lib.rs) làm các việc sau:
 
-1. `tauri_plugin_http::init()`: webview gọi `fetch` của plugin; request đi bằng HTTP client phía Rust, không qua chính sách CORS của webview. `sgdev.vip` không trả header CORS và cần các header tuỳ biến (`key2`, `hash`, `timestamp`, `deviceid`, `os`, `ver`), nên đây là cách duy nhất gọi API từ webview.
+1. `tauri_plugin_http::init()` (bật feature `socks`): webview gọi `fetch` của plugin; request đi bằng HTTP client phía Rust, không qua chính sách CORS của webview, và nhận tuỳ chọn `proxy` cho từng request. `sgdev.vip` không trả header CORS và cần các header tuỳ biến (`key2`, `hash`, `timestamp`, `deviceid`, `os`, `ver`), nên đây là cách duy nhất gọi API từ webview.
 2. `tauri_plugin_store`: đọc/ghi file JSON trong thư mục dữ liệu app.
 3. Lệnh:
    - `data_dir()` trả đường dẫn thư mục dữ liệu, để màn Cài đặt hiển thị.
    - `restrict_data_file(name)` chạy `chmod 600` sau mỗi lần ghi `accounts.json`/`settings.json`. Chỉ nhận đúng 2 tên file cố định, nên tham số không thể trỏ ra ngoài thư mục dữ liệu.
    - `export_accounts_file(name, content)` ghi file xuất danh sách tài khoản vào thư mục Downloads. Chỉ nhận tên `ola-accounts-YYYYMMDD-HHMMSS.json`, không ghi đè (trùng thì thêm `-2`, `-3`…), quyền 600 trên macOS/Linux.
    - `set_close_action(action)` / `close_window(action)` cho nút đóng cửa sổ và icon ở khay (`tray.rs`).
+   - `ws_open(url, proxy, onEvent)` / `ws_send(id, data)` / `ws_close(id)` (`socket.rs`): WebSocket mở từ phía Rust, đi qua proxy HTTP (`CONNECT`) hoặc SOCKS5 (có user/pass), TLS bằng rustls + webpki-roots. Chỉ chuyển khung text; phần Engine.IO 3 / Socket.IO 2 nằm ở `src/lib/rustSocket.ts`.
 
-Quyền (capability) nằm ở [`capabilities/default.json`](../src-tauri/capabilities/default.json): `core:default`, `store:default`, `http:default` với `allow` chỉ `https://sgdev.vip/*`. CSP trong [`tauri.conf.json`](../src-tauri/tauri.conf.json) chỉ cho kết nối tới IPC của Tauri, Firebase Auth (`identitytoolkit`, `securetoken`), `sgdev.vip` và `wss://sgdev.vip:3001`; ảnh `https:`; không cho script ngoài.
+Quyền (capability) nằm ở [`capabilities/default.json`](../src-tauri/capabilities/default.json): `core:default`, `store:default`, `http:default` với `allow` gồm `https://sgdev.vip/*`, Firebase Auth REST (`identitytoolkit.googleapis.com`, `securetoken.googleapis.com`, dùng khi nick có proxy) và `https://api.ipify.org/*` (nút *Kiểm tra* proxy). CSP trong [`tauri.conf.json`](../src-tauri/tauri.conf.json) chỉ cho kết nối tới IPC của Tauri, Firebase Auth (`identitytoolkit`, `securetoken`), `sgdev.vip` và `wss://sgdev.vip:3001`; ảnh `https:`; không cho script ngoài.
 
-Khi cần làm thêm phía Rust (ví dụ chạy nền, client Socket.IO riêng nếu server chặn Origin của webview), thêm lệnh vào `lib.rs` và gọi bằng `invoke()` từ `src/lib/platform.ts`.
+Khi cần làm thêm phía Rust, thêm lệnh vào `lib.rs` và gọi bằng `invoke()` từ `src/lib/platform.ts`.
+
+## Proxy theo từng nick
+
+`StoredAccount.proxy` (URL đã chuẩn hoá bởi `parseProxy()` trong `src/lib/proxy.ts`: `http://`, `socks5://`, `socks5h://`, có thể kèm user/pass). Đọc lúc đăng nhập, như thông tin thiết bị.
+
+| Kết nối | Nick **có** proxy | Nick **không** proxy |
+|---|---|---|
+| Firebase đăng nhập + làm mới token | REST `accounts:signInWithPassword`, `accounts:lookup`, `securetoken` qua `fetch` của plugin http với `proxy` (lõi: `firebaseRestLogin()`, `OlaClient.login({ firebaseFetch })`) | Firebase JS SDK trong webview |
+| API Ola (`sgdev.vip`) | `fetch` của plugin http với `proxy` | `fetch` của plugin http |
+| Socket (hộp thư, chat 1-1, phòng) | `rustIo(proxy)` → `socket.rs` | `socket.io-client` trong webview |
+
+Không đi qua proxy: ảnh đại diện (thẻ `<img>` của webview tải thẳng từ host ảnh) và đăng ký / gửi lại email xác thực (Firebase SDK). Chạy trong trình duyệt (`yarn dev`) thì bỏ qua proxy.
 
 ## Dùng chung lõi với `scripts/nodejs`
 
@@ -61,9 +75,9 @@ App không chép code client. `vite.config.ts` đặt alias `@ola/core` → `../
 
 Test `test/core.test.ts` duyệt đồ thị import từ `client.ts`, `chat.ts`, `endpoints/index.ts` và fail nếu chạm tới `node:*`, nên một thay đổi làm hỏng app desktop sẽ bị phát hiện ngay trong test của lõi.
 
-## Đăng nhập một tài khoản
+## Đăng nhập: mọi tài khoản cùng lúc
 
-`session.tsx` → `OlaClient.login()` với:
+`session.tsx` giữ một `LiveAccount` cho mỗi tài khoản. Mỗi `LiveAccount` gọi `OlaClient.login()` với:
 
 - `account`: email/mật khẩu từ `accounts.json`.
 - `config`: base URL + **thông tin thiết bị riêng của tài khoản**: Device ID, `key2`, app version, Android version (`olaConfigFor(account)` trong `accounts.ts`; mục để trống dùng mặc định của APK). `users/sync` đăng ký đúng Device ID và Android version đã ký.
@@ -71,17 +85,23 @@ Test `test/core.test.ts` duyệt đồ thị import từ `client.ts`, `chat.ts`,
 
 Sau đó `chatProfile()` chỉ lấy `displayName`, `photoURL`, `isVip`, `level`, `isVerifyAvatar` từ profile. Profile gốc **có key `password`** nên không bao giờ được lưu (xem [bao-mat-va-luu-y.md](../../docs/api/bao-mat-va-luu-y.md)).
 
-Mỗi thời điểm chỉ có **một** tài khoản đăng nhập; đổi tài khoản sẽ đóng client và kênh realtime cũ. Lõi đã hỗ trợ nhiều phiên song song (mỗi lần login một Firebase app riêng) nếu sau này cần.
+**Nhiều tài khoản online cùng lúc, đăng nhập bằng tay.** Mở app **không** tự đăng nhập; mỗi nick đăng nhập khi bấm *Đăng nhập* của nick đó, hoặc *Đăng nhập tất cả* trong Quản lý tài khoản (tối đa 3 nick một lúc). Mỗi tài khoản có client, Firebase app (lõi đặt tên riêng cho mỗi lần login), kênh hộp thư cá nhân và cache tin riêng (`chat-<uid>.json`). Bấm *Đăng xuất* ở một nick thì đóng client + kênh của nick đó; các nick khác vẫn online. Nhập danh sách tài khoản không đăng nhập các nick mới.
+
+Phía React:
+
+- `SessionProvider` / `useSession()`: danh sách tài khoản, cài đặt, `live[id]` (trạng thái từng nick: `status`, `error`, `ola`, `me`, `realtime`), `connect(id)` / `connectAll()` / `disconnect(id)`, `select(id)`.
+- `AccountProvider id` / `useAccount()` / `useOla()`: bọc màn hình của **một** nick. `App.tsx` dựng một `AccountView` (sidebar + Tin nhắn/Khám phá/Phòng chat/Thông tin) cho mỗi tài khoản và giữ chúng mounted suốt phiên; nick không được chọn chỉ bị ẩn, nên chat đang mở, tab và số tin chưa đọc của từng nick vẫn còn khi chuyển qua lại.
+- `selectedId` (lưu là `activeId` trong `accounts.json`) chỉ là nick đang hiện trên màn hình; chọn nick khác **không** đăng nhập lại.
 
 ## Kênh realtime
 
 | Kênh | `roomNo` | `add user` | Ai mở |
 |---|---|---|---|
-| Hộp thư cá nhân | uid của mình | `{username: uid, roomNo: uid}` [Suy luận] | `session.tsx`, suốt phiên |
+| Hộp thư cá nhân | uid của mình | `{username: uid, roomNo: uid}` [Suy luận] | `session.tsx`, mỗi nick đang online một kênh, suốt phiên |
 | Chat 1-1 | uid người nhận | `{username: uid mình, roomNo: uid người nhận}` | `DirectChat`, khi mở hội thoại |
 | Phòng | mã tỉnh | `{username: tên hiển thị, roomNo: mã}` | `RoomView`, khi ở trong phòng |
 
-Mỗi kênh là một `ChatChannel` (lõi `chat.ts`): `forceNew`, chỉ websocket, query `key` + `roomNo`, tự kết nối lại (2 s → 30 s). Tin đến trên hộp thư cá nhân được ghi vào cache rồi phát cho màn Tin nhắn.
+Mỗi kênh là một `ChatChannel` (lõi `chat.ts`): `forceNew`, chỉ websocket, query `key` + `roomNo`, tự kết nối lại (2 s → 30 s). Nick có proxy dùng `rustIo` thay `socket.io-client`, cùng giao diện `on/off/emit/connect/disconnect`. Tin đến trên hộp thư cá nhân được ghi vào cache rồi phát cho màn Tin nhắn.
 
 ## File dữ liệu
 

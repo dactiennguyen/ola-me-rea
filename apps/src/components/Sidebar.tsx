@@ -1,20 +1,19 @@
-import type { StoredAccount } from '../lib/accounts.ts';
-import type { AccountsPanel } from '../screens/AccountsScreen.tsx';
-import { shortTime } from '../lib/format.ts';
-import { useSession, type RealtimeState } from '../lib/session.tsx';
+import { useAccount, type RealtimeState } from '../lib/session.tsx';
+import { liveText, liveTone } from './AccountRail.tsx';
 import { Avatar } from './Avatar.tsx';
 import { Icon, type IconName } from './Icon.tsx';
 
-export type Screen = 'messages' | 'explore' | 'rooms' | 'accounts';
+/** The screens of one account. */
+export type Screen = 'messages' | 'explore' | 'rooms' | 'profile';
 
 const NAV: { id: Screen; label: string; icon: IconName }[] = [
   { id: 'messages', label: 'Tin nhắn', icon: 'message' },
   { id: 'explore', label: 'Khám phá', icon: 'compass' },
   { id: 'rooms', label: 'Phòng chat', icon: 'users' },
-  { id: 'accounts', label: 'Quản lý tài khoản', icon: 'settings' },
+  { id: 'profile', label: 'Thông tin tài khoản', icon: 'user' },
 ];
 
-const REALTIME: Record<RealtimeState, { text: string; tone: 'ok' | 'warn' | 'bad' | 'idle' }> = {
+export const REALTIME: Record<RealtimeState, { text: string; tone: 'ok' | 'warn' | 'bad' | 'idle' }> = {
   off: { text: 'Chưa đăng nhập', tone: 'idle' },
   'missing-key': { text: 'Thiếu socket key', tone: 'warn' },
   idle: { text: 'Chưa kết nối', tone: 'idle' },
@@ -24,65 +23,23 @@ const REALTIME: Record<RealtimeState, { text: string; tone: 'ok' | 'warn' | 'bad
   error: { text: 'Lỗi kết nối', tone: 'bad' },
 };
 
-function accountStatus(account: StoredAccount, active: boolean, status: string, error: string | null) {
-  if (active && status === 'ready') return { text: 'Đang hoạt động', tone: 'ok' as const };
-  if (active && status === 'signing-in') return { text: 'Đang đăng nhập…', tone: 'warn' as const };
-  if (active && status === 'error') return { text: error ?? 'Lỗi đăng nhập', tone: 'bad' as const };
-  if (account.lastError) return { text: 'Lỗi lần trước', tone: 'warn' as const };
-  if (account.lastLoginAt) return { text: `Đăng nhập ${shortTime(account.lastLoginAt)}`, tone: 'idle' as const };
-  return { text: 'Chưa đăng nhập', tone: 'idle' as const };
-}
-
-export function Sidebar({ screen, onNavigate, onAccounts, unread }: {
-  screen: Screen;
-  onNavigate: (s: Screen) => void;
-  /** Opens Quản lý tài khoản with a panel (add, register, import/export). */
-  onAccounts: (panel: AccountsPanel) => void;
-  unread: number;
-}) {
-  const { accounts, activeId, status, error, realtime, switchAccount } = useSession();
-  const rt = REALTIME[realtime];
+/** The sidebar of the account on screen: who it is, its screens, its realtime channel. */
+export function Sidebar({ screen, onNavigate, unread }: { screen: Screen; onNavigate: (s: Screen) => void; unread: number }) {
+  const { account, state } = useAccount();
+  const name = state.me?.displayName || account.label || account.email;
+  const rt = REALTIME[state.realtime];
   return (
-    <aside className="sidebar" aria-label="Tài khoản và điều hướng">
-      <div className="sidebar-brand">
-        <span className="brand-name">Ola Desktop</span>
-        <span className="muted small">{accounts.length} tài khoản</span>
-      </div>
+    <aside className="sidebar" aria-label={`Tài khoản ${name}`}>
+      <button type="button" className="sidebar-account" title="Thông tin tài khoản" onClick={() => onNavigate('profile')}>
+        <Avatar name={name} photo={state.me?.photoURL || account.photoURL} color={account.color} size={40} ring="var(--sidebar)" />
+        <span className="account-text">
+          <span className="account-name">{account.label || name}</span>
+          <span className="muted small ellipsis">{account.email}</span>
+          <span className={`status-line tone-${liveTone(state)}`}><span className="status-dot" aria-hidden="true" />{liveText(account, state)}</span>
+        </span>
+      </button>
 
-      <section className="sidebar-section">
-        <div className="section-head">
-          <h2 className="section-label">Tài khoản</h2>
-          <button type="button" className="section-action" title="Nhập / xuất danh sách tài khoản" onClick={() => onAccounts('transfer')}>
-            <Icon name="arrowUpDown" size={14} /> Nhập / Xuất
-          </button>
-        </div>
-        {accounts.map(account => {
-          const active = account.id === activeId;
-          const s = accountStatus(account, active, status, error);
-          return (
-            <button
-              key={account.id}
-              type="button"
-              className={`account-row${active ? ' is-active' : ''}`}
-              aria-current={active ? 'true' : undefined}
-              onClick={() => { if (!active || status === 'error' || status === 'signed-out') void switchAccount(account.id); }}
-              title={account.email}
-            >
-              <Avatar name={account.label || account.email} photo={account.photoURL} color={account.color} size={32} />
-              <span className="account-text">
-                <span className="account-name">{account.label || account.email}</span>
-                <span className={`status-line tone-${s.tone}`}><span className="status-dot" aria-hidden="true" />{s.text}</span>
-              </span>
-            </button>
-          );
-        })}
-        <button type="button" className="add-account" onClick={() => onAccounts('add')}>
-          <Icon name="plus" /> Thêm tài khoản
-        </button>
-      </section>
-
-      <nav className="sidebar-section" aria-label="Điều hướng chính">
-        <h2 className="section-label">Mục</h2>
+      <nav className="sidebar-section" aria-label="Mục của tài khoản">
         {NAV.map(item => (
           <button
             key={item.id}
@@ -98,7 +55,7 @@ export function Sidebar({ screen, onNavigate, onAccounts, unread }: {
         ))}
       </nav>
 
-      <div className="realtime-chip" title="Kênh Socket.IO cá nhân (nhận tin 1-1)">
+      <div className="realtime-chip" title="Kênh Socket.IO cá nhân của nick này (nhận tin 1-1)">
         <span className={`status-dot tone-${rt.tone}`} aria-hidden="true" />
         <span className="grow">Kết nối realtime</span>
         <span className={`tone-${rt.tone} strong`}>{rt.text}</span>

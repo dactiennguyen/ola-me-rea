@@ -2,10 +2,14 @@
 
 Phạm vi bản này: **tài khoản, danh sách tin nhắn, chat 1-1, Khám phá, phòng chat**, chỉ tin văn bản. Mọi request đi qua lõi `scripts/nodejs/src` với header ký như app gốc ([auth-va-header.md](../../docs/api/auth-va-header.md)). Cột "Ghi?" đánh dấu request đổi trạng thái server.
 
-## Thanh bên
+## Bố cục: cột tài khoản + thanh bên của từng nick
 
-- Danh sách tài khoản đã lưu kèm trạng thái: *Đang hoạt động*, *Đang đăng nhập…*, lỗi (thông báo đã dịch sang tiếng Việt), hoặc thời điểm đăng nhập lần cuối. Bấm vào tài khoản khác để chuyển. Nút **Nhập / Xuất** bên phải chữ "Tài khoản" mở thẳng phần nhập/xuất; *Thêm tài khoản* mở form thêm.
-- Mục: Tin nhắn (badge số tin chưa đọc), Khám phá, Phòng chat, Quản lý tài khoản.
+Mở app **không tự đăng nhập**. Bấm *Đăng nhập* ở từng nick (ô trạng thái của nick, *Thông tin tài khoản*, Quản lý tài khoản) hoặc *Đăng nhập tất cả* trong Quản lý tài khoản. Nhiều nick online cùng lúc, nick nào online đều nhận tin.
+
+- **Cột tài khoản** (sát mép trái): mỗi nick một avatar, chấm trạng thái (xanh: online; vàng: đang đăng nhập hoặc realtime chưa ổn định; đỏ: lỗi; xám: chưa đăng nhập) và số tin chưa đọc của nick đó. Bấm avatar để xem nick đó ngay, không đăng nhập lại; mỗi nick giữ nguyên chat đang mở và tab đang xem. Dưới cùng: **+** (thêm tài khoản), **Quản lý tài khoản**, **Cài đặt**.
+- **Thanh bên của nick đang xem**: avatar, tên, email, trạng thái (bấm vào mở *Thông tin tài khoản*); mục Tin nhắn (badge số tin chưa đọc), Khám phá, Phòng chat, Thông tin tài khoản.
+- Nick chưa online thì thay cho các màn là ô trạng thái: *Đang đăng nhập…*, lỗi kèm *Thử lại* / *Sửa tài khoản*, hoặc *chưa đăng nhập* kèm *Đăng nhập*.
+- **Thông tin tài khoản**: tên trên Ola và trong app, email, UID (nút sao chép), trạng thái, realtime, lần đăng nhập cuối, Device ID, app version, Android version, key2; nút *Đăng xuất nick này* / *Đăng nhập* và *Sửa*.
 - Ô *Kết nối realtime* phản ánh kênh hộp thư cá nhân: *Ổn định*, *Đang kết nối…*, *Mất kết nối*. Socket key đã có mặc định nên kênh tự kết nối sau khi đăng nhập, không cần nhập gì (*Thiếu socket key* chỉ hiện nếu người dùng tự xoá key trong Cài đặt › Nâng cao).
 
 ## Quản lý tài khoản
@@ -13,19 +17,25 @@ Phạm vi bản này: **tài khoản, danh sách tin nhắn, chat 1-1, Khám ph�
 | Thao tác | Gọi | Ghi? |
 |---|---|---|
 | Thêm / sửa / xoá | Chỉ ghi `accounts.json` | Không |
-| Đăng nhập (*Lưu và đăng nhập*, *Dùng*, *Thử lại*) | Firebase `signInWithPassword` → `GET napi/general/getTimes` → `POST napi/users/sync` | **Có**: `users/sync` đăng ký Device ID |
-| Đăng xuất | Đóng Firebase app + socket trên máy, bỏ chọn tài khoản (lần mở app sau không tự đăng nhập) | Không |
+| Đăng nhập (*Đăng nhập*, *Đăng nhập tất cả*, *Lưu và đăng nhập*, *Thử lại*; không tự động khi mở app) | Firebase `signInWithPassword` → `GET napi/general/getTimes` → `POST napi/users/sync` | **Có**: `users/sync` đăng ký Device ID |
+| Đăng xuất (một nick) | Đóng Firebase app + socket của nick đó trên máy. Các nick khác vẫn online | Không |
 | **Đăng ký mới** | `POST faApi2/checkEmail.php` (ký, không Bearer; cần `valid: true`) → Firebase `createUserWithEmailAndPassword` → `sendEmailVerification` | **Có**: tạo tài khoản Firebase thật, gửi mail |
 | Gửi lại email xác thực | Firebase `signInWithPassword` → `sendEmailVerification` (không gọi backend Ola) | **Có**: gửi mail |
-| Nhập / Xuất | Chỉ đọc/ghi `accounts.json`; file xuất nằm trong Downloads | Không |
+| Nhập / Xuất (trong **Cài đặt**) | Đọc/ghi `accounts.json`; file xuất nằm trong Downloads. Nick mới nhập chưa đăng nhập | Không |
 
 - Form: tên hiển thị (trống thì dùng tên Ola), email, mật khẩu (nút hiện/ẩn), và mục **Thiết bị của nick này**: Device ID (16 hex, nút tạo mới), App version (header `ver`), Android version (`ver` trong `users/sync`), Key2 (header `key2`). Ba mục sau để trống = giá trị của APK 27.7.8 (`olaDefaults`) và chỉ lưu khi khác mặc định, nên lên bản app mới thì nick dùng mặc định tự theo. Đổi thiết bị của nick đang đăng nhập áp dụng từ lần đăng nhập sau. Danh sách hiện `device · ver · Android` của từng nick.
 - Email chưa xác minh bị từ chối, giống app (lõi kiểm tra `emailVerified` trước `sync`).
-- **Đăng ký mới** làm giống màn đăng ký của app Android ([luong-dang-ky.md](../../docs/api/luong-dang-ky.md)): cùng luật email (regex `^[^@]+@[^@]+\.[^@]+`, được trim) và mật khẩu ≥ 6 ký tự, cùng câu báo lỗi. Form desktop **không** có ô *Nhập lại mật khẩu* và hai ô tick (đồng ý Điều khoản sử dụng, đủ 18 tuổi): bấm *Đăng ký ngay* là tự xác nhận thay người dùng (theo yêu cầu chủ app). Email vẫn phải xác thực bằng link trong mail, không tự làm được. Link điều khoản hiện dạng chữ kèm nút sao chép (app chưa mở được link ngoài). `checkEmail` được ký bằng Device ID mới của tài khoản. Xong thì tài khoản vào danh sách (không tự chọn) với trạng thái "Đã gửi email xác thực"; mở link trong mail rồi bấm *Dùng*. Lõi: `scripts/nodejs/src/register.ts` (`registerAccount`, `resendVerificationEmail`, `OlaClient.anonymous`).
+- **Đăng ký mới** làm giống màn đăng ký của app Android ([luong-dang-ky.md](../../docs/api/luong-dang-ky.md)): cùng luật email (regex `^[^@]+@[^@]+\.[^@]+`, được trim) và mật khẩu ≥ 6 ký tự, cùng câu báo lỗi. Form desktop **không** có ô *Nhập lại mật khẩu* và hai ô tick (đồng ý Điều khoản sử dụng, đủ 18 tuổi): bấm *Đăng ký ngay* là tự xác nhận thay người dùng (theo yêu cầu chủ app). Email vẫn phải xác thực bằng link trong mail, không tự làm được. Link điều khoản hiện dạng chữ kèm nút sao chép (app chưa mở được link ngoài). `checkEmail` được ký bằng Device ID mới của tài khoản. Xong thì tài khoản vào danh sách (không tự chọn) với trạng thái "Đã gửi email xác thực"; mở link trong mail rồi bấm *Đăng nhập*. Lõi: `scripts/nodejs/src/register.ts` (`registerAccount`, `resendVerificationEmail`, `OlaClient.anonymous`).
+- **Proxy** (mục *Proxy của nick này* trong form): `host:cổng`, `host:cổng:user:pass`, `user:pass@host:cổng`, `http://…`, `socks5://…`; nút *Kiểm tra* hiện IP ra ngoài qua proxy (`api.ipify.org`). Có proxy thì đăng nhập Firebase, API Ola và mọi socket của nick đi qua proxy ([01 · Kiến trúc](01-kien-truc.md#proxy-theo-từng-nick)); ảnh đại diện vẫn tải trực tiếp. Danh sách và *Thông tin tài khoản* hiện `proxy http 1.2.3.4:8080 (có user)`, không hiện mật khẩu proxy. Đổi proxy áp dụng từ lần đăng nhập sau.
 - **Gửi lại email xác thực** hiện ở tài khoản vừa đăng ký hoặc đăng nhập bị từ chối vì chưa xác minh. App Android không có nút này (chỉ gửi một lần lúc đăng ký).
-- **Xuất**: file `ola-accounts-YYYYMMDD-HHMMSS.json` trong thư mục Downloads (không ghi đè, quyền 600 trên macOS/Linux) hoặc *Sao chép JSON*. Gồm email, **mật khẩu dạng chữ thường**, tên, Device ID của mọi tài khoản.
-- **Nhập**: chọn file hoặc dán chữ. Nhận file xuất của app, mảng JSON `[{email, password, label?, deviceId?, appVersion?, androidVersion?, publicKey?}]`, hoặc mỗi dòng `email|mật khẩu` (dấu ngăn đầu tiên trên dòng trong `|`, tab, `,`, `;`, `:`; phần còn lại là mật khẩu; dòng `#` bị bỏ qua; khoảng trắng đầu/cuối dòng bị cắt). Trước khi nhập hiện số sẽ thêm / cập nhật / giữ nguyên và các dòng lỗi. Trùng email (không phân biệt hoa thường) thì cập nhật mật khẩu và tên, **giữ Device ID cũ**; email mới được thêm với thông tin thiết bị trong file (Device ID hoặc mã mới, phiên bản, key2). File xuất cũng mang thông tin thiết bị riêng của từng nick.
-- **Cài đặt app** (dùng chung mọi nick): *Chế độ thử* (tin chỉ hiện trên máy, không gửi), *Khi bấm nút đóng cửa sổ*, *Khôi phục mặc định*. Socket key **không** nằm ở phần chính vì đã có mặc định chạy được; nó nằm trong mục **Nâng cao** (ẩn mặc định), chỉ cần đổi khi app gốc đổi key. Hiển thị máy chủ API/socket (cố định, xem [01 · Kiến trúc](01-kien-truc.md#file-dữ-liệu)) và thư mục dữ liệu. `settings.json` bản cũ có app version/Android version/key2 chung: lần mở đầu tiên chép các giá trị khác mặc định sang những nick chưa có giá trị riêng, rồi bỏ khỏi `settings.json`.
+- **Xuất**: file `ola-accounts-YYYYMMDD-HHMMSS.json` trong thư mục Downloads (không ghi đè, quyền 600 trên macOS/Linux) hoặc *Sao chép JSON*. Gồm email, **mật khẩu dạng chữ thường**, tên, thông tin thiết bị và **proxy (kể cả user/pass proxy)** của mọi tài khoản.
+- **Nhập**: chọn file hoặc dán chữ. Nhận file xuất của app, mảng JSON `[{email, password, label?, deviceId?, appVersion?, androidVersion?, publicKey?, proxy?}]`, hoặc mỗi dòng `email|mật khẩu` hay `email|mật khẩu|proxy` (phần sau dấu `|` cuối cùng được coi là proxy nếu đọc được như proxy) (dấu ngăn đầu tiên trên dòng trong `|`, tab, `,`, `;`, `:`; phần còn lại là mật khẩu; dòng `#` bị bỏ qua; khoảng trắng đầu/cuối dòng bị cắt). Trước khi nhập hiện số sẽ thêm / cập nhật / giữ nguyên và các dòng lỗi. Trùng email (không phân biệt hoa thường) thì cập nhật mật khẩu, tên và proxy (nếu có), **giữ Device ID cũ**; email mới được thêm với thông tin thiết bị trong file (Device ID hoặc mã mới, phiên bản, key2). File xuất cũng mang thông tin thiết bị riêng của từng nick.
+
+## Cài đặt
+
+Dùng chung cho cả app, không theo tài khoản.
+
+- Nút **Cài đặt** (bánh răng) ở cuối cột tài khoản, không nằm trong Quản lý tài khoản, mở được cả khi chưa có tài khoản: *Chế độ thử* (tin chỉ hiện trên máy, không gửi), *Khi bấm nút đóng cửa sổ*, *Khôi phục mặc định*. Socket key **không** nằm ở phần chính vì đã có mặc định chạy được; nó nằm trong mục **Nâng cao** (ẩn mặc định), chỉ cần đổi khi app gốc đổi key. Hiển thị máy chủ API/socket (cố định, xem [01 · Kiến trúc](01-kien-truc.md#file-dữ-liệu)) và thư mục dữ liệu. `settings.json` bản cũ có app version/Android version/key2 chung: lần mở đầu tiên chép các giá trị khác mặc định sang những nick chưa có giá trị riêng, rồi bỏ khỏi `settings.json`.
 
 ## Tin nhắn: danh sách hội thoại
 
@@ -57,7 +67,7 @@ Gửi tin (đúng thứ tự app gốc, [luong-chat-1-1.md](../../docs/api/luong
 - Socket chưa kết nối thì **không gửi gì** (bước HTTP không chạy). Bước 2/3 lỗi thì tin vẫn hiện, kèm dòng cảnh báo ("Đã gửi realtime; lỗi lưu tin cuối").
 - App desktop không có FCM token thiết bị nên `fcmToken` của người gửi là chuỗi rỗng; người khác nhắn đến chỉ hiện khi app đang mở (kênh cá nhân), không có push.
 - Đang gõ: emit `typing` khi bắt đầu nhập, `stop typing` sau 2 giây ngừng; hiện "… đang soạn tin" khi nhận `typing`.
-- Enter gửi, Shift+Enter xuống dòng; tối đa 2000 ký tự.
+- Enter gửi, Shift+Enter xuống dòng; tối đa 4000 ký tự (app Android không giới hạn). Người nhận đang mở app nhận đủ; người nhận offline chỉ thấy 150 ký tự đầu (server cắt khi lưu, xem [luong-chat-1-1.md](../../docs/api/luong-chat-1-1.md#độ-dài-tin-nhắn)).
 - Ô nhập bị khoá kèm lý do khi: thiếu socket key, socket chưa kết nối, chưa tải được người nhận.
 
 ## Khám phá
@@ -90,4 +100,4 @@ Gửi tin (đúng thứ tự app gốc, [luong-chat-1-1.md](../../docs/api/luong
 
 ## Ngoài phạm vi bản này
 
-Ảnh, sticker, quà, tin thoại, trả lời tin (reply), thông báo hệ điều hành, gọi thoại/video, bài viết/story, VIP/xu, Caro, nhiều tài khoản online cùng lúc. Xem [03 · Lộ trình](03-lo-trinh.md).
+Ảnh, sticker, quà, tin thoại, trả lời tin (reply), thông báo hệ điều hành, gọi thoại/video, bài viết/story, VIP/xu, Caro, hộp thư gộp mọi nick. Xem [03 · Lộ trình](03-lo-trinh.md).

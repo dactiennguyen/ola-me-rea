@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon } from './Icon.tsx';
 
-const MAX_LENGTH = 2000;
+// The Android app sets no limit and the socket delivers long texts intact; the
+// server keeps only 150 characters for offline receivers (docs/api/luong-chat-1-1.md).
+const MAX_LENGTH = 4000;
 
 /**
  * Text composer: Enter sends, Shift+Enter adds a line. Reports typing

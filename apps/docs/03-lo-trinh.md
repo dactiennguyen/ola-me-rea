@@ -13,6 +13,7 @@ Cập nhật 2026-11-04.
 | 4 · Tin nhắn + chat 1-1 | Danh sách gộp server + cache, chat realtime, đang gõ, gửi 3 bước | Lõi có test; UI chưa chạy thử với server |
 | 5 · Khám phá | 3 tab, bộ lọc, cuộn vô hạn, nhắn tin từ thẻ | Endpoint đã chạy thật trên Node trước đây |
 | 6 · Phòng chat | Vào phòng, lịch sử, thành viên, gửi, khoá khi bị cấm | Endpoint đọc đã chạy thật 2026-11-04 |
+| 8 · Nhiều nick cùng lúc | Nhiều tài khoản online song song (đăng nhập bằng tay, có *Đăng nhập tất cả*); cột tài khoản; màn của từng nick giữ trạng thái; Thông tin tài khoản | Headless Chrome với 3 nick (2 tự đăng nhập song song, 1 offline); chưa chạy với nhiều nick thật |
 | 7 · Socket key | Khôi phục `key` tĩnh của Socket.IO = `6Q5AY7RZVR06LFAA07TC`; đặt làm mặc định `socketDefaults.key` | APK + 1 kết nối sống 2026-11-04 ([socket-io.md](../../docs/api/socket-io.md#key-được-tạo-như-thế-nào)) |
 
 ## Việc cần làm tiếp
@@ -34,7 +35,7 @@ Theo thứ tự ưu tiên:
 | Gửi ảnh / sticker / tin thoại | Bắt `FormData` của `postUploadChat`/`upAudio` ([con-thieu.md](../../docs/api/con-thieu.md) mục 5) |
 | Trả lời tin (reply) | Payload đã có `replyID`/`replyText`; cần một capture có giá trị |
 | Thông báo hệ điều hành khi có tin | `tauri-plugin-notification`; chỉ khi app đang chạy |
-| Nhiều tài khoản online cùng lúc | Lõi đã hỗ trợ; cần session theo từng tài khoản và hộp thư gộp |
+| Hộp thư gộp mọi nick | Đã có nhiều nick online cùng lúc; cần màn gộp danh sách hội thoại, gắn nhãn nick |
 | Mã hoá `accounts.json` | `tauri-plugin-stronghold` hoặc Keychain (hiện cố ý không dùng) |
 | Bản Windows/Linux | Build trên máy tương ứng; quyền 600 chỉ áp dụng Unix |
 
@@ -51,5 +52,4 @@ Theo thứ tự ưu tiên:
 
 ## Câu hỏi mở
 
-- Có cần nhiều tài khoản **online cùng lúc** (nhận tin của tất cả) hay chỉ chuyển qua lại như hiện tại?
 - Device ID: mỗi tài khoản một mã ngẫu nhiên (hiện tại) hay dùng Android ID thật của máy đã đăng nhập?
