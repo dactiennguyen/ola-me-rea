@@ -49,6 +49,64 @@ fn restrict_data_file(app: tauri::AppHandle, name: String) -> Result<(), String>
     Ok(())
 }
 
+/// `ola-accounts-YYYYMMDD-HHMMSS.json`, the only name an export may get.
+fn is_export_name(name: &str) -> bool {
+    let Some(stamp) = name
+        .strip_prefix("ola-accounts-")
+        .and_then(|rest| rest.strip_suffix(".json"))
+    else {
+        return false;
+    };
+    stamp.len() == 15
+        && stamp.bytes().enumerate().all(|(i, b)| {
+            if i == 8 {
+                b == b'-'
+            } else {
+                b.is_ascii_digit()
+            }
+        })
+}
+
+/// Writes the account list export (passwords included) to the Downloads
+/// folder and returns its path. Never overwrites: a taken name gets -2, -3….
+#[tauri::command]
+fn export_accounts_file(
+    app: tauri::AppHandle,
+    name: String,
+    content: String,
+) -> Result<String, String> {
+    if !is_export_name(&name) {
+        return Err(format!("invalid export file name: {name}"));
+    }
+    let dir = app.path().download_dir().map_err(|e| e.to_string())?;
+    let stem = name.trim_end_matches(".json");
+    for n in 1..=20 {
+        let path = if n == 1 {
+            dir.join(&name)
+        } else {
+            dir.join(format!("{stem}-{n}.json"))
+        };
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        match options.open(&path) {
+            Ok(mut file) => {
+                use std::io::Write;
+                file.write_all(content.as_bytes())
+                    .map_err(|e| e.to_string())?;
+                return Ok(path.to_string_lossy().into_owned());
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+    Err("too many exports with the same name in Downloads".into())
+}
+
 /// The app's name in its window title and tray: Ola Desktop DEV under `yarn app:dev`.
 pub fn app_name() -> &'static str {
     if tauri::is_dev() {
@@ -79,6 +137,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             data_dir,
             restrict_data_file,
+            export_accounts_file,
             tray::set_close_action,
             tray::close_window
         ])
@@ -95,4 +154,24 @@ pub fn run() {
                 tray::show(_app);
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_export_name;
+
+    #[test]
+    fn export_names() {
+        assert!(is_export_name("ola-accounts-20261104-090807.json"));
+        for bad in [
+            "ola-accounts-20261104-090807.txt",
+            "ola-accounts-2026110-4090807.json",
+            "ola-accounts-20261104-09080.json",
+            "../ola-accounts-20261104-090807.json",
+            "ola-accounts-20261104-090807.json/../x",
+            "accounts.json",
+        ] {
+            assert!(!is_export_name(bad), "{bad}");
+        }
+    }
 }

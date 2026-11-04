@@ -95,26 +95,11 @@ Màn "Quên mật khẩu?" (`ForgotPasswordScreen`) mở từ link "Quên mật 
 
 Luồng này **không** gọi backend Ola. Đổi mật khẩu diễn ra trên trang của Firebase qua link trong mail.
 
-## Làm bằng Node.js / Firebase JS SDK
+## Làm bằng Node.js và Ola Desktop
 
-Client trong `scripts/nodejs` **chưa** có lệnh đăng ký. Nếu cần làm, các bước tương ứng là (chưa chạy thử; bước 2 tạo tài khoản thật):
+Lõi `scripts/nodejs/src/register.ts` làm đúng các bước trên: `registrationProblem()` (luật form và câu báo của app), `checkEmailAllowed()` (gọi `checkEmail.php` qua `OlaClient.anonymous()`, không Bearer), `registerAccount()` (Firebase `createUserWithEmailAndPassword` + `sendEmailVerification`) và `resendVerificationEmail()`. Ola Desktop dùng nó cho nút *Đăng ký mới* ([tính năng](../../apps/docs/02-tinh-nang.md#quản-lý-tài-khoản)); cách gọi từ Node ở [nodejs-login.md](nodejs-login.md#đăng-ký).
 
-```ts
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
-import { checkEmail } from './src/endpoints/index.ts';
-
-// 1. checkEmail chạy trước khi có tài khoản: request ký nhưng không có Bearer.
-//    OlaClient hiện chỉ gọi được sau khi đăng nhập, nên cần một request ký không token.
-// 2. Tạo tài khoản Firebase và gửi mail xác thực:
-const auth = getAuth(initializeApp(firebaseConfig));
-const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password);
-await sendEmailVerification(user);
-// 3. Người dùng bấm link trong mail, sau đó mới đăng nhập như bình thường (OlaClient.login → users/sync).
-
-// Quên mật khẩu:
-await sendPasswordResetEmail(auth, email.trim());
-```
+Khác app Android: có thêm *Gửi lại email xác thực* (app gốc chỉ gửi một lần lúc đăng ký). Gọi thật là **tạo tài khoản thật**; test của lõi dùng fetch giả và không chạm Firebase.
 
 ## Bằng chứng
 

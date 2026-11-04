@@ -26,6 +26,19 @@ export async function restrictDataFile(name: DataFileName): Promise<void> {
   if (isTauri) await invoke('restrict_data_file', { name });
 }
 
+/**
+ * Saves an account export. Tauri writes it to the Downloads folder and returns
+ * the path; a browser tab downloads it and returns null.
+ */
+export async function saveExportFile(name: string, content: string): Promise<string | null> {
+  if (isTauri) return invoke<string>('export_accounts_file', { name, content });
+  const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
+  const link = Object.assign(document.createElement('a'), { href: url, download: name });
+  link.click();
+  URL.revokeObjectURL(url);
+  return null;
+}
+
 /** Tells the Rust side what the close button does (src-tauri/src/tray.rs). */
 export async function setCloseAction(action: 'ask' | 'tray' | 'quit'): Promise<void> {
   if (isTauri) await invoke('set_close_action', { action });

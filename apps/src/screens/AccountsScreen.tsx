@@ -5,18 +5,37 @@ import { newDeviceId, type StoredAccount } from '../lib/accounts.ts';
 import { shortTime } from '../lib/format.ts';
 import { dataDir, isTauri } from '../lib/platform.ts';
 import { useSession } from '../lib/session.tsx';
+import { AccountsTransferPanel } from './AccountsTransferPanel.tsx';
+import { RegisterPanel } from './RegisterPanel.tsx';
 import { DEFAULT_SETTINGS, SERVERS, SIGN_IN_SETTINGS, type AppSettings, type CloseAction } from '../lib/settings.ts';
 
 interface Draft { id?: string; label: string; email: string; password: string; deviceId: string }
 
 const emptyDraft = (): Draft => ({ label: '', email: '', password: '', deviceId: newDeviceId() });
 
+/** Sign-in failed or registration is pending because the email is not verified yet. */
+const needsVerification = (a: StoredAccount) => Boolean(a.verificationSentAt) || /xác minh/.test(a.lastError ?? '');
+
 export function AccountsScreen() {
-  const { accounts, activeId, status, error, switchAccount, signOut, saveAccount, removeAccount } = useSession();
+  const { accounts, activeId, status, error, switchAccount, signOut, saveAccount, removeAccount, resendVerification } = useSession();
   const [draft, setDraft] = useState<Draft | null>(accounts.length ? null : emptyDraft());
+  const [panel, setPanel] = useState<'register' | 'transfer' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [resend, setResend] = useState<{ id: string; text: string; tone: string } | null>(null);
+
+  const openPanel = (next: 'register' | 'transfer') => { setDraft(null); setPanel(next); };
+
+  const doResend = async (a: StoredAccount) => {
+    setResend({ id: a.id, text: 'Đang gửi…', tone: 'idle' });
+    try {
+      const sent = await resendVerification(a.id);
+      setResend({ id: a.id, text: sent ? `Đã gửi lại email xác thực tới ${a.email}.` : 'Email đã được xác thực, bấm Dùng để đăng nhập.', tone: 'ok' });
+    } catch (err) {
+      setResend({ id: a.id, text: err instanceof Error ? err.message : String(err), tone: 'bad' });
+    }
+  };
 
   const edit = (a: StoredAccount) => {
     setDraft({ id: a.id, label: a.label, email: a.email, password: a.password, deviceId: a.deviceId });
@@ -44,14 +63,27 @@ export function AccountsScreen() {
           <h1>Quản lý tài khoản</h1>
           <p className="muted small">Thêm tài khoản Ola (email + mật khẩu), chọn tài khoản đang dùng và cấu hình kết nối.</p>
         </div>
-        {!draft && (
-          <button type="button" className="btn btn-primary" onClick={() => { setDraft(emptyDraft()); setFormError(null); }}>
-            <Icon name="plus" size={16} /> Thêm tài khoản
-          </button>
+        {!panel && !draft?.id && (
+          <div className="form-actions">
+            {!draft && (
+              <button type="button" className="btn btn-primary" onClick={() => { setDraft(emptyDraft()); setFormError(null); }}>
+                <Icon name="plus" size={16} /> Thêm tài khoản
+              </button>
+            )}
+            <button type="button" className="btn btn-ghost" onClick={() => openPanel('register')}>
+              <Icon name="user" size={16} /> Đăng ký mới
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => openPanel('transfer')}>
+              <Icon name="refresh" size={16} /> Nhập / Xuất
+            </button>
+          </div>
         )}
       </header>
 
-      {draft && (
+      {panel === 'register' && <RegisterPanel onClose={() => setPanel(null)} />}
+      {panel === 'transfer' && <AccountsTransferPanel onClose={() => setPanel(null)} />}
+
+      {draft && !panel && (
         <form className="panel form-grid" onSubmit={e => void submit(e, true)} aria-label={draft.id ? 'Sửa tài khoản' : 'Thêm tài khoản'}>
           <h2 className="panel-title">{draft.id ? 'Sửa tài khoản' : 'Tài khoản mới'}</h2>
           <label className="field">
@@ -99,6 +131,7 @@ export function AccountsScreen() {
                 ? status === 'ready' ? { text: 'Đang hoạt động', tone: 'ok' }
                   : status === 'signing-in' ? { text: 'Đang đăng nhập…', tone: 'warn' }
                     : status === 'error' ? { text: error ?? 'Lỗi', tone: 'bad' } : { text: 'Đã đăng xuất', tone: 'idle' }
+                : a.verificationSentAt ? { text: `Đã gửi email xác thực ${shortTime(a.verificationSentAt)}: mở link trong email rồi bấm Dùng`, tone: 'warn' }
                 : a.lastError ? { text: `Lỗi lần trước: ${a.lastError}`, tone: 'warn' }
                   : { text: a.lastLoginAt ? `Đăng nhập lần cuối ${shortTime(a.lastLoginAt)}` : 'Chưa đăng nhập', tone: 'idle' };
               return (
@@ -108,8 +141,14 @@ export function AccountsScreen() {
                     <span className="strong">{a.label || a.email}{active && <span className="chip chip-sm">Đang dùng</span>}</span>
                     <span className="muted small">{a.email}{a.uid ? ` · UID ${a.uid.slice(0, 8)}…` : ''} · device {a.deviceId}</span>
                     <span className={`status-line tone-${state.tone}`}><span className="status-dot" aria-hidden="true" />{state.text}</span>
+                    {resend?.id === a.id && <span className={`small tone-${resend.tone}`} role="status">{resend.text}</span>}
                   </div>
                   <div className="row-actions">
+                    {needsVerification(a) && !(active && status === 'ready') && (
+                      <button type="button" className="btn btn-ghost btn-sm" disabled={resend?.id === a.id && resend.text === 'Đang gửi…'} onClick={() => void doResend(a)}>
+                        Gửi lại email xác thực
+                      </button>
+                    )}
                     {(!active || status !== 'ready') && (
                       <button type="button" className="btn btn-primary btn-sm" onClick={() => void switchAccount(a.id)}>
                         <Icon name="logIn" size={15} /> {active ? 'Thử lại' : 'Dùng'}

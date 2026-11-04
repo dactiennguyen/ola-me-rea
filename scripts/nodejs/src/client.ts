@@ -48,6 +48,9 @@ export interface LoginOptions {
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
+/** Only OlaClient.anonymous() may build a client without a token. */
+const ANONYMOUS = Symbol('anonymous');
+
 /** URLs are `${baseUrl}${path}`; OLA_BASE_URL or app settings may omit the slash. */
 function withTrailingSlash(config: OlaConfig): OlaConfig {
   return config.baseUrl.endsWith('/') ? config : { ...config, baseUrl: `${config.baseUrl}/` };
@@ -66,8 +69,9 @@ export class OlaClient {
   #close: (() => Promise<void>) | undefined;
   #clockOffset: Promise<number> | undefined;
 
-  constructor(options: OlaClientOptions) {
-    if (typeof options.session?.idToken !== 'string' || !options.session.idToken.trim()) {
+  constructor(options: OlaClientOptions, anonymous?: typeof ANONYMOUS) {
+    if (anonymous !== ANONYMOUS
+      && (typeof options.session?.idToken !== 'string' || !options.session.idToken.trim())) {
       throw new Error('Missing Firebase session.idToken; use OlaClient.login().');
     }
     this.session = options.session;
@@ -75,6 +79,16 @@ export class OlaClient {
     this.#config = withTrailingSlash(options.config ?? olaDefaults);
     this.#fetch = options.fetch ?? fetch;
     this.#close = options.close;
+  }
+
+  /**
+   * A client with no account: requests carry the signed key2/timestamp/hash
+   * headers but no Authorization, as the app sends checkEmail before a
+   * Firebase account exists. Session-defaulted fields have no value, so
+   * endpoints that need the signed-in uid fail validation instead of sending.
+   */
+  static anonymous(options: Pick<OlaClientOptions, 'config' | 'fetch'> = {}): OlaClient {
+    return new OlaClient({ ...options, session: { localId: '', idToken: '' }, getToken: async () => '' }, ANONYMOUS);
   }
 
   /** Signs in with `account` and, unless firebaseOnly, syncs the Ola profile. */

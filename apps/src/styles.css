@@ -273,3 +273,16 @@ select { height: 36px; border: 1px solid var(--border); border-radius: var(--rad
   .members-panel { flex-basis: 240px; }
   .msg-row { max-width: 85%; }
 }
+
+/* Đăng ký / Nhập-Xuất tài khoản (RegisterPanel.tsx, AccountsTransferPanel.tsx) */
+.page-head > .form-actions { flex-direction: row; gap: 10px; }
+.spinner-sm { width: 14px; height: 14px; border-width: 2px; }
+.terms-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: -8px; }
+.transfer-block { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.transfer-block + .transfer-block { border-top: 1px solid var(--border); padding-top: 16px; }
+.transfer-title { font-size: 14px; color: var(--text-strong); }
+.transfer-text { width: 100%; min-height: 120px; resize: vertical; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 10px 12px; color: var(--text); font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; }
+.file-pick { align-self: flex-start; cursor: pointer; }
+.file-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-pick:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.transfer-problems { margin: 0; padding-left: 28px; display: block; }

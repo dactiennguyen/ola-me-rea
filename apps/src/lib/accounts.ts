@@ -20,6 +20,8 @@ export interface StoredAccount {
   photoURL?: string;
   lastLoginAt?: number;
   lastError?: string;
+  /** Set when this app registered the account or resent the verification email; cleared at the first sign-in. */
+  verificationSentAt?: number;
 }
 
 export interface AccountsData {

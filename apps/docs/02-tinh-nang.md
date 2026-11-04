@@ -15,9 +15,16 @@ Phạm vi bản này: **tài khoản, danh sách tin nhắn, chat 1-1, Khám ph�
 | Thêm / sửa / xoá | Chỉ ghi `accounts.json` | Không |
 | Đăng nhập (*Lưu và đăng nhập*, *Dùng*, *Thử lại*) | Firebase `signInWithPassword` → `GET napi/general/getTimes` → `POST napi/users/sync` | **Có**: `users/sync` đăng ký Device ID |
 | Đăng xuất | Đóng Firebase app + socket trên máy, bỏ chọn tài khoản (lần mở app sau không tự đăng nhập) | Không |
+| **Đăng ký mới** | `POST faApi2/checkEmail.php` (ký, không Bearer; cần `valid: true`) → Firebase `createUserWithEmailAndPassword` → `sendEmailVerification` | **Có**: tạo tài khoản Firebase thật, gửi mail |
+| Gửi lại email xác thực | Firebase `signInWithPassword` → `sendEmailVerification` (không gọi backend Ola) | **Có**: gửi mail |
+| Nhập / Xuất | Chỉ đọc/ghi `accounts.json`; file xuất nằm trong Downloads | Không |
 
 - Form: tên hiển thị (trống thì dùng tên Ola), email, mật khẩu (nút hiện/ẩn), Device ID (16 hex, nút tạo mới).
 - Email chưa xác minh bị từ chối, giống app (lõi kiểm tra `emailVerified` trước `sync`).
+- **Đăng ký mới** làm giống màn đăng ký của app Android ([luong-dang-ky.md](../../docs/api/luong-dang-ky.md)): email (regex `^[^@]+@[^@]+\.[^@]+`, được trim), mật khẩu ≥ 6 ký tự, nhập lại mật khẩu, hai ô bắt buộc (đồng ý Điều khoản sử dụng, đủ 18 tuổi); cùng câu báo lỗi. Link điều khoản hiện dạng chữ kèm nút sao chép (app chưa mở được link ngoài). `checkEmail` được ký bằng Device ID mới của tài khoản. Xong thì tài khoản vào danh sách (không tự chọn) với trạng thái "Đã gửi email xác thực"; mở link trong mail rồi bấm *Dùng*. Lõi: `scripts/nodejs/src/register.ts` (`registerAccount`, `resendVerificationEmail`, `OlaClient.anonymous`).
+- **Gửi lại email xác thực** hiện ở tài khoản vừa đăng ký hoặc đăng nhập bị từ chối vì chưa xác minh. App Android không có nút này (chỉ gửi một lần lúc đăng ký).
+- **Xuất**: file `ola-accounts-YYYYMMDD-HHMMSS.json` trong thư mục Downloads (không ghi đè, quyền 600 trên macOS/Linux) hoặc *Sao chép JSON*. Gồm email, **mật khẩu dạng chữ thường**, tên, Device ID của mọi tài khoản.
+- **Nhập**: chọn file hoặc dán chữ. Nhận file xuất của app, mảng JSON `[{email, password, label?, deviceId?}]`, hoặc mỗi dòng `email|mật khẩu` (dấu ngăn đầu tiên trên dòng trong `|`, tab, `,`, `;`, `:`; phần còn lại là mật khẩu; dòng `#` bị bỏ qua; khoảng trắng đầu/cuối dòng bị cắt). Trước khi nhập hiện số sẽ thêm / cập nhật / giữ nguyên và các dòng lỗi. Trùng email (không phân biệt hoa thường) thì cập nhật mật khẩu và tên, **giữ Device ID cũ**; email mới được thêm với Device ID trong file hoặc mã mới.
 - **Cài đặt**: app version, Android version, key2 (ba mục áp dụng từ lần đăng nhập sau), *Chế độ thử* (tin chỉ hiện trên máy, không gửi), *Khôi phục mặc định*. Socket key **không** nằm ở phần chính vì đã có mặc định chạy được; nó nằm trong mục **Nâng cao** (ẩn mặc định), chỉ cần đổi khi app gốc đổi key. Hiển thị máy chủ API/socket (cố định, xem [01 · Kiến trúc](01-kien-truc.md#file-dữ-liệu)) và thư mục dữ liệu.
 
 ## Tin nhắn: danh sách hội thoại
@@ -63,6 +70,7 @@ Gửi tin (đúng thứ tự app gốc, [luong-chat-1-1.md](../../docs/api/luong
 
 - Lọc giới tính (Tất cả/Nữ/Nam/LGBT → bỏ key/0/1/2) và tỉnh (`cityID`), như [luong-kham-pha.md](../../docs/api/luong-kham-pha.md).
 - Tự tải trang tiếp khi cuộn gần cuối (và nút *Tải thêm*); dừng khi `list_data` rỗng; bỏ trùng theo `uid`.
+- Bộ lọc không ai khớp: server trả `{is_success: false, list_data: []}`; app hiện "Không có ai khớp bộ lọc." như app gốc, không báo lỗi.
 - Thẻ người dùng: ảnh, tên, huy hiệu xác thực, VIP, *Mới*, cấp, tỉnh, lần truy cập; **Nhắn tin** mở chat 1-1.
 
 ## Phòng chat

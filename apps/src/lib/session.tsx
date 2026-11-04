@@ -6,7 +6,9 @@ import io from 'socket.io-client';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChatChannel, chatProfile, normalizeMessage, type ChannelState, type ChatMessage, type ChatProfile } from '@ola/core/chat.ts';
 import { OlaClient } from '@ola/core/client.ts';
-import { loadAccounts, newAccount, saveAccounts, type AccountsData, type StoredAccount } from './accounts.ts';
+import { registerAccount, resendVerificationEmail, type RegisterInput } from '@ola/core/register.ts';
+import { loadAccounts, newAccount, newDeviceId, saveAccounts, type AccountsData, type StoredAccount } from './accounts.ts';
+import { planImport, type ImportPlan, type TransferAccount } from './accountsTransfer.ts';
 import { appendThread } from './messageCache.ts';
 import { apiFetch } from './platform.ts';
 import { DEFAULT_SETTINGS, firebaseDefaults, loadSettings, olaConfigFor, saveSettings, SERVERS, type AppSettings } from './settings.ts';
@@ -31,6 +33,12 @@ export interface Session {
   signOut(): Promise<void>;
   saveAccount(account: Omit<StoredAccount, 'id' | 'deviceId' | 'color'> & Partial<StoredAccount>): Promise<StoredAccount>;
   removeAccount(id: string): Promise<void>;
+  /** Registers like the app (checkEmail, Firebase, verification email) and stores the account, not active. */
+  register(input: RegisterInput & { label: string }): Promise<StoredAccount>;
+  /** Sends the verification email again; false when the email is already verified. */
+  resendVerification(id: string): Promise<boolean>;
+  /** Adds new emails and updates the password/label of existing ones. */
+  importAccounts(entries: TransferAccount[]): Promise<ImportPlan>;
   saveSettings(settings: AppSettings): Promise<void>;
   /** A new realtime channel with the current settings, or null without a socket key. */
   openChannel(roomNo: string, joinAs?: string): ChatChannel | null;
@@ -173,6 +181,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         label: account.label.trim() || profile.displayName,
         lastLoginAt: Date.now(),
         lastError: undefined,
+        verificationSentAt: undefined,
       });
       startInbox(profile);
     } catch (err) {
@@ -193,6 +202,48 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       : [...current.accounts, account];
     await persist({ ...current, accounts, activeId: current.activeId ?? account.id });
     return account;
+  }, [persist]);
+
+  const register: Session['register'] = useCallback(async ({ label, ...input }) => {
+    // The new account's own device id signs checkEmail, as the app does on that phone.
+    const deviceId = newDeviceId();
+    const { email } = await registerAccount(input, {
+      config: olaConfigFor(settingsRef.current, deviceId),
+      firebaseConfig: firebaseDefaults,
+      fetch: apiFetch,
+    });
+    const current = dataRef.current;
+    const account = newAccount({
+      label: label.trim(), email, password: input.password, deviceId, verificationSentAt: Date.now(),
+    }, current.accounts.length);
+    // Not made active: it cannot sign in until the email is verified.
+    await persist({ ...current, accounts: [...current.accounts, account] });
+    return account;
+  }, [persist]);
+
+  const resendVerification = useCallback(async (id: string) => {
+    const account = dataRef.current.accounts.find(a => a.id === id);
+    if (!account) return false;
+    const sent = await resendVerificationEmail(account, { firebaseConfig: firebaseDefaults });
+    await patchAccount(id, sent ? { verificationSentAt: Date.now() } : { verificationSentAt: undefined });
+    return sent;
+  }, [patchAccount]);
+
+  const importAccounts = useCallback(async (entries: TransferAccount[]) => {
+    const current = dataRef.current;
+    const plan = planImport(current.accounts, entries);
+    const updates = new Map(plan.updated.map(e => [e.email.toLowerCase(), e]));
+    const accounts = current.accounts.map(a => {
+      const entry = updates.get(a.email.toLowerCase());
+      // Keep the stored device id: it is this account's identity on the server.
+      return entry ? { ...a, password: entry.password, ...(entry.label && { label: entry.label }), lastError: undefined } : a;
+    });
+    plan.added.forEach((entry, i) => accounts.push(newAccount({
+      label: entry.label ?? '', email: entry.email, password: entry.password,
+      ...(entry.deviceId && { deviceId: entry.deviceId }),
+    }, current.accounts.length + i)));
+    await persist({ ...current, accounts });
+    return plan;
   }, [persist]);
 
   const removeAccount = useCallback(async (id: string) => {
@@ -236,9 +287,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Session>(() => ({
     loaded, accounts: data.accounts, activeId: data.activeId, settings, status, error, ola, me, deviceId, realtime,
-    switchAccount, signOut, saveAccount, removeAccount, saveSettings: updateSettings, openChannel, onIncoming,
+    switchAccount, signOut, saveAccount, removeAccount, register, resendVerification, importAccounts,
+    saveSettings: updateSettings, openChannel, onIncoming,
   }), [loaded, data, settings, status, error, ola, me, deviceId, realtime,
-    switchAccount, signOut, saveAccount, removeAccount, updateSettings, openChannel, onIncoming]);
+    switchAccount, signOut, saveAccount, removeAccount, register, resendVerification, importAccounts,
+    updateSettings, openChannel, onIncoming]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

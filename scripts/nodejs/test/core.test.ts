@@ -32,7 +32,7 @@ describe('buildConfig', () => {
 
 // The Tauri app (apps/) bundles these modules into a webview, which has no node:* modules.
 describe('platform-neutral core', () => {
-  const ENTRY_POINTS = ['client.ts', 'chat.ts', 'endpoints/index.ts'];
+  const ENTRY_POINTS = ['client.ts', 'chat.ts', 'register.ts', 'endpoints/index.ts'];
   const IMPORT = /^\s*(?:import|export)\s[^'"]*?from\s+'([^']+)'/gm;
 
   it('never reaches a node:* import from the desktop entry points', () => {

@@ -80,6 +80,30 @@ const ola = await OlaClient.login({
 - `deviceId`/`ver` của `usersSync` lấy từ config của chính client (`loginFromEnv()` dùng `olaConfig` từ `.env`; `new OlaClient()` không truyền config thì dùng `olaDefaults`), luôn trùng header `deviceid` mà client ký.
 - Request được ký bằng giờ server. Client lấy độ lệch đồng hồ qua `napi/general/getTimes` **một lần** rồi dùng lại, thay vì gọi `getTimes` trước mỗi request.
 
+## Đăng ký
+
+`src/register.ts` làm theo màn đăng ký của app ([luong-dang-ky.md](luong-dang-ky.md)); app desktop dùng nó cho nút *Đăng ký mới*. Chưa có lệnh CLI.
+
+```ts
+import { olaDefaults } from './src/defaults.ts';
+import { registerAccount, resendVerificationEmail, RegisterError } from './src/register.ts';
+
+try {
+  // Kiểm tra form → checkEmail.php (ký, không Bearer) → Firebase tạo tài khoản → gửi mail xác thực.
+  await registerAccount(
+    { email, password, confirmPassword: password, agreeTerms: true, confirmAge: true },
+    { config: { ...olaDefaults, deviceId: 'abc123' } },
+  );
+} catch (error) {
+  if (error instanceof RegisterError) console.error(error.code, error.message);  // vd email-rejected, email-already-in-use
+}
+await resendVerificationEmail({ email, password });   // false nếu email đã xác thực
+```
+
+- **Tạo tài khoản thật** trên Firebase/Ola và gửi mail. Đăng nhập (`OlaClient.login`) chỉ chạy được sau khi mở link xác thực.
+- `OlaClient.anonymous({ config, fetch })` ký request **không có** `Authorization`, dùng cho `checkEmail` trước khi có tài khoản. Endpoint cần UID của phiên sẽ bị từ chối trước khi gửi.
+- Test (`test/register.test.ts`) dùng fetch giả, không gọi Firebase.
+
 ## Luồng đăng nhập
 
 1. Firebase JS SDK `signInWithEmailAndPassword` với persistence trong bộ nhớ. SDK tự gọi `accounts:signInWithPassword` và `accounts:lookup`.
@@ -103,7 +127,8 @@ Firebase config lấy từ Android resources; `apiKey` là trường cần cho �
 | `src/md5.ts` | MD5 thuần TypeScript (chạy cả trong webview) |
 | `src/signing.ts` | Header ký (`hash` = MD5(`timestamp-888` + deviceId + đoạn path cuối)), kiểm tra path |
 | `src/http.ts` | fetch JSON, thông báo lỗi không lộ body/token |
-| `src/client.ts` | `OlaClient`: login, sync, call, request |
+| `src/client.ts` | `OlaClient`: login, anonymous, sync, call, request |
+| `src/register.ts` | Đăng ký: kiểm tra form, `checkEmail`, Firebase tạo tài khoản + mail xác thực |
 | `src/chat.ts` | Kênh Socket.IO 2.x (nhận `io` từ ngoài), payload tin 1-1/phòng, chuẩn hoá tin/hội thoại, luồng gửi |
 | `src/endpoint.ts` | `defineEndpoint()` + helper field (`text`, `int`, `scalar`, `identifier`, `segment`, `extraFields`, `oneOf`) |
 | `src/endpoints/*.ts` | Một khai báo cho mỗi endpoint; `index.ts` là registry sinh tự động |
