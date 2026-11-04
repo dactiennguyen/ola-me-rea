@@ -1,6 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { CloseDialog } from './components/CloseDialog.tsx';
 import { Icon } from './components/Icon.tsx';
 import { Sidebar, type Screen } from './components/Sidebar.tsx';
+import { onCloseAsked, setCloseAction } from './lib/platform.ts';
 import { useSession } from './lib/session.tsx';
 import { AccountsScreen } from './screens/AccountsScreen.tsx';
 import { ExploreScreen } from './screens/ExploreScreen.tsx';
@@ -18,6 +20,18 @@ export function App() {
     setScreen('messages');
   }, []);
   const clearTarget = useCallback(() => setTarget(null), []);
+
+  // The close button (src-tauri/src/tray.rs): Rust quits until it hears the setting.
+  const [closeAsked, setCloseAsked] = useState(false);
+  const closeDialogDone = useCallback(() => setCloseAsked(false), []);
+  const onClose = session.settings.onClose;
+  useEffect(() => {
+    if (session.loaded) void setCloseAction(onClose).catch(() => {});
+  }, [session.loaded, onClose]);
+  useEffect(() => {
+    const unlisten = onCloseAsked(() => setCloseAsked(true));
+    return () => { void unlisten.then(stop => stop()); };
+  }, []);
 
   if (!session.loaded) {
     return <div className="splash"><span className="muted">Đang mở Ola Desktop…</span></div>;
@@ -45,6 +59,7 @@ export function App() {
           </>
         )}
       </div>
+      {closeAsked && <CloseDialog onDone={closeDialogDone} />}
     </div>
   );
 }

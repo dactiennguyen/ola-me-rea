@@ -4,7 +4,10 @@
 // scripts/nodejs/src). Rust only:
 //   - registers the plugins: http (Ola API requests without webview CORS) and
 //     store (JSON files in the app data dir: accounts, settings, message cache);
-//   - exposes two small commands for the JSON files that hold passwords.
+//   - exposes two small commands for the JSON files that hold passwords;
+//   - owns the tray icon and the close button (tray.rs).
+
+mod tray;
 
 use std::path::PathBuf;
 
@@ -46,12 +49,50 @@ fn restrict_data_file(app: tauri::AppHandle, name: String) -> Result<(), String>
     Ok(())
 }
 
+/// The app's name in its window title and tray: Ola Desktop DEV under `yarn app:dev`.
+pub fn app_name() -> &'static str {
+    if tauri::is_dev() {
+        "Ola Desktop DEV"
+    } else {
+        "Ola Desktop"
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .invoke_handler(tauri::generate_handler![data_dir, restrict_data_file])
-        .run(tauri::generate_context!())
-        .expect("error while running Ola Desktop");
+        .manage(tray::CloseAction::default())
+        .setup(|app| {
+            // tauri.dev.conf.json renames the dev app but cannot change the window
+            // title without repeating the whole window, so the title is set here.
+            if tauri::is_dev() {
+                if let Some(window) = app.get_webview_window("main") {
+                    window.set_title(app_name())?;
+                }
+            }
+            tray::setup(app.handle());
+            Ok(())
+        })
+        .on_window_event(tray::on_window_event)
+        .invoke_handler(tauri::generate_handler![
+            data_dir,
+            restrict_data_file,
+            tray::set_close_action,
+            tray::close_window
+        ])
+        .build(tauri::generate_context!())
+        .expect("error while building Ola Desktop")
+        .run(|_app, _event| {
+            // The Dock icon clicked while the window is in the tray.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen {
+                has_visible_windows: false,
+                ..
+            } = _event
+            {
+                tray::show(_app);
+            }
+        });
 }

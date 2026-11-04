@@ -24,6 +24,14 @@ yarn install
 yarn app:dev           # mở cửa sổ app (Vite dev server + Tauri)
 ```
 
+**Bản dev tách khỏi bản cài.** `yarn app:dev` (hay `yarn tauri dev`) đi qua `scripts/tauri.mjs`, script này thêm `src-tauri/tauri.dev.conf.json` lên trên `tauri.conf.json`. Bản dev:
+- có identifier riêng `dev.olamerea.desktop.dev`, nên dùng **thư mục dữ liệu riêng** (`accounts.json`, `settings.json`, cache tin nhắn), không đụng dữ liệu của bản Ola Desktop đã cài;
+- có tên **Ola Desktop DEV** ở tiêu đề cửa sổ và khay hệ thống.
+
+`yarn app:build`, `yarn tauri build` và CI chuyển nguyên lệnh cho Tauri CLI, nên bản phát hành vẫn là Ola Desktop với identifier `dev.olamerea.desktop`. Lưu ý: hai bản có hai danh sách tài khoản riêng; đăng nhập cùng một nick ở cả hai bản thì server có thể đá phiên trước.
+
+**Nút đóng cửa sổ** ([tray.rs](src-tauri/src/tray.rs)): mặc định hỏi **Thu nhỏ vào khay** (chạy nền, vẫn giữ đăng nhập và nhận tin; mở lại bằng icon ở khay) hay **Thoát ứng dụng**, có ô "Ghi nhớ lựa chọn". Đổi lại trong Quản lý tài khoản → Cài đặt → "Khi bấm nút đóng cửa sổ". Menu của icon ở khay có Mở cửa sổ và Thoát. Máy không tạo được icon ở khay (ví dụ Linux thiếu AppIndicator) thì "Thu nhỏ vào khay" chỉ thu nhỏ xuống taskbar.
+
 `.yarnrc` trong thư mục này bật `ignore-engines`: Firebase 13 khai báo Node ≥ 24.12, nhưng trong app Firebase chạy trong webview; Node chỉ chạy Vite, `tsc` và Tauri CLI.
 
 Build bản cài đặt:

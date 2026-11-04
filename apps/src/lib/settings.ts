@@ -18,7 +18,12 @@ export interface AppSettings {
   socketKey: string;
   /** When on, sends are logged instead of reaching the server (for UI work). */
   dryRunSends: boolean;
+  /** The window's close button: ask each time, hide in the tray, or quit (src-tauri/src/tray.rs). */
+  onClose: CloseAction;
 }
+
+export type CloseAction = 'ask' | 'tray' | 'quit';
+const CLOSE_ACTIONS: readonly CloseAction[] = ['ask', 'tray', 'quit'];
 
 export const SERVERS = { api: olaDefaults.baseUrl, socket: socketDefaults.url } as const;
 
@@ -28,6 +33,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   androidVersion: olaDefaults.androidVersion,
   socketKey: socketDefaults.key,
   dryRunSends: false,
+  onClose: 'ask',
 };
 
 /** Settings that OlaClient reads at sign-in; changing them needs a new sign-in. */
@@ -40,7 +46,9 @@ export async function loadSettings(): Promise<AppSettings> {
   const saved = (await file.get<Partial<AppSettings>>('settings')) ?? {};
   // Keep only known keys (older files also had baseUrl/socketUrl).
   const known = Object.fromEntries(Object.entries(saved).filter(([key]) => key in DEFAULT_SETTINGS));
-  return { ...DEFAULT_SETTINGS, ...known };
+  const settings = { ...DEFAULT_SETTINGS, ...known };
+  if (!CLOSE_ACTIONS.includes(settings.onClose)) settings.onClose = DEFAULT_SETTINGS.onClose;
+  return settings;
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {

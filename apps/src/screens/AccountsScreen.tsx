@@ -5,7 +5,7 @@ import { newDeviceId, type StoredAccount } from '../lib/accounts.ts';
 import { shortTime } from '../lib/format.ts';
 import { dataDir, isTauri } from '../lib/platform.ts';
 import { useSession } from '../lib/session.tsx';
-import { DEFAULT_SETTINGS, SERVERS, SIGN_IN_SETTINGS, type AppSettings } from '../lib/settings.ts';
+import { DEFAULT_SETTINGS, SERVERS, SIGN_IN_SETTINGS, type AppSettings, type CloseAction } from '../lib/settings.ts';
 
 interface Draft { id?: string; label: string; email: string; password: string; deviceId: string }
 
@@ -180,6 +180,14 @@ function SettingsPanel() {
       <label className="checkbox span-2">
         <input type="checkbox" checked={form.dryRunSends} onChange={e => set('dryRunSends', e.target.checked)} />
         <span>Chế độ thử: không gửi tin thật (chỉ hiện trên máy này)</span>
+      </label>
+      <label className="field">
+        <span>Khi bấm nút đóng cửa sổ</span>
+        <select value={form.onClose} onChange={e => set('onClose', e.target.value as CloseAction)}>
+          <option value="ask">Hỏi mỗi lần</option>
+          <option value="tray">Thu nhỏ vào khay (chạy nền)</option>
+          <option value="quit">Thoát ứng dụng</option>
+        </select>
       </label>
 
       <div className="advanced-toggle span-2">

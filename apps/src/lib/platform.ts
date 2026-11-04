@@ -3,6 +3,7 @@
 // plugin because sgdev.vip does not allow cross-origin requests).
 
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { load } from '@tauri-apps/plugin-store';
 
@@ -23,6 +24,21 @@ export async function dataDir(): Promise<string | null> {
 /** chmod 600 on a data file (no-op outside Tauri / on Windows). */
 export async function restrictDataFile(name: DataFileName): Promise<void> {
   if (isTauri) await invoke('restrict_data_file', { name });
+}
+
+/** Tells the Rust side what the close button does (src-tauri/src/tray.rs). */
+export async function setCloseAction(action: 'ask' | 'tray' | 'quit'): Promise<void> {
+  if (isTauri) await invoke('set_close_action', { action });
+}
+
+/** A choice of the Đóng cửa sổ dialog: hide in the tray, or quit. */
+export async function closeWindow(action: 'tray' | 'quit'): Promise<void> {
+  if (isTauri) await invoke('close_window', { action });
+}
+
+/** The close button was pressed and the setting is Ask. Returns the unlisten function. */
+export async function onCloseAsked(handler: () => void): Promise<() => void> {
+  return isTauri ? listen('close-asked', () => handler()) : () => {};
 }
 
 /** A JSON file in the app data dir (Tauri store plugin), or localStorage in a browser tab. */
