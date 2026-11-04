@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Avatar } from '../components/Avatar.tsx';
 import { Icon } from '../components/Icon.tsx';
-import { DEVICE_DEFAULTS, deviceOverride, deviceValue, newDeviceId, type StoredAccount } from '../lib/accounts.ts';
+import { DEVICE_DEFAULTS, deviceOverride, deviceValue, newDeviceId, twinOf, type StoredAccount } from '../lib/accounts.ts';
 import { shortTime } from '../lib/format.ts';
 import { checkProxy, parseProxy, proxyLabel } from '../lib/proxy.ts';
 import { OFFLINE, useSession } from '../lib/session.tsx';
@@ -56,6 +56,8 @@ export function AccountsScreen({ request, onOpen }: {
 
   const openPanel = (next: 'register') => { setDraft(null); setPanel(next); setNotice(null); };
 
+  const draftProxy = draft ? parseProxy(draft.proxy) : null;
+
   const testProxy = async (text: string) => {
     setProxyCheck({ text: 'Đang kiểm tra…', tone: 'idle' });
     try {
@@ -93,6 +95,8 @@ export function AccountsScreen({ request, onOpen }: {
     if (!draft) return;
     const email = draft.email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Email không hợp lệ.'); return; }
+    const twin = twinOf(accounts, { id: draft.id, email });
+    if (twin) { setFormError(`Email này đã có trong danh sách (nick "${twin.label || twin.email}"). Mỗi tài khoản Ola chỉ thêm một lần.`); return; }
     if (!draft.password) { setFormError('Nhập mật khẩu.'); return; }
     if (!/^[A-Za-z0-9_.-]{4,64}$/.test(draft.deviceId)) { setFormError('Device ID chỉ gồm chữ, số, _ . - (4–64 ký tự).'); return; }
     const proxy = parseProxy(draft.proxy);
@@ -194,8 +198,10 @@ export function AccountsScreen({ request, onOpen }: {
           <div className="span-2 form-subhead">
             <h3>Proxy của nick này</h3>
             <p className="muted small">
-              Có proxy thì mọi kết nối của nick (đăng nhập Firebase, API Ola, socket nhắn tin) đi qua proxy này. Nhận{' '}
-              <code>host:cổng</code>, <code>host:cổng:user:pass</code>, <code>http://user:pass@host:cổng</code> hoặc <code>socks5://…</code>. Để trống = không dùng proxy.
+              Có proxy thì mọi kết nối của nick (đăng nhập Firebase, API Ola, socket nhắn tin) đi qua proxy này. Dán theo dạng
+              nhà cung cấp đưa đều được: <code>host:cổng</code>, <code>host:cổng:user:pass</code>, <code>user:pass:host:cổng</code>,{' '}
+              <code>user:pass@host:cổng</code>, <code>host:cổng@user:pass</code>, cách nhau bằng dấu cách / tab / <code>|</code> / <code>;</code> / <code>,</code>,
+              có hoặc không có <code>http://</code>, <code>socks5://</code> (hay chữ <code>socks5</code> ở đầu). Mặc định là HTTP. Để trống = không dùng proxy.
             </p>
           </div>
           <label className="field span-2">
@@ -204,6 +210,9 @@ export function AccountsScreen({ request, onOpen }: {
               <input autoComplete="off" spellCheck={false} value={draft.proxy} placeholder="Không dùng proxy" onChange={e => { setDraft({ ...draft, proxy: e.target.value }); setProxyCheck(null); }} />
               <button type="button" className="btn btn-ghost btn-sm" disabled={!draft.proxy.trim() || proxyCheck?.text === 'Đang kiểm tra…'} onClick={() => void testProxy(draft.proxy)}>Kiểm tra</button>
             </span>
+            {draftProxy && !proxyCheck && ('error' in draftProxy
+              ? <span className="small tone-bad" role="status">{draftProxy.error}</span>
+              : <span className="small muted" role="status">Sẽ dùng: {proxyLabel(draftProxy.url)}</span>)}
             {proxyCheck && <span className={`small tone-${proxyCheck.tone}`} role="status">{proxyCheck.text}</span>}
           </label>
           {formError && <p className="notice notice-bad small span-2" role="alert">{formError}</p>}
@@ -223,6 +232,7 @@ export function AccountsScreen({ request, onOpen }: {
           <ul className="account-table">
             {accounts.map(a => {
               const live_ = live[a.id] ?? OFFLINE;
+              const twin = twinOf(accounts, a);
               const online = live_.status === 'ready';
               const busy = live_.status === 'signing-in';
               const state = online ? { text: 'Đang online', tone: 'ok' }
@@ -243,6 +253,9 @@ export function AccountsScreen({ request, onOpen }: {
                       {a.proxy ? ` · proxy ${proxyLabel(a.proxy)}` : ''}
                     </span>
                     <span className={`status-line tone-${state.tone}`}><span className="status-dot" aria-hidden="true" />{state.text}</span>
+                    {twin && (
+                      <span className="small tone-warn">Trùng tài khoản Ola với nick "{twin.label || twin.email}": xoá một trong hai.</span>
+                    )}
                     {resend?.id === a.id && needsVerification(a) && !online && (
                       <span className={`small tone-${resend.tone}`} role="status">{resend.text}</span>
                     )}

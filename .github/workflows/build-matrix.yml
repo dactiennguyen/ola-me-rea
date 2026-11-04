@@ -59,12 +59,14 @@ jobs:
           yarn typecheck
           yarn test
 
-      # The app type-check also covers the scripts/nodejs/src modules it imports through @ola/core.
-      - name: App type-check (apps)
+      # The app type-check also covers the scripts/nodejs/src modules it imports through @ola/core;
+      # node --test covers app-only logic (proxy formats).
+      - name: App type-check and tests (apps)
         working-directory: apps
         run: |
           yarn install --frozen-lockfile
           yarn typecheck
+          yarn test
 
   preflight-rust:
     name: "Preflight: Rust fmt, clippy, tests"

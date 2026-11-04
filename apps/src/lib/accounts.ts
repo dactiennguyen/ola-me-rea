@@ -67,6 +67,17 @@ function randomHex(bytes: number): string {
   return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Another saved account that is the same Ola account (same email, case and
+ * spaces ignored, or same uid). Saving one account twice would show the same
+ * chats under two names and sign it in from two device IDs at once.
+ */
+export function twinOf(accounts: StoredAccount[], account: Pick<StoredAccount, 'email'> & Partial<Pick<StoredAccount, 'id' | 'uid'>>): StoredAccount | undefined {
+  const email = account.email.trim().toLowerCase();
+  return accounts.find(a => a.id !== account.id
+    && (a.email.trim().toLowerCase() === email || (Boolean(account.uid) && a.uid === account.uid)));
+}
+
 /** 16 hex chars, the shape of an Android ID. */
 export const newDeviceId = () => randomHex(8);
 

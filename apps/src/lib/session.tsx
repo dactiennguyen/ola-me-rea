@@ -11,7 +11,7 @@ import { ChatChannel, chatProfile, normalizeMessage, type ChannelState, type Cha
 import { OlaClient } from '@ola/core/client.ts';
 import { registerAccount, resendVerificationEmail, type RegisterInput } from '@ola/core/register.ts';
 import {
-  DEVICE_FIELDS, loadAccounts, newAccount, newDeviceId, olaConfigFor, saveAccounts, type AccountsData, type StoredAccount,
+  DEVICE_FIELDS, loadAccounts, newAccount, newDeviceId, olaConfigFor, saveAccounts, twinOf, type AccountsData, type StoredAccount,
 } from './accounts.ts';
 import { planImport, type ImportPlan, type TransferAccount } from './accountsTransfer.ts';
 import { appendThread } from './messageCache.ts';
@@ -123,6 +123,13 @@ class LiveAccount {
     return this.#openChannel(roomNo, joinAs, this.#proxy);
   }
 
+  /** Shows a sign-in error without trying (e.g. the same Ola account is already online). */
+  async fail(error: string): Promise<SignInResult> {
+    await this.signOut();
+    this.#set({ status: 'error', error });
+    return { error };
+  }
+
   /** Signs in; null when a newer sign-in or sign-out superseded this one. */
   async signIn(account: StoredAccount): Promise<SignInResult> {
     await this.signOut();
@@ -219,6 +226,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const sessions = useRef(new Map<string, LiveAccount>());
+  /** Accounts whose sign-in started but whose state is not signing-in yet (it is set after an await). */
+  const starting = useRef(new Set<string>());
 
   const persist = useCallback(async (next: AccountsData) => {
     dataRef.current = next;
@@ -259,7 +268,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (id: string) => {
     const account = dataRef.current.accounts.find(a => a.id === id);
     if (!account) return;
-    const result = await sessionFor(id).signIn(account);
+    // The same Ola account saved twice must not be online twice (two device IDs, one inbox).
+    // `starting` covers twins started in the same tick (Đăng nhập tất cả runs several at once).
+    const busy = (a: StoredAccount) => starting.current.has(a.id)
+      || ['ready', 'signing-in'].includes(sessions.current.get(a.id)?.state.status ?? '');
+    const twin = twinOf(dataRef.current.accounts.filter(a => a.id !== id && busy(a)), account);
+    let result;
+    if (twin) {
+      result = await sessionFor(id).fail(`Trùng tài khoản Ola với nick "${twin.label || twin.email}" đang online. Xoá một trong hai nick.`);
+    } else {
+      starting.current.add(id);
+      try {
+        result = await sessionFor(id).signIn(account);
+      } finally {
+        starting.current.delete(id);
+      }
+    }
     if (!result) return;
     if ('error' in result) {
       await patchAccount(id, { lastError: result.error });
@@ -298,6 +322,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const saveAccount: Session['saveAccount'] = useCallback(async input => {
     const current = dataRef.current;
     const existing = input.id ? current.accounts.find(a => a.id === input.id) : undefined;
+    const twin = twinOf(current.accounts, { ...input, uid: existing?.uid });
+    if (twin) throw new Error(`Email này đã có trong danh sách (nick "${twin.label || twin.email}").`);
     const account = existing ? { ...existing, ...input } : newAccount(input, current.accounts.length);
     const accounts = existing
       ? current.accounts.map(a => (a.id === account.id ? account : a))

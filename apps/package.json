@@ -13,6 +13,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test \"test/**/*.test.ts\"",
     "tauri": "node scripts/tauri.mjs",
     "app:dev": "node scripts/tauri.mjs dev",
     "app:build": "node scripts/tauri.mjs build"
