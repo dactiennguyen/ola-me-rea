@@ -68,6 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write # delete this run's artifacts once published
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -121,3 +122,16 @@ jobs:
             gh release delete "$TAG" --yes
           fi
           gh release create "$TAG" assets/* "${extra[@]}" --title "Ola Desktop $VERSION" --notes-file notes.md
+
+      # The release now holds every file: drop this run's artifacts so they do not sit in Actions storage.
+      # Only after a successful publish; when it fails they stay (3 days) for "Re-run failed jobs".
+      - name: Delete the run's artifacts
+        env:
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          for id in $(gh api "repos/$GH_REPO/actions/runs/$RUN_ID/artifacts?per_page=100" --jq '.artifacts[].id'); do
+            gh api -X DELETE "repos/$GH_REPO/actions/artifacts/$id"
+            echo "deleted artifact $id"
+          done
