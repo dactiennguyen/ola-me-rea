@@ -13,16 +13,13 @@ Cập nhật 2026-11-04.
 | 4 · Tin nhắn + chat 1-1 | Danh sách gộp server + cache, chat realtime, đang gõ, gửi 3 bước | Lõi có test; UI chưa chạy thử với server |
 | 5 · Khám phá | 3 tab, bộ lọc, cuộn vô hạn, nhắn tin từ thẻ | Endpoint đã chạy thật trên Node trước đây |
 | 6 · Phòng chat | Vào phòng, lịch sử, thành viên, gửi, khoá khi bị cấm | Endpoint đọc đã chạy thật 2026-11-04 |
+| 7 · Socket key | Khôi phục `key` tĩnh của Socket.IO = `6Q5AY7RZVR06LFAA07TC`; đặt làm mặc định `socketDefaults.key` | APK + 1 kết nối sống 2026-11-04 ([socket-io.md](../../docs/api/socket-io.md#key-được-tạo-như-thế-nào)) |
 
 ## Việc cần làm tiếp
 
 Theo thứ tự ưu tiên:
 
-1. <a id="socket-key"></a>**Socket key** (chặn toàn bộ realtime). Query Socket.IO có `key=<giá trị tĩnh>` nhưng mọi log trong repo đều đã che (`key=***`) và bản dump AOT không có trên máy này. Cách lấy, chọn một:
-   - Chạy lại logger Frida ([04-runtime-api-capture.md](../../docs/04-runtime-api-capture.md)) trên máy test, mở một màn chat, đọc URL `wss://sgdev.vip:3001/socket.io/?key=…` trong log local (không commit).
-   - Tìm chuỗi trong object pool của `libapp.so` quanh hàm dựng `setQuery` của ChatProvider (dump `dae`).
-   - Có key rồi thì dán vào **Cài đặt › Socket key** (lưu trong `settings.json`, không vào git). Với CLI Node: `OLA_SOCKET_KEY` trong `scripts/nodejs/.env`.
-2. **Chạy thử end-to-end trong cửa sổ Tauri** với 2 tài khoản test A ↔ B: đăng nhập, Khám phá, mở chat, gửi/nhận, phòng `79`. Đặc biệt cần xác nhận:
+1. <a id="socket-key"></a>**Chạy thử realtime end-to-end**. Socket key đã có (`6Q5AY7RZVR06LFAA07TC`, mặc định sẵn; là hằng số tĩnh `wasabiKeyID` trong `libnative-lib.so`, [socket-io.md](../../docs/api/socket-io.md#key-được-tạo-như-thế-nào)). Muốn thay thì dán giá trị khác vào **Cài đặt › Socket key**, hoặc `OLA_SOCKET_KEY` cho CLI. Cần chạy thử trong cửa sổ Tauri với 2 tài khoản test A ↔ B: đăng nhập, Khám phá, mở chat, gửi/nhận, phòng `79`. Đặc biệt cần xác nhận:
    - Firebase Auth chạy trong webview với origin `tauri://localhost`.
    - Server socket chấp nhận Origin của webview. Nếu bị chặn: viết client Engine.IO v3 phía Rust (`tokio-tungstenite`, gửi `2`/nhận `3` ping-pong, khung `42[...]`) và phát sự kiện sang webview bằng Tauri event. Lưu ý `rust_socketio` chỉ hỗ trợ EIO 4, không dùng được.
    - Kênh cá nhân có cần `add user` không (hiện đang emit `{username: uid, roomNo: uid}`, [Suy luận]).
@@ -45,8 +42,8 @@ Theo thứ tự ưu tiên:
 
 | Rủi ro | Ảnh hưởng | Giảm thiểu |
 |---|---|---|
-| Thiếu socket key | Không gửi/nhận tin realtime | Mục 1 ở trên; các màn đọc vẫn chạy |
-| Server socket chặn Origin webview | Như trên | Client EIO3 phía Rust |
+| Server đổi socket key tĩnh | Không gửi/nhận tin realtime | Chỉnh trong Cài đặt / `OLA_SOCKET_KEY`; các màn đọc vẫn chạy |
+| Server socket chặn Origin webview | Không gửi/nhận tin realtime | Client EIO3 phía Rust |
 | Lịch sử 1-1 không có trên server | Máy mới chỉ thấy tin cuối | Cache `chat-<uid>.json`; nói rõ trong UI |
 | Mật khẩu lưu JSON thường | Ai đọc được file sẽ có mật khẩu | chmod 600, thư mục ngoài repo; chọn mã hoá ở bản sau |
 | Gửi tin tới người thật | Tác động lên dịch vụ thật | Thử giữa 2 tài khoản test; *Chế độ thử*; không có tính năng gửi hàng loạt |

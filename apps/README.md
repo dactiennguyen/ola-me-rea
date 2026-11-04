@@ -6,7 +6,7 @@ App desktop (Tauri 2 + React + TypeScript) để quản lý nhiều tài khoản
 |---|---|
 | [01 · Kiến trúc](docs/01-kien-truc.md) | Stack, phần Rust, dùng chung lõi với `scripts/nodejs`, file dữ liệu JSON, bảo mật Tauri |
 | [02 · Tính năng](docs/02-tinh-nang.md) | Từng màn hình: API/socket nào được gọi, hành vi, giới hạn |
-| [03 · Lộ trình](docs/03-lo-trinh.md) | Đã làm, còn thiếu (socket key…), rủi ro, câu hỏi mở |
+| [03 · Lộ trình](docs/03-lo-trinh.md) | Đã làm, việc cần làm tiếp, rủi ro, câu hỏi mở |
 | [04 · Design](docs/04-design.md) | Token màu, chữ, thành phần của hướng C |
 | [05 · CI/CD và phát hành](docs/05-phat-hanh.md) | Workflow build/release, cách ra bản mới (tag `v*`), file cài đặt, ký ứng dụng |
 
@@ -47,7 +47,7 @@ yarn build             # bundle frontend vào dist/
 
 1. **Quản lý tài khoản › Thêm tài khoản**: nhập email + mật khẩu Ola (tài khoản email/mật khẩu đã xác minh). Mỗi tài khoản có một Device ID riêng, tự sinh.
 2. **Lưu và đăng nhập**: app đăng nhập Firebase, gọi `napi/users/sync`, rồi mở Tin nhắn.
-3. **Cài đặt › Socket key**: cần cho nhắn tin realtime (gửi/nhận tin, đang gõ, người trong phòng). Key này **chưa được khôi phục** từ app gốc, xem [Lộ trình §Socket key](docs/03-lo-trinh.md#socket-key). Khi chưa có key, các màn đọc dữ liệu vẫn chạy (danh sách hội thoại, Khám phá, lịch sử phòng, thành viên) nhưng ô nhập tin bị khoá.
+3. **Nhắn tin realtime** (gửi/nhận tin, đang gõ, người trong phòng) dùng socket key đã có sẵn mặc định (`6Q5AY7RZVR06LFAA07TC`, hằng số tĩnh của app, [socket-io.md](../docs/api/socket-io.md#key-được-tạo-như-thế-nào)), không cần nhập gì. Nếu app gốc đổi key, dán giá trị mới vào **Cài đặt › Socket key**. Để trống key thì các màn đọc dữ liệu vẫn chạy nhưng ô nhập tin bị khoá.
 4. Muốn thử giao diện gửi tin mà không gửi thật: bật **Chế độ thử** trong Cài đặt.
 
 Tài khoản được lưu dạng **JSON thường, kể cả mật khẩu** (theo yêu cầu, không dùng Keychain) trong thư mục dữ liệu của app, quyền `600`:

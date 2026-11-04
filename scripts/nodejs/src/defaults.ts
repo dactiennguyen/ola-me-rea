@@ -28,7 +28,7 @@ export interface OlaConfig {
 export interface SocketConfig {
   /** Socket.IO 2.x (EIO=3) server for chat. */
   url: string;
-  /** Static `key` query value the app sends; not recovered yet, so it has no default. */
+  /** Static `key` query value the app sends on every connection (app-wide constant). */
   key: string;
 }
 
@@ -59,7 +59,11 @@ export const olaDefaults: OlaConfig = {
 
 export const socketDefaults: SocketConfig = {
   url: 'https://sgdev.vip:3001',
-  key: '',
+  // Static handshake key, the same for every user and connection. It is the
+  // `wasabiKeyID` field of the plaintext secrets JSON embedded in
+  // libnative-lib.so; the app reuses that constant as the Socket.IO `key` query.
+  // Recovered 2026-11-04 from the APK and a live connection (docs/api/socket-io.md).
+  key: '6Q5AY7RZVR06LFAA07TC',
 };
 
 /** The trimmed env value, or the fallback when it is unset or blank. */

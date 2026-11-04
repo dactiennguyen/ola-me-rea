@@ -9,7 +9,21 @@ wss://sgdev.vip:3001/socket.io/?key=<static key>&roomNo=<room>&EIO=3&transport=w
 - Engine.IO **v3** (Socket.IO 2.x), chỉ WebSocket, namespace `/`.
 - Mỗi màn chat tạo một `Manager` mới (`forceNew`, `autoConnect=false`, `setQuery`); rời màn thì `DISCONNECT`.
 - Socket luôn mở song song: `roomNo=Olame` (kênh chung) và `roomNo=<uid>` (kênh cá nhân).
-- Trong capture chưa thấy user token trên query; có `key` tĩnh và các trường `username`/`userID` do client gửi. Chưa đủ bằng chứng để kết luận server không kiểm tra danh tính.
+- Trong capture chưa thấy user token trên query; `key` là **hằng số tĩnh** và các trường `username`/`userID` do client gửi. Chưa đủ bằng chứng để kết luận server không kiểm tra danh tính.
+
+### `key` được tạo như thế nào
+
+**Là hằng số cố định, không sinh ra lúc chạy và không do server cấp.** Giá trị: `6Q5AY7RZVR06LFAA07TC` — giống nhau cho mọi tài khoản và mọi lần kết nối.
+
+- App nhúng toàn bộ secret trong một **khối JSON plaintext** trong `lib/arm64-v8a/libnative-lib.so` (thư viện C++, không nằm trong Dart `libapp.so`). Đây là cách app giấu secret khỏi việc đọc chuỗi Dart. Các field gồm: `secretAccessVNG`, `accessKeyVNG`, `key`, `wasabiKeyID`, `wasabiKeySecret`, `key2`, `apiKey`, `key3` (AWS `AKIA…`), `endpoint` (`https://sgdev.vip/`), STUN cho gọi điện (`stunSv/stunUser/stunPass`), `publicKey`, …
+- App **tái dùng field `wasabiKeyID`** làm `key` của Socket.IO. (Mapping field → chỗ dùng là tuỳ ý: header HTTP `key2` lại lấy từ field `publicKey` = `49|S4f(vcVKIZ`.)
+- Vì chỉ là một ID 20 ký tự cố định gắn chung cho app, ai đọc được APK đều lấy được; nó không ràng buộc danh tính người dùng.
+
+**Cách lấy lại / kiểm chứng** (2026-11-04):
+1. Tĩnh: `unzip split_config.arm64_v8a.apk lib/*`, rồi `strings libnative-lib.so | grep secretAccessVNG` → đọc khối JSON, lấy `wasabiKeyID`.
+2. Runtime: với app đang chạy, `frida -U -n Ola` rồi `Memory.scanSync` tìm `/socket.io/?` trong vùng nhớ `rw-`/`r--` → đọc URL thật `?key=6Q5AY7RZVR06LFAA07TC&roomNo=…`. Hai mẫu socket sống đều cùng giá trị, khớp hằng số trong binary.
+
+Giá trị này là mặc định của `socketDefaults.key` trong [`defaults.ts`](../../scripts/nodejs/src/defaults.ts); ghi đè bằng `OLA_SOCKET_KEY` (CLI) hoặc ô Socket key trong Cài đặt (app desktop).
 
 ## Định dạng wire
 
