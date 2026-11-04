@@ -314,3 +314,36 @@ select { height: 36px; border: 1px solid var(--border); border-radius: var(--rad
 .profile-row { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .profile-row dd { margin: 0; color: var(--text-strong); overflow-wrap: anywhere; }
 .profile-uid { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ---- Tìm người & nhắn ---------------------------------------------------- */
+.outreach-side { flex: 0 0 360px; min-width: 320px; max-width: 400px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+.tabs-sm { align-self: flex-start; }
+.outreach-collect { display: flex; flex-direction: column; gap: 8px; padding: 14px 12px 10px; border-bottom: 1px solid var(--border); }
+.outreach-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.outreach-line select { height: 30px; flex: 1 1 0; min-width: 0; padding: 0 6px; font-size: 13px; }
+.tabs-sm .tab { height: 26px; padding: 0 10px; font-size: 12px; }
+.pages-input { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.pages-input input { width: 52px; height: 30px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 0 6px; color: var(--text); font-size: 13px; }
+.nick-chip { height: 26px; max-width: 160px; padding: 0 10px; border: 1px solid var(--border); border-radius: 13px; background: transparent; color: var(--text-soft); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nick-chip:hover { border-color: var(--border-strong); }
+.nick-chip.is-on { background: var(--accent-soft); border-color: transparent; color: var(--on-accent-soft); font-weight: 600; }
+.outreach-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; }
+.search-sm input { height: 32px; font-size: 12px; padding-left: 32px; }
+.search-sm svg { left: 10px; }
+.icon-btn-sm { width: auto; min-width: 32px; height: 32px; padding: 0 6px; font-size: 11px; font-weight: 600; }
+.outreach-row { min-height: 46px; padding: 6px 8px; }
+.outreach-row .conv-text { gap: 0; }
+.outreach-row .conv-name { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
+.sent-mark { flex: none; align-self: center; font-size: 11px; font-weight: 700; color: var(--ok); background: rgba(52, 211, 153, 0.12); border-radius: 9px; padding: 1px 6px; }
+.outreach-side-panels { overflow-y: auto; padding: 20px 24px; gap: 16px; }
+.outreach-sender { gap: 8px; }
+.outreach-sender select { height: 26px; padding: 0 6px; font-size: 12px; max-width: 200px; }
+.template-list, .sent-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.template-list li { display: flex; align-items: flex-start; gap: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); }
+.template-text { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+.sent-list li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); min-width: 0; }
+.composer { position: relative; }
+.template-menu { position: absolute; left: 20px; right: 20px; bottom: calc(100% - 6px); max-height: 240px; overflow-y: auto; list-style: none; margin: 0; padding: 4px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--raised); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); z-index: 5; }
+.template-menu button { width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text); text-align: left; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.template-menu button:hover, .template-menu button:focus-visible { background: var(--bubble-in); }
+.template-input { min-height: 60px; }

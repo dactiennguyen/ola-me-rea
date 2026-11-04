@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   directMessagePayload, loadChatUser, loadConversations, localTextMessage, normalizeMessage, sendDirectMessage,
   type ChannelState, type ChatChannel, type ChatMessage, type ChatUser, type Conversation,
@@ -9,6 +9,7 @@ import { Icon } from '../components/Icon.tsx';
 import { MessageList, type PendingState } from '../components/MessageList.tsx';
 import { lastSeenLabel, shortTime } from '../lib/format.ts';
 import { appendThread, loadThread, loadThreadPeers, mergeMessages, rememberPeer } from '../lib/messageCache.ts';
+import { logSent, type SentEntry } from '../lib/sentLog.ts';
 import { useAccount, useOla, useSession } from '../lib/session.tsx';
 
 export interface PeerTarget { uid: string; name?: string; photo?: string }
@@ -212,7 +213,18 @@ export function MessagesScreen({ hidden, target, onTargetOpened, onUnreadChange 
   );
 }
 
-function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: ChatUser, message: ChatMessage) => void }) {
+/**
+ * One 1-1 conversation of the account in context (AccountProvider). Every
+ * message the user sends is recorded in the sent log (SQLite, sentLog.ts).
+ */
+export function DirectChat({ target, onSent, source = 'messages', actions }: {
+  target: PeerTarget;
+  onSent?: (peer: ChatUser, message: ChatMessage) => void;
+  /** Recorded with each sent message: 'messages' (an account's Tin nhắn) or 'outreach'. */
+  source?: string;
+  /** Extra controls in the header (e.g. choosing the sending account). */
+  actions?: ReactNode;
+}) {
   const { ola, me } = useOla();
   const { settings } = useSession();
   const { account, onIncoming, openChannel } = useAccount();
@@ -264,6 +276,22 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
     if (m.fromUid === target.uid) { setPeerTyping(false); setMessages(list => mergeMessages(list, [m])); }
   }), [onIncoming, target.uid]);
 
+  /** Records a sent message in SQLite; a failed write must not look like a failed send. */
+  const record = (message: ChatMessage, fields: Pick<SentEntry, 'pushOk' | 'lastMessageOk' | 'error' | 'dryRun'>) => {
+    void logSent({
+      sentAt: message.at, accountId: account.id, accountUid: me.uid, accountLabel: account.label || me.displayName,
+      peerUid: target.uid, peerName: peer?.displayName || target.name || '', messageId: message.id, text: message.text,
+      source, ...fields,
+    }).catch(e => {
+      const note = `Lỗi lưu lịch sử SQLite: ${(e as Error).message ?? e}`;
+      // Keep a warning already shown for this message (MessageList shows one per id).
+      setPending(p => {
+        const old = p.find(x => x.id === message.id)?.error;
+        return [...p.filter(x => x.id !== message.id), { id: message.id, error: old ? `${old} ${note}` : `Đã gửi; ${note.toLowerCase()}` }];
+      });
+    });
+  };
+
   const send = async (text: string) => {
     const now = Date.now();
     if (settings.dryRunSends) {
@@ -271,6 +299,7 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
       const message = localTextMessage(String(payload.messageID), me, text, now);
       await merge([message]);
       setPending(p => [...p, { id: message.id, error: 'Chế độ thử: chưa gửi lên server.' }]);
+      record(message, { pushOk: null, lastMessageOk: null, error: null, dryRun: true });
       return;
     }
     const channel = channelRef.current;
@@ -278,8 +307,15 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
     try {
       const result = await sendDirectMessage(ola, channel, { from: me, peer, text, now });
       await merge([result.message]);
-      onSent(peer, result.message);
+      onSent?.(peer, result.message);
+      const step = (name: string) => result.steps.find(s => s.name === name);
       const failed = result.steps.filter(s => !s.ok);
+      record(result.message, {
+        pushOk: step('push')?.ok ?? null,
+        lastMessageOk: step('lastMessage')?.ok ?? null,
+        error: failed.map(f => `${f.name}: ${f.error ?? 'lỗi'}`).join('; ') || null,
+        dryRun: false,
+      });
       if (failed.length) {
         const names: Record<string, string> = { push: 'thông báo đẩy', lastMessage: 'lưu tin cuối' };
         setPending(p => [...p, { id: result.message.id, error: `Đã gửi realtime; lỗi ${failed.map(f => names[f.name] ?? f.name).join(', ')}.` }]);
@@ -311,6 +347,7 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
           <span className="chip-swatch" style={{ background: account.color }} aria-hidden="true" />
           Gửi bằng: {me.displayName}
         </span>
+        {actions}
         <span className={`chip tone-${channelState === 'connected' ? 'ok' : channelState === 'none' ? 'warn' : 'idle'}`}>
           {channelState === 'none' ? 'Không có realtime' : CHANNEL_TEXT[channelState]}
         </span>
@@ -327,6 +364,7 @@ function DirectChat({ target, onSent }: { target: PeerTarget; onSent: (peer: Cha
         disabledReason={disabledReason}
         onSend={send}
         onTyping={active => channelRef.current?.typing(active)}
+        templates={settings.messageTemplates}
       />
     </main>
   );

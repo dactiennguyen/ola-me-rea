@@ -38,6 +38,28 @@ Dùng chung cho cả app, không theo tài khoản.
 
 - Nút **Cài đặt** (bánh răng) ở cuối cột tài khoản, không nằm trong Quản lý tài khoản, mở được cả khi chưa có tài khoản: *Chế độ thử* (tin chỉ hiện trên máy, không gửi), *Khi bấm nút đóng cửa sổ*, *Khôi phục mặc định*. Socket key **không** nằm ở phần chính vì đã có mặc định chạy được; nó nằm trong mục **Nâng cao** (ẩn mặc định), chỉ cần đổi khi app gốc đổi key. Hiển thị máy chủ API/socket (cố định, xem [01 · Kiến trúc](01-kien-truc.md#file-dữ-liệu)) và thư mục dữ liệu. `settings.json` bản cũ có app version/Android version/key2 chung: lần mở đầu tiên chép các giá trị khác mặc định sang những nick chưa có giá trị riêng, rồi bỏ khỏi `settings.json`.
 
+## Tìm người & nhắn
+
+Nút tin nhắn ở cuối cột tài khoản (trên *Quản lý tài khoản*). Màn giữ nguyên danh sách và chat đang mở khi chuyển màn khác.
+
+| Thao tác | Gọi | Ghi? |
+|---|---|---|
+| Lấy danh sách: **Khám phá** (tab Online / Đã xác thực / Ảnh có mặt, giới tính, tỉnh) | `getExploreOnlineV6` / `getExplore3` / `getExploreAvatarV4`, theo cursor, mỗi nick được chọn N trang | Không |
+| Lấy danh sách: **Phòng chat** (chọn phòng) | `apiAddToRoomV4 {state, page}`, mỗi nick N trang | Không |
+| Nhắn một người | Như chat 1-1 (socket → push → `addLastMessage5`) bằng nick chọn ở ô *Nhắn bằng* | **Có** |
+
+- **Lấy bằng nick**: tick một hoặc nhiều nick đang online; mỗi nick lấy *Số trang mỗi nick* (1–50) trang, nghỉ 0,4 s giữa các trang, dừng sớm khi hết dữ liệu. Nút **Dừng** huỷ giữa chừng.
+- **Danh sách gộp, bỏ trùng theo UID**; mỗi người ghi *Tìm từ:* các nick đã thấy người đó và nguồn lần đầu (vd `Khám phá · Online · Nữ · Hà Nội`), kèm tỉnh, cấp, lần truy cập.
+- **Đã nhắn** (từ SQLite): `Đã nhắn: nick A (2 tin, 15:08)`; ô *Ẩn đã nhắn* lọc bỏ người đã được nhắn từ bất kỳ nick nào. Lọc theo tên / UID / tỉnh.
+- **Xuất** danh sách đang lọc ra `ola-users-YYYYMMDD-HHMMSS.csv` (UTF-8 có BOM, mở được bằng Excel) hoặc `.json` trong Downloads.
+- Bấm một người → mở chat 1-1 ở bên phải; ô **Nhắn bằng** chọn nick gửi (mặc định nick đã tìm thấy người đó). Gửi **từng tin bằng tay**; app không có gửi hàng loạt.
+- **Tin nhắn mẫu** (nút *Mẫu & lịch sử*): thêm / sửa / xoá, lưu trong `settings.json` (`messageTemplates`). Trong mọi ô chat 1-1 có nút mẫu chèn câu vào ô nhập tại con trỏ; vẫn phải tự bấm Gửi.
+- **Đã gửi gần đây**: 30 tin cuối từ SQLite.
+
+## Lịch sử gửi (SQLite)
+
+Mọi tin 1-1 gửi từ app (tab Tin nhắn của từng nick và màn Tìm người & nhắn) được ghi vào bảng `sent_messages` của `messages.db` trong thư mục dữ liệu: thời điểm, nick gửi (id, uid, tên), người nhận (uid, tên), messageID, nội dung, màn gửi, kết quả push / `addLastMessage5`, lỗi, và cờ *Chế độ thử*. Tin ở Chế độ thử được ghi nhưng không tính là "đã nhắn". Ghi lỗi thì tin vẫn đã gửi, chỉ hiện cảnh báo. Chạy trong trình duyệt (`yarn dev`) thì lưu vào localStorage.
+
 ## Tin nhắn: danh sách hội thoại
 
 | Thao tác | Gọi | Ghi? |

@@ -18,6 +18,8 @@ export interface AppSettings {
   dryRunSends: boolean;
   /** The window's close button: ask each time, hide in the tray, or quit (src-tauri/src/tray.rs). */
   onClose: CloseAction;
+  /** Saved message texts the composer can insert (each send is still pressed by hand). */
+  messageTemplates: string[];
 }
 
 export type CloseAction = 'ask' | 'tray' | 'quit';
@@ -29,6 +31,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   socketKey: socketDefaults.key,
   dryRunSends: false,
   onClose: 'ask',
+  messageTemplates: [],
 };
 
 const FILE = 'settings.json';
@@ -50,6 +53,9 @@ export async function loadSettings(): Promise<LoadedSettings> {
   const known = Object.fromEntries(Object.entries(saved).filter(([key]) => key in DEFAULT_SETTINGS));
   const settings = { ...DEFAULT_SETTINGS, ...known } as AppSettings;
   if (!CLOSE_ACTIONS.includes(settings.onClose)) settings.onClose = DEFAULT_SETTINGS.onClose;
+  settings.messageTemplates = Array.isArray(settings.messageTemplates)
+    ? settings.messageTemplates.filter((t): t is string => typeof t === 'string' && Boolean(t.trim()))
+    : [];
   const legacyDevice: LoadedSettings['legacyDevice'] = {};
   for (const field of DEVICE_FIELDS) {
     const value = deviceOverride(field, typeof saved[field] === 'string' ? saved[field] : undefined);

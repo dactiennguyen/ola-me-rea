@@ -5,8 +5,11 @@
 //   - registers the plugins: http (Ola API requests without webview CORS) and
 //     store (JSON files in the app data dir: accounts, settings, message cache);
 //   - exposes two small commands for the JSON files that hold passwords;
-//   - owns the tray icon and the close button (tray.rs).
+//   - owns the tray icon and the close button (tray.rs);
+//   - opens WebSockets through a proxy (socket.rs);
+//   - keeps the log of sent 1-1 messages in SQLite (sentlog.rs).
 
+mod sentlog;
 mod socket;
 mod tray;
 
@@ -50,42 +53,48 @@ fn restrict_data_file(app: tauri::AppHandle, name: String) -> Result<(), String>
     Ok(())
 }
 
-/// `ola-accounts-YYYYMMDD-HHMMSS.json`, the only name an export may get.
-fn is_export_name(name: &str) -> bool {
-    let Some(stamp) = name
-        .strip_prefix("ola-accounts-")
-        .and_then(|rest| rest.strip_suffix(".json"))
-    else {
-        return false;
-    };
-    stamp.len() == 15
+/// Export file names: `ola-accounts-YYYYMMDD-HHMMSS.json` (account list) or
+/// `ola-users-YYYYMMDD-HHMMSS.json|.csv` (collected users). Returns the extension.
+fn export_extension(name: &str) -> Option<&'static str> {
+    let (rest, allowed): (&str, &[&'static str]) =
+        if let Some(rest) = name.strip_prefix("ola-accounts-") {
+            (rest, &[".json"])
+        } else if let Some(rest) = name.strip_prefix("ola-users-") {
+            (rest, &[".json", ".csv"])
+        } else {
+            return None;
+        };
+    let ext = allowed.iter().copied().find(|ext| rest.ends_with(ext))?;
+    let stamp = &rest[..rest.len() - ext.len()];
+    let valid = stamp.len() == 15
         && stamp.bytes().enumerate().all(|(i, b)| {
             if i == 8 {
                 b == b'-'
             } else {
                 b.is_ascii_digit()
             }
-        })
+        });
+    valid.then_some(ext)
 }
 
-/// Writes the account list export (passwords included) to the Downloads
-/// folder and returns its path. Never overwrites: a taken name gets -2, -3….
+/// Writes an export (account list with passwords, or collected users) to the
+/// Downloads folder and returns its path. Never overwrites: a taken name gets -2, -3….
 #[tauri::command]
 fn export_accounts_file(
     app: tauri::AppHandle,
     name: String,
     content: String,
 ) -> Result<String, String> {
-    if !is_export_name(&name) {
+    let Some(ext) = export_extension(&name) else {
         return Err(format!("invalid export file name: {name}"));
-    }
+    };
     let dir = app.path().download_dir().map_err(|e| e.to_string())?;
-    let stem = name.trim_end_matches(".json");
+    let stem = &name[..name.len() - ext.len()];
     for n in 1..=20 {
         let path = if n == 1 {
             dir.join(&name)
         } else {
-            dir.join(format!("{stem}-{n}.json"))
+            dir.join(format!("{stem}-{n}{ext}"))
         };
         let mut options = std::fs::OpenOptions::new();
         options.write(true).create_new(true);
@@ -124,6 +133,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(tray::CloseAction::default())
         .manage(std::sync::Arc::new(socket::Sockets::default()))
+        .manage(sentlog::SentLog::default())
         .setup(|app| {
             // tauri.dev.conf.json renames the dev app but cannot change the window
             // title without repeating the whole window, so the title is set here.
@@ -144,7 +154,10 @@ pub fn run() {
             tray::close_window,
             socket::ws_open,
             socket::ws_send,
-            socket::ws_close
+            socket::ws_close,
+            sentlog::sent_log_add,
+            sentlog::sent_log_recent,
+            sentlog::sent_log_contacts
         ])
         .build(tauri::generate_context!())
         .expect("error while building Ola Desktop")
@@ -163,13 +176,31 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::is_export_name;
+    use super::export_extension;
+
+    fn is_export_name(name: &str) -> bool {
+        export_extension(name).is_some()
+    }
 
     #[test]
     fn export_names() {
-        assert!(is_export_name("ola-accounts-20261104-090807.json"));
+        assert_eq!(
+            export_extension("ola-accounts-20261104-090807.json"),
+            Some(".json")
+        );
+        assert_eq!(
+            export_extension("ola-users-20261104-090807.json"),
+            Some(".json")
+        );
+        assert_eq!(
+            export_extension("ola-users-20261104-090807.csv"),
+            Some(".csv")
+        );
         for bad in [
             "ola-accounts-20261104-090807.txt",
+            "ola-accounts-20261104-090807.csv",
+            "ola-users-20261104-090807.txt",
+            "ola-other-20261104-090807.json",
             "ola-accounts-2026110-4090807.json",
             "ola-accounts-20261104-09080.json",
             "../ola-accounts-20261104-090807.json",

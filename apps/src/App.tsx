@@ -5,6 +5,7 @@ import { onCloseAsked, setCloseAction } from './lib/platform.ts';
 import { AccountProvider, useSession } from './lib/session.tsx';
 import { AccountsScreen, type AccountsPanel, type AccountsRequest } from './screens/AccountsScreen.tsx';
 import { AccountView } from './screens/AccountView.tsx';
+import { OutreachScreen } from './screens/OutreachScreen.tsx';
 import { SettingsScreen } from './screens/SettingsScreen.tsx';
 
 export function App() {
@@ -55,6 +56,7 @@ export function App() {
         unread={unread}
         onAccount={showAccount}
         onAdd={() => openAccounts('add')}
+        onOutreach={() => setView('outreach')}
         onManage={() => setView('accounts')}
         onSettings={() => setView('settings')}
       />
@@ -63,6 +65,8 @@ export function App() {
           <AccountView hidden={!(current === 'account' && account.id === selectedId)} onUnread={onUnread} onEdit={editAccount} />
         </AccountProvider>
       ))}
+      {/* Stays mounted so the collected list and the open chat survive view switches. */}
+      <OutreachScreen hidden={current !== 'outreach'} />
       {current === 'accounts' && (
         <div className="content content-page"><AccountsScreen request={accountsRequest} onOpen={showAccount} /></div>
       )}

@@ -4,7 +4,7 @@ import { Avatar } from './Avatar.tsx';
 import { Icon } from './Icon.tsx';
 
 /** What the main area shows: one account, or an app-wide page. */
-export type AppView = 'account' | 'accounts' | 'settings';
+export type AppView = 'account' | 'outreach' | 'accounts' | 'settings';
 
 export function liveTone(state: LiveState): 'ok' | 'warn' | 'bad' | 'idle' {
   if (state.status === 'ready') return state.realtime === 'connected' || state.realtime === 'off' ? 'ok' : 'warn';
@@ -26,11 +26,12 @@ export function liveText(account: StoredAccount, state: LiveState): string {
  * online at once), its status dot and unread count; Thêm, Quản lý tài khoản and Cài đặt
  * at the bottom.
  */
-export function AccountRail({ view, unread, onAccount, onAdd, onManage, onSettings }: {
+export function AccountRail({ view, unread, onAccount, onAdd, onOutreach, onManage, onSettings }: {
   view: AppView;
   unread: Record<string, number>;
   onAccount: (id: string) => void;
   onAdd: () => void;
+  onOutreach: () => void;
   onManage: () => void;
   onSettings: () => void;
 }) {
@@ -64,6 +65,9 @@ export function AccountRail({ view, unread, onAccount, onAdd, onManage, onSettin
         </button>
       </div>
       <div className="rail-bottom">
+        <button type="button" className={`rail-btn${view === 'outreach' ? ' is-active' : ''}`} title="Tìm người & nhắn" aria-label="Tìm người và nhắn" aria-current={view === 'outreach' ? 'page' : undefined} onClick={onOutreach}>
+          <Icon name="message" size={20} />
+        </button>
         <button type="button" className={`rail-btn${view === 'accounts' ? ' is-active' : ''}`} title="Quản lý tài khoản" aria-label="Quản lý tài khoản" aria-current={view === 'accounts' ? 'page' : undefined} onClick={onManage}>
           <Icon name="users" size={20} />
         </button>

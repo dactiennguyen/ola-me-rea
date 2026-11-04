@@ -77,7 +77,7 @@ export function SettingsScreen() {
 
         <div className="form-actions span-2">
           <button type="submit" className="btn btn-primary">Lưu cài đặt</button>
-          <button type="button" className="btn btn-ghost" onClick={() => setForm(DEFAULT_SETTINGS)}>Khôi phục mặc định</button>
+          <button type="button" className="btn btn-ghost" onClick={() => setForm({ ...DEFAULT_SETTINGS, messageTemplates: form.messageTemplates })}>Khôi phục mặc định</button>
           {saved && <span className="tone-ok small" role="status">{saved}</span>}
         </div>
         <p className="muted small span-2">

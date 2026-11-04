@@ -78,18 +78,19 @@ apps/
 │   │   ├── accounts.ts      # accounts.json
 │   │   ├── settings.ts      # settings.json (socket key, chế độ thử, nút đóng)
 │   │   ├── proxy.ts         # proxy từng nick: đọc/chuẩn hoá, fetch qua proxy, kiểm tra IP
+│   │   ├── sentLog.ts       # lịch sử tin đã gửi (SQLite qua Rust; localStorage trong trình duyệt)
 │   │   ├── rustSocket.ts    # socket.io-client 2.x tối giản trên WebSocket phía Rust (nick có proxy)
 │   │   ├── messageCache.ts  # chat-<uid>.json: lịch sử 1-1 trên máy
 │   │   ├── platform.ts      # fetch của Tauri, file JSON, lệnh Rust
 │   │   ├── provinces.ts     # danh sách phòng = mã tỉnh
 │   │   └── format.ts
 │   ├── components/          # AccountRail (cột tài khoản), Sidebar (của một nick), Avatar, MessageList, Composer, Icon
-│   └── screens/             # AccountView (màn của một nick), Messages, Explore, Rooms, Profile, Accounts, Settings
+│   └── screens/             # AccountView (màn của một nick), Messages, Explore, Rooms, Profile, Accounts, Settings, Outreach (Tìm người & nhắn)
 └── src-tauri/
     ├── Cargo.toml, build.rs, tauri.conf.json
     ├── capabilities/default.json   # quyền: http tới sgdev.vip, Firebase Auth REST, api.ipify.org; store
     ├── icons/
-    └── src/lib.rs, socket.rs, tray.rs, main.rs  # plugin http + store, lệnh dữ liệu, WebSocket qua proxy, khay
+    └── src/lib.rs, socket.rs, sentlog.rs, tray.rs, main.rs  # plugin http + store, lệnh dữ liệu, WebSocket qua proxy, SQLite, khay
 ```
 
 Lõi gọi API (đăng nhập, ký request, endpoint, Socket.IO, payload chat) **không nằm trong app**: app import thẳng `scripts/nodejs/src` qua alias `@ola/core`, nên CLI Node và app desktop luôn dùng cùng một code đã có test.

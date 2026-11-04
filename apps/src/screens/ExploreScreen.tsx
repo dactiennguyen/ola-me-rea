@@ -11,21 +11,21 @@ import { PROVINCES, provinceName } from '../lib/provinces.ts';
 import { useOla } from '../lib/session.tsx';
 import type { PeerTarget } from './MessagesScreen.tsx';
 
-type Tab = 'online' | 'verified' | 'avatar';
-type Gender = 'all' | 0 | 1 | 2;
+export type Tab = 'online' | 'verified' | 'avatar';
+export type Gender = 'all' | 0 | 1 | 2;
 
-const TABS: { id: Tab; label: string }[] = [
+export const TABS: { id: Tab; label: string }[] = [
   { id: 'online', label: 'Online' },
   { id: 'verified', label: 'Đã xác thực' },
   { id: 'avatar', label: 'Ảnh có mặt' },
 ];
 
 // The three tabs are built by the same defineExplore(), so they share one type.
-const ENDPOINT: Record<Tab, typeof getExploreOnlineV6> = {
+export const ENDPOINT: Record<Tab, typeof getExploreOnlineV6> = {
   online: getExploreOnlineV6, verified: getExplore3, avatar: getExploreAvatarV4,
 };
 
-const GENDERS: { value: Gender; label: string }[] = [
+export const GENDERS: { value: Gender; label: string }[] = [
   { value: 'all', label: 'Tất cả' }, { value: 0, label: 'Nữ' }, { value: 1, label: 'Nam' }, { value: 2, label: 'LGBT' },
 ];
 

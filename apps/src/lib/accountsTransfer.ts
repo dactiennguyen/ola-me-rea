@@ -41,12 +41,12 @@ export function exportAccounts(accounts: StoredAccount[], now = new Date()): str
   }, null, 2)}\n`;
 }
 
-/** ola-accounts-YYYYMMDD-HHMMSS.json in local time (src-tauri accepts only this shape). */
-export function exportFileName(now = new Date()): string {
+/** ola-accounts-YYYYMMDD-HHMMSS.json in local time (src-tauri accepts only this shape, and ola-users-…json|csv). */
+export function exportFileName(now = new Date(), prefix: 'ola-accounts' | 'ola-users' = 'ola-accounts', ext: 'json' | 'csv' = 'json'): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
   const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  return `ola-accounts-${date}-${time}.json`;
+  return `${prefix}-${date}-${time}.${ext}`;
 }
 
 export function parseImport(text: string): ParsedImport {
