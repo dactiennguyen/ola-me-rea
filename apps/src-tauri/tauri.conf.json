@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sgdev.vip https://sgdev.vip:3001 wss://sgdev.vip:3001; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sgdev.vip https://sgdev.vip:3001 wss://sgdev.vip:3001; img-src 'self' data: blob: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
     }
   },
   "bundle": {

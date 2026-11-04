@@ -2,7 +2,7 @@
   "endpoint": "postComments",
   "cases": [
     {
-      "name": "page defaults to 1",
+      "name": "page defaults to 0 (first page, observed)",
       "input": {
         "postId": "540919"
       },
@@ -10,7 +10,7 @@
         "method": "POST",
         "path": "napi/post/540919/comments",
         "body": {
-          "page": 1
+          "page": 0
         }
       },
       "legacy": "api/postComments.js buildPostComments"

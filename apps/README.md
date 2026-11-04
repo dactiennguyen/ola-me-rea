@@ -85,7 +85,7 @@ apps/
 │   │   ├── provinces.ts     # danh sách phòng = mã tỉnh
 │   │   └── format.ts
 │   ├── components/          # AccountRail (cột tài khoản), Sidebar (của một nick), Avatar, MessageList, Composer, Icon
-│   └── screens/             # AccountView (màn của một nick), Messages, Explore, Rooms, Profile, Accounts, Settings, Outreach (Tìm người & nhắn)
+│   └── screens/             # AccountView (màn của một nick), Messages, Explore, Rooms, Blog, Profile, Accounts, Settings, Outreach (Tìm người & nhắn)
 └── src-tauri/
     ├── Cargo.toml, build.rs, tauri.conf.json
     ├── capabilities/default.json   # quyền: http tới sgdev.vip, Firebase Auth REST, api.ipify.org; store

@@ -15,15 +15,24 @@ Lấy **danh sách bình luận** của một bài (feed/blog), có phân trang.
 | `postId` (path) | string | ID bài cần lấy bình luận (bắt buộc, không suy ra được từ session) | [Quan sát] luồng "xem bình luận" |
 | `page` | integer | Trang phân trang; tăng dần khi cuộn | [Quan sát] body `page` |
 
-Trang đầu = `1` là **[Suy luận]** (chưa xác minh giá trị khởi đầu trên wire).
+Trang đầu = `0`, mỗi trang 10 bình luận. **[Quan sát 2026-11-04]**: bài có 16 bình luận trả 10 ở `page: 0`, 6 ở `page: 1`, 0 ở `page: 2`.
 
 ```json
-{ "page": 1 }
+{ "page": 0 }
 ```
 
 ## Response
 
-**Chưa bắt response** — chạy `node scripts/nodejs/ola.ts postComments --postId <id> --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. Phiên 2026-11-03 chỉ ghi nhận request (body `page`), chưa ghi response. Cấu trúc trang bình luận **chưa kiểm chứng**. [Chưa xác minh]
+[Quan sát 2026-11-04] (lưu ý: `success`, không phải `is_success`):
+
+```json
+{ "newest_version": "27.7.9", "success": true, "totalComments": 16,
+  "data": [{ "id": 1007102, "content": "…", "likeCount": 0, "timePost": "1793781544757",
+             "displayName": "…", "photoURL": "https://…", "fcmToken": "…", "uid": "<uid>",
+             "isVip": 0, "stickerUrl": "", "isLiked": false }] }
+```
+
+`timePost` là ms dạng chuỗi. Đọc bằng `loadComments()` trong [`src/blog.ts`](../../../scripts/nodejs/src/blog.ts).
 
 ## Dùng Node.js
 
@@ -36,8 +45,8 @@ import { postComments } from './src/endpoints/index.ts';
 
 const ola = await loginFromEnv();
 try {
-  const comments = await ola.call(postComments, { postId: '540919', page: 1 });
-  // page mặc định 1.
+  const comments = await ola.call(postComments, { postId: '540919', page: 0 });
+  // page mặc định 0.
 } finally {
   await ola.close();
 }

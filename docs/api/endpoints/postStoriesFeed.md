@@ -19,7 +19,17 @@ GET /napi/post/stories/feed
 
 ## Response
 
-**Chưa bắt response** — logger phiên 2026-11-03 chỉ ghi method + path (GET, không body). Chạy `node scripts/nodejs/ola.ts postStoriesFeed --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
+[Quan sát 2026-11-04] Nhóm theo người đăng:
+
+```json
+{ "is_success": true, "data": [{ "user_id": "<uid>", "displayName": "…", "photoURL": "https://…", "fcmToken": "…",
+  "privacy": "public", "receiverPushStranger": 1, "has_unseen": true, "latest_created_at": 1793773729000,
+  "stories": [{ "id": 8289, "user_id": "<uid>", "media_url": "https://…", "media_type": "image", "privacy": "public",
+    "caption": "", "view_count": 46, "created_at": "2026-11-04T06:28:49.000Z", "expires_at": "2026-11-05T06:28:49.000Z",
+    "displayName": "…", "photoURL": "https://…", "fcmToken": "…", "receiverPushStranger": 1, "is_viewed": 0 }] }] }
+```
+
+Đọc bằng `loadStories()` trong [`src/blog.ts`](../../../scripts/nodejs/src/blog.ts).
 
 ## Dùng Node.js
 

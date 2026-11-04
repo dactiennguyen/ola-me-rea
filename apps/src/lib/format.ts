@@ -43,6 +43,20 @@ export function lastSeenLabel(value: number, now = Date.now()): string {
   return `${Math.round(hours / 24)} ngày trước`;
 }
 
+/** Post time: "Vừa xong", "5 phút trước", "3 giờ trước", "2 ngày trước", then dd/MM/yyyy. */
+export function agoLabel(ms: number, now = Date.now()): string {
+  if (!ms) return '';
+  const minutes = Math.floor(Math.max(0, now - ms) / 60_000);
+  if (minutes < 1) return 'Vừa xong';
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} ngày trước`;
+  const d = new Date(ms);
+  return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return '?';

@@ -121,6 +121,24 @@ Gửi tin (đúng thứ tự app gốc, [luong-chat-1-1.md](../../docs/api/luong
 - Header hiện số người trong phòng từ sự kiện `user joined/left`; panel thành viên có nút nhắn tin 1-1.
 - **Lưu ý:** phòng chat broadcast `deviceID` và `userID` của người gửi cho mọi thành viên (đặc điểm của giao thức gốc).
 
+## Blog
+
+Mục *Blog* ở thanh bên của từng nick. **Chỉ đọc**: app không thích, bình luận hay đăng bài.
+
+| Thao tác | Gọi | Ghi? |
+|---|---|---|
+| Story (thanh trên cùng, chỉ ở *Nổi bật*) | `GET napi/post/stories/feed` | Không (xem story không gửi "đã xem") |
+| Feed *Nổi bật* | `getFeedNoiBatV4 {uid, page, new: 1}`, page từ 0 | Không |
+| *Bài của tôi* / bài của một người | `getPostByUserV7 {uid, page}`, page từ 0 | Không |
+| Bình luận của bài | `POST napi/post/<id>/comments {page}`, page từ 0, 10/trang | Không |
+| Người đã thích | `getLikesV2 {postID, page}`, page từ 0, 30/trang | Không |
+
+- Tự tải trang tiếp khi cuộn gần cuối (và nút *Tải thêm*); dừng khi trang rỗng hoặc chỉ toàn bài đã có.
+- Bài: ảnh đại diện, tên, xác thực, VIP, thời gian, tỉnh, nội dung, ảnh (1 ảnh giữ tỉ lệ; nhiều ảnh thành lưới 2×2, "+N"), số thích / bình luận, mã bài.
+- Bấm tên hoặc ảnh đại diện → bài của người đó (có nút **Nhắn tin**). Nút nhắn ở góc bài và trong danh sách người thích mở chat 1-1 của nick đang xem.
+- Bấm ảnh hoặc story → xem toàn màn hình; ← → chuyển, Esc đóng. Story video phát được (CSP `media-src https:`).
+- Dữ liệu đọc bằng `scripts/nodejs/src/blog.ts` (shape đã quan sát 2026-11-04).
+
 ## Ngoài phạm vi bản này
 
-Ảnh, sticker, quà, tin thoại, trả lời tin (reply), thông báo hệ điều hành, gọi thoại/video, bài viết/story, VIP/xu, Caro, hộp thư gộp mọi nick. Xem [03 · Lộ trình](03-lo-trinh.md).
+Ảnh, sticker, quà, tin thoại, trả lời tin (reply), thông báo hệ điều hành, gọi thoại/video, đăng bài / thích / bình luận / đăng story, VIP/xu, Caro, hộp thư gộp mọi nick. Xem [03 · Lộ trình](03-lo-trinh.md).

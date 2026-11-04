@@ -20,7 +20,7 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 
 ## Response
 
-**Chưa bắt response** — chạy `node scripts/nodejs/ola.ts getPostByID --postID <id> --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. Theo convention `faApi2 get*` (xem [Khám phá](../luong-kham-pha.md)), response thường có `is_success`; client **ném lỗi nếu `is_success=false`**. Cấu trúc bài đăng **chưa kiểm chứng**. [Chưa xác minh]
+[Quan sát 2026-11-04] `{is_success: true, message: "done", data: {bài}}`; bài có cùng field như item của [getFeedNoiBatV4](getFeedNoiBatV4.md) (không có `location`, `level`), thêm `os`, `userBock`, `listReact` (chuỗi, rỗng khi chưa có). Đọc bằng `loadPost()` trong [`src/blog.ts`](../../../scripts/nodejs/src/blog.ts).
 
 ## Dùng Node.js
 

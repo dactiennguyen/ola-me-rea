@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon.tsx';
 import { Sidebar, type Screen } from '../components/Sidebar.tsx';
 import { shortTime } from '../lib/format.ts';
 import { useAccount, useSession } from '../lib/session.tsx';
+import { BlogScreen } from './BlogScreen.tsx';
 import { ExploreScreen } from './ExploreScreen.tsx';
 import { MessagesScreen, type PeerTarget } from './MessagesScreen.tsx';
 import { ProfileScreen } from './ProfileScreen.tsx';
@@ -22,6 +23,9 @@ export function AccountView({ hidden, onUnread, onEdit }: {
   const [screen, setScreen] = useState<Screen>('messages');
   const [target, setTarget] = useState<PeerTarget | null>(null);
   const [unread, setUnread] = useState(0);
+  // Blog mounts on first visit, then stays (hidden) so the feed and open comments survive tab switches.
+  const [blogOpened, setBlogOpened] = useState(false);
+  useEffect(() => { if (screen === 'blog') setBlogOpened(true); }, [screen]);
   const me = state.status === 'ready' ? state.me : null;
 
   useEffect(() => { onUnread(account.id, me ? unread : 0); }, [onUnread, account.id, me, unread]);
@@ -50,6 +54,7 @@ export function AccountView({ hidden, onUnread, onEdit }: {
             />
             {screen === 'explore' && <ExploreScreen key={me.uid} onMessage={messagePeer} />}
             {screen === 'rooms' && <RoomsScreen key={me.uid} onMessage={messagePeer} />}
+            {blogOpened && <BlogScreen key={me.uid} hidden={screen !== 'blog'} onMessage={messagePeer} />}
           </>
         ) : screen !== 'profile' && <AccountGate onEdit={edit} />}
       </div>

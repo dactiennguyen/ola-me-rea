@@ -4,12 +4,13 @@ import { Avatar } from './Avatar.tsx';
 import { Icon, type IconName } from './Icon.tsx';
 
 /** The screens of one account. */
-export type Screen = 'messages' | 'explore' | 'rooms' | 'profile';
+export type Screen = 'messages' | 'explore' | 'rooms' | 'blog' | 'profile';
 
 const NAV: { id: Screen; label: string; icon: IconName }[] = [
   { id: 'messages', label: 'Tin nhắn', icon: 'message' },
   { id: 'explore', label: 'Khám phá', icon: 'compass' },
   { id: 'rooms', label: 'Phòng chat', icon: 'users' },
+  { id: 'blog', label: 'Blog', icon: 'newspaper' },
   { id: 'profile', label: 'Thông tin tài khoản', icon: 'user' },
 ];
 

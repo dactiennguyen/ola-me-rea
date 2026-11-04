@@ -22,7 +22,17 @@ Auth: bộ [header xác thực](../auth-va-header.md) (Bearer + `key2`/`timestam
 
 ## Response
 
-**Chưa bắt response** — chạy `node scripts/nodejs/ola.ts getFeedNoiBatV4 --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. Các endpoint `faApi2/*` khác trả `{ is_success, ... }` kèm danh sách bài viết; client ném lỗi nếu `is_success=false`. [Chưa xác minh]
+[Quan sát 2026-11-04] `{is_success: true, message: "done", list_data: [bài]}`; page 0 trả 20 bài mới, các trang sau 10–15 bài cũ hơn, hết thì mảng rỗng. Mỗi bài:
+
+```json
+{ "id": 541209, "text": "…", "timePost": "1793784704341", "likeCount": 1, "commentCount": 0,
+  "listImage": "https://…/a.jpg,https://…/b.jpg", "imgSize": "1280:1368,1080:1440",
+  "location": 79, "uid": "<uid>", "displayName": "…", "photoURL": "https://…", "fcmToken": "…",
+  "isVerifyAvatar": true, "isVip": false, "level": 1, "isTrust": 0, "feeling": "", "checkIn": "",
+  "requestNewFeed": 2, "receivePush": 1, "totalAcc": 0 }
+```
+
+`listImage` và `imgSize` là chuỗi nối bằng dấu phẩy (cùng thứ tự); `location` là mã tỉnh, `-1` khi không có; `timePost` là ms dạng chuỗi. Đọc bằng `loadFeed()` trong [`src/blog.ts`](../../../scripts/nodejs/src/blog.ts).
 
 ## Dùng Node.js
 
