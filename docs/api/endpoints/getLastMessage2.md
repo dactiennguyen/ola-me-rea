@@ -1,6 +1,6 @@
 # faApi2/getLastMessage2.php
 
-Lấy danh sách tin cuối của các hội thoại 1-1 — nạp màn **Tin nhắn** (danh sách hội thoại) lúc khởi động. Xem [luồng chat 1-1](../luong-chat-1-1.md).
+Lấy **hàng đợi tin chờ** của tài khoản (các tin 1-1 người khác lưu bằng `addLastMessage5`), nạp màn **Tin nhắn** lúc khởi động. **Đọc là xoá**: gọi lần hai trả rỗng. Xem [luồng chat 1-1](../luong-chat-1-1.md).
 
 ## Method + path
 
@@ -26,7 +26,22 @@ Quan sát ngày 2026-11-04 bằng client Node với tài khoản test, **chỉ g
 { is_success: boolean, data: [] }
 ```
 
-Tài khoản test chưa có hội thoại nên `data` rỗng; **chưa biết các field của một phần tử**. Client desktop (`normalizeConversations()` trong `scripts/nodejs/src/chat.ts`) đoán peer từ `uid`/`userID`/`id`/`roomID` (giá trị khác uid của mình), nội dung từ `content`/`mess`, thời gian từ `timestamp` — cần đối chiếu khi có dữ liệu thật. [Chưa xác minh]
+Thử ngày 2026-11-04 giữa 2 tài khoản thật của chủ app (A gửi B bằng client Node, đúng thứ tự của app; B nghe kênh cá nhân và đọc `getLastMessage2`). [Quan sát] Chỉ ghi tên key và kiểu:
+
+```text
+{ is_success: boolean,
+  data: [ { uid: string,          // người GỬI
+            displayName: string, photoURL: string, isVip: number,   // của người gửi
+            fcmToken: string,     // token thiết bị người gửi ("" nếu gửi từ client không có FCM)
+            id: string,           // messageID = "<ms><uid người gửi>"
+            timestamp: number, content: string, image: string,
+            isSticker: null, replyID: string, replyText: string } ] }
+```
+
+- **Mỗi tin một phần tử**, không gộp theo hội thoại: A gửi 3 tin → `data` có 3 phần tử.
+- **Đọc là xoá**: gọi lại ngay sau đó trả `data: []`. Tài khoản đăng nhập ở nhiều nơi (điện thoại + desktop) thì nơi nào gọi trước sẽ lấy hết tin chờ.
+- `content` tối đa **150 ký tự** (server cắt khi lưu, xem [addLastMessage5](addLastMessage5.md)).
+- Không có field số tin chưa đọc: số phần tử của mỗi người gửi chính là số tin chờ.
 
 ## Dùng Node.js
 

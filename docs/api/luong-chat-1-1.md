@@ -61,7 +61,20 @@ Client gọi API với token của người nhận để backend gửi push. `da
  "uid":"<uid>","userID":"<peer_uid>","isSticker":null,"replyID":"","replyText":""}
 ```
 
-`fcmToken` trong body này là token thiết bị người gửi. Endpoint cập nhật nội dung tin cuối của hội thoại để hiển thị ở danh sách chat. Tin nhắn đi **2 đường** (socket + HTTP) đều do client điều khiển.
+`fcmToken` trong body này là token thiết bị người gửi. Endpoint cất tin vào **hàng đợi tin chờ** của người nhận, đọc lại bằng `getLastMessage2` (đọc xong thì hàng đợi bị xoá, xem [getLastMessage2](endpoints/getLastMessage2.md)). Tin nhắn đi **2 đường** (socket + HTTP) đều do client điều khiển.
+
+## Độ dài tin nhắn
+
+Thử ngày 2026-11-04 giữa 2 tài khoản thật của chủ app (A gửi B bằng client Node, đúng thứ tự của app; B nghe kênh cá nhân và đọc `getLastMessage2`). [Quan sát]
+
+| Đường đi | Giới hạn | Kết quả |
+|---|---|---|
+| App Android (ô nhập chat) | Không có | `TextField` đặt `maxLines = 5`, `minLines = 1`, **không** đặt `maxLength` (AOT `ola_flutter_core_chat_chat_input.dart`, quanh `0xa85ef4`); không có chuỗi báo "tin quá dài". |
+| Socket `new message` (người nhận đang online) | Không thấy | 149 → 1 100 000 ký tự đều tới **nguyên vẹn**. |
+| `addLastMessage5` → `getLastMessage2` (người nhận offline / danh sách tin) | **150 ký tự** | Server luôn trả `{"is_success": true, "message": "done"}`, nhưng chỉ lưu **150 ký tự đầu**, cắt im lặng. Tính theo **ký tự**, không theo byte: tin tiếng Việt 259 ký tự (574 byte) còn đúng 150 ký tự; 114 ký tự (226 byte) giữ nguyên. |
+| `send-notification` (push) | Chưa đo | Tài khoản nhận thử không có `fcmToken`. FCM giới hạn payload khoảng 4 KB. |
+
+Tức là: người nhận **đang mở app** (socket) đọc được cả tin dài; người nhận **offline** chỉ thấy 150 ký tự đầu trong danh sách tin chờ.
 
 ## Nhận tin về
 

@@ -50,7 +50,14 @@ Ví dụ (đã redact):
 
 ## Response
 
-**Chưa bắt response** — log chỉ bắt request body. Chạy `node scripts/nodejs/ola.ts addLastMessage5 --content hi --userID <peer_uid> --dry-run` để xem request; bỏ `--dry-run` (có đăng nhập) để lấy response. [Chưa xác minh]
+Thử ngày 2026-11-04 giữa 2 tài khoản thật của chủ app (A gửi B bằng client Node, đúng thứ tự của app; B nghe kênh cá nhân và đọc `getLastMessage2`). [Quan sát]
+
+```text
+{ is_success: true, message: "done" }
+```
+
+- Tin được thêm vào **hàng đợi tin chờ** của `userID`; đọc bằng [getLastMessage2](getLastMessage2.md) (đọc là xoá).
+- `content` chỉ được lưu **150 ký tự đầu** (tính theo ký tự, tiếng Việt cũng vậy); dài hơn vẫn trả `is_success: true`. Đã thử tới 1 100 000 ký tự: không lỗi, vẫn cắt còn 150. Chi tiết: [Độ dài tin nhắn](../luong-chat-1-1.md#độ-dài-tin-nhắn).
 
 ## Dùng Node.js
 
