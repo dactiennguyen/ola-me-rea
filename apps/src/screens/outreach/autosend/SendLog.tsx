@@ -15,6 +15,7 @@ const STATUS: Record<SendStatus, { label: string; icon: IconName; tone: Tone }> 
 /** `source` column → where the message was sent from. */
 export const SOURCE_LABEL: Record<string, string> = {
   'outreach-auto': 'Auto gửi',
+  'auto-reply': 'Tự trả lời',
   outreach: 'Tìm người',
   messages: 'Tin nhắn',
   bulk: 'Hàng loạt',

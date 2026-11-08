@@ -2,7 +2,7 @@
 // → push when the peer has an FCM token → addLastMessage5), recorded in the
 // SQLite sent log exactly like a message sent by hand.
 
-import { directMessagePayload, loadChatUser, sendDirectMessage, type ChatChannel, type ChatProfile, type ChatUser } from '@ola/core/chat.ts';
+import { directMessagePayload, loadChatUser, localTextMessage, sendDirectMessage, type ChatChannel, type ChatMessage, type ChatProfile, type ChatUser } from '@ola/core/chat.ts';
 import type { OlaClient } from '@ola/core/client.ts';
 import { logSent } from '../../../lib/sentLog.ts';
 import type { Nick } from '../types.ts';
@@ -69,22 +69,24 @@ export function sleepUnlessCancelled(ms: number, cancel: { readonly current: boo
  * Sends one message and logs it. Throws when nothing was delivered (lookup,
  * connect or socket emit failed); a failed push/lastMessage only adds a note.
  */
-export async function sendOne({ sender, user, text, dryRun, openChannel }: {
+export async function sendOne({ sender, user, text, dryRun, openChannel, source = AUTO_SOURCE }: {
   sender: Sender;
   user: ChatUser;
   text: string;
   dryRun: boolean;
   openChannel: OpenChannel;
-}): Promise<{ pushOk: boolean | null; note?: string }> {
+  /** `source` column of the logged row. */
+  source?: string;
+}): Promise<{ message: ChatMessage; pushOk: boolean | null; note?: string }> {
   const now = Date.now();
   if (dryRun) {
     const payload = directMessagePayload({ from: sender.me, text, now });
     await logSent({
       sentAt: now, accountId: sender.id, accountUid: sender.me.uid, accountLabel: sender.label,
       peerUid: user.uid, peerName: user.displayName, messageId: String(payload.messageID), text,
-      source: AUTO_SOURCE, pushOk: null, lastMessageOk: null, error: null, dryRun: true,
+      source, pushOk: null, lastMessageOk: null, error: null, dryRun: true,
     });
-    return { pushOk: null };
+    return { message: localTextMessage(String(payload.messageID), sender.me, text, now), pushOk: null };
   }
 
   // Prefer a token from the lookup; fall back to one the collected user carried
@@ -98,15 +100,18 @@ export async function sendOne({ sender, user, text, dryRun, openChannel }: {
     const result = await sendDirectMessage(sender.ola, channel, { from: sender.me, peer, text, now });
     const stepOk = (name: string) => result.steps.find(s => s.name === name)?.ok ?? null;
     const failed = result.steps.filter(s => !s.ok);
+    // Delivered from here on: a failed write must not look like a failed send.
+    let logError: string | undefined;
     await logSent({
       sentAt: result.message.at, accountId: sender.id, accountUid: sender.me.uid, accountLabel: sender.label,
       peerUid: peer.uid, peerName: peer.displayName || user.displayName, messageId: result.message.id, text: result.message.text,
-      source: AUTO_SOURCE, pushOk: stepOk('push'), lastMessageOk: stepOk('lastMessage'),
+      source, pushOk: stepOk('push'), lastMessageOk: stepOk('lastMessage'),
       error: failed.map(f => `${f.name}: ${f.error ?? 'lỗi'}`).join('; ') || null, dryRun: false,
-    });
+    }).catch((e: unknown) => { logError = `Đã gửi, nhưng không lưu được lịch sử: ${(e as Error).message ?? e}`; });
     return {
+      message: result.message,
       pushOk: stepOk('push'),
-      note: failed.length ? `Đã gửi realtime, nhưng lỗi: ${failed.map(f => STEP_NAMES[f.name] ?? f.name).join(', ')}` : undefined,
+      note: [failed.length ? `Đã gửi realtime, nhưng lỗi: ${failed.map(f => STEP_NAMES[f.name] ?? f.name).join(', ')}` : '', logError ?? ''].filter(Boolean).join(' · ') || undefined,
     };
   } finally {
     channel.close();

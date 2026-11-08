@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon.tsx';
 import { dataDir, isTauri } from '../lib/platform.ts';
 import { useSession } from '../lib/session.tsx';
 import { AccountsTransferPanel } from './AccountsTransferPanel.tsx';
+import { AutoReplyPanel } from './AutoReplyPanel.tsx';
 import { DEFAULT_SETTINGS, SERVERS, type AppSettings, type CloseAction } from '../lib/settings.ts';
 
 /** App-wide options (not per account): test mode, close button, socket key. */
@@ -15,14 +16,16 @@ export function SettingsScreen() {
   const [folder, setFolder] = useState<string | null>(null);
   const keyIsDefault = form.socketKey === DEFAULT_SETTINGS.socketKey;
 
-  useEffect(() => { setForm(settings); }, [settings]);
+  // Not on every settings change: the auto-reply panel saves on its own and must not reset edits here.
+  useEffect(() => { setForm(settings); }, [settings.socketKey, settings.dryRunSends, settings.onClose]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { void dataDir().then(setFolder).catch(() => setFolder(null)); }, []);
 
   const set = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => { setForm(f => ({ ...f, [key]: value })); setSaved(null); };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    await saveSettings(form);
+    // Fields this form does not edit always keep their latest saved value.
+    await saveSettings({ ...settings, socketKey: form.socketKey, dryRunSends: form.dryRunSends, onClose: form.onClose });
     setSaved('Đã lưu.');
   };
 
@@ -34,6 +37,7 @@ export function SettingsScreen() {
           <p className="muted small">Dùng chung cho cả app, không theo tài khoản; kèm nhập / xuất danh sách tài khoản. Device ID, phiên bản, key2 và proxy của từng nick nằm ở Quản lý tài khoản.</p>
         </div>
       </header>
+      <AutoReplyPanel />
       <form className="panel form-grid" onSubmit={e => void submit(e)} aria-label="Cài đặt app">
         <label className="checkbox span-2">
           <input type="checkbox" checked={form.dryRunSends} onChange={e => set('dryRunSends', e.target.checked)} />

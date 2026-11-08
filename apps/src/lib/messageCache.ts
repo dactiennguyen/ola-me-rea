@@ -65,6 +65,19 @@ export function rememberPeer(myUid: string, user: ChatUser): Promise<void> {
   });
 }
 
+type LocalMessageListener = (myUid: string, peerUid: string, message: ChatMessage) => void;
+const localMessageListeners = new Set<LocalMessageListener>();
+
+/** A message this app sent from outside the chat screen (Tự trả lời), already in the thread. */
+export function onLocalMessage(listener: LocalMessageListener): () => void {
+  localMessageListeners.add(listener);
+  return () => { localMessageListeners.delete(listener); };
+}
+
+export function publishLocalMessage(myUid: string, peerUid: string, message: ChatMessage): void {
+  for (const listener of localMessageListeners) listener(myUid, peerUid, message);
+}
+
 export function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
   const byId = new Map(existing.map(m => [m.id, m]));
   for (const m of incoming) byId.set(m.id, { ...byId.get(m.id), ...m });

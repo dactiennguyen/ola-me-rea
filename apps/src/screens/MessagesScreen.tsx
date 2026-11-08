@@ -8,7 +8,7 @@ import { Composer } from '../components/Composer.tsx';
 import { Icon } from '../components/Icon.tsx';
 import { MessageList, type PendingState } from '../components/MessageList.tsx';
 import { lastSeenLabel, shortTime } from '../lib/format.ts';
-import { appendThread, loadThread, loadThreadPeers, mergeMessages, rememberPeer } from '../lib/messageCache.ts';
+import { appendThread, loadThread, loadThreadPeers, mergeMessages, onLocalMessage, rememberPeer } from '../lib/messageCache.ts';
 import { logSent, type SentEntry } from '../lib/sentLog.ts';
 import { useAccount, useOla, useSession } from '../lib/session.tsx';
 
@@ -106,6 +106,17 @@ export function MessagesScreen({ hidden, target, onTargetOpened, onUnreadChange 
     });
     if (selectedRef.current !== message.fromUid) setUnread(u => ({ ...u, [message.fromUid]: (u[message.fromUid] ?? 0) + 1 }));
   }), [onIncoming]);
+
+  useEffect(() => onLocalMessage((myUid, peerUid, message) => {
+    if (myUid !== me.uid) return;
+    setConversations(list => {
+      const prev = list.find(c => c.peerUid === peerUid);
+      return [{
+        peerUid, peerName: prev?.peerName ?? '', peerPhoto: prev?.peerPhoto ?? '',
+        lastText: message.text, lastFromMe: true, at: message.at, unread: 0,
+      }, ...list.filter(c => c.peerUid !== peerUid)];
+    });
+  }), [me.uid]);
 
   const totalUnread = Object.values(unread).reduce((a, b) => a + b, 0);
   useEffect(() => { onUnreadChange(totalUnread); }, [totalUnread, onUnreadChange]);
@@ -275,6 +286,10 @@ export function DirectChat({ target, onSent, source = 'messages', actions }: {
   useEffect(() => onIncoming(m => {
     if (m.fromUid === target.uid) { setPeerTyping(false); setMessages(list => mergeMessages(list, [m])); }
   }), [onIncoming, target.uid]);
+
+  useEffect(() => onLocalMessage((myUid, peerUid, m) => {
+    if (myUid === me.uid && peerUid === target.uid) setMessages(list => mergeMessages(list, [m]));
+  }), [me.uid, target.uid]);
 
   /** Records a sent message in SQLite; a failed write must not look like a failed send. */
   const record = (message: ChatMessage, fields: Pick<SentEntry, 'pushOk' | 'lastMessageOk' | 'error' | 'dryRun'>) => {

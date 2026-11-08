@@ -1,4 +1,4 @@
-import type { ComponentPropsWithRef, ReactNode } from 'react';
+import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { cn } from './cn.ts';
 
 /** Shared look of text-like controls (also used by Select/NumberInput/Textarea). */
@@ -48,8 +48,10 @@ export function Textarea({ className, ...rest }: ComponentPropsWithRef<'textarea
 }
 
 /**
- * Number box with an optional unit after it ("3 trang", "1 giây"). Clamps to
- * [min, max]; with `emptyMeansZero` an empty box is 0 and 0 shows the placeholder.
+ * Number box with an optional unit after it ("3 trang", "1 giây"). What is
+ * typed stays in the box as typed, so it can be cleared and retyped; the parent
+ * gets the value kept within [min, max] on every key, and the box shows that
+ * value on blur. With `emptyMeansZero` an empty box is 0 and 0 shows the placeholder.
  */
 export function NumberInput({
   value, onChange, min = 0, max, step = 1, integer = true, unit, emptyMeansZero = false,
@@ -68,28 +70,43 @@ export function NumberInput({
   className?: string;
   'aria-label'?: string;
 }) {
-  const update = (raw: string) => {
-    if (raw === '') { onChange(emptyMeansZero ? 0 : min); return; }
-    let n = Number(raw);
+  /** The text being typed; null when the box is not being edited. */
+  const [draft, setDraft] = useState<string | null>(null);
+
+  const edit = (input: HTMLInputElement) => {
+    const raw = input.value;
+    setDraft(raw);
+    if (raw === '') {
+      // Also '' while unfinished ("1."): that must not count as cleared.
+      if (emptyMeansZero && !input.validity.badInput) onChange(0);
+      return;
+    }
+    const n = Number(raw);
     if (!Number.isFinite(n)) return;
-    if (integer) n = Math.floor(n);
-    n = Math.max(min, max === undefined ? n : Math.min(max, n));
-    onChange(n);
+    const whole = integer ? Math.floor(n) : n;
+    onChange(Math.max(min, max === undefined ? whole : Math.min(max, whole)));
   };
+
+  const finish = (input: HTMLInputElement) => {
+    if (draft === '' && !emptyMeansZero && !input.validity.badInput) onChange(min);
+    setDraft(null);
+  };
+
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted">
       <input
         type="number"
         inputMode={integer ? 'numeric' : 'decimal'}
         className={cn(controlClass, 'h-8 w-16 px-2 text-sm tabular-nums', className)}
-        value={emptyMeansZero && value === 0 ? '' : value}
+        value={draft ?? (emptyMeansZero && value === 0 ? '' : value)}
         min={min}
         max={max}
         step={step}
         placeholder={placeholder}
         disabled={disabled}
         aria-label={ariaLabel}
-        onChange={e => update(e.target.value)}
+        onChange={e => edit(e.target)}
+        onBlur={e => finish(e.target)}
       />
       {unit && <span>{unit}</span>}
     </span>

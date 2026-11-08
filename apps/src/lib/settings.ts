@@ -20,6 +20,11 @@ export interface AppSettings {
   onClose: CloseAction;
   /** Saved message texts the composer can insert (each send is still pressed by hand). */
   messageTemplates: string[];
+  /** Tự trả lời: answer incoming 1-1 messages of signed-in nicks with `autoReplyText`. */
+  autoReplyEnabled: boolean;
+  autoReplyText: string;
+  /** How many automatic replies one person can get from one nick, ever. */
+  autoReplyMaxPerPerson: number;
 }
 
 export type CloseAction = 'ask' | 'tray' | 'quit';
@@ -32,6 +37,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dryRunSends: false,
   onClose: 'ask',
   messageTemplates: [],
+  autoReplyEnabled: false,
+  autoReplyText: '',
+  autoReplyMaxPerPerson: 1,
 };
 
 const FILE = 'settings.json';
@@ -56,6 +64,9 @@ export async function loadSettings(): Promise<LoadedSettings> {
   settings.messageTemplates = Array.isArray(settings.messageTemplates)
     ? settings.messageTemplates.filter((t): t is string => typeof t === 'string' && Boolean(t.trim()))
     : [];
+  settings.autoReplyEnabled = settings.autoReplyEnabled === true;
+  if (typeof settings.autoReplyText !== 'string') settings.autoReplyText = '';
+  if (!Number.isInteger(settings.autoReplyMaxPerPerson) || settings.autoReplyMaxPerPerson < 1) settings.autoReplyMaxPerPerson = DEFAULT_SETTINGS.autoReplyMaxPerPerson;
   const legacyDevice: LoadedSettings['legacyDevice'] = {};
   for (const field of DEVICE_FIELDS) {
     const value = deviceOverride(field, typeof saved[field] === 'string' ? saved[field] : undefined);

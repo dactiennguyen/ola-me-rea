@@ -38,6 +38,15 @@ Dùng chung cho cả app, không theo tài khoản.
 
 - Nút **Cài đặt** (bánh răng) ở cuối cột tài khoản, không nằm trong Quản lý tài khoản, mở được cả khi chưa có tài khoản: *Chế độ thử* (tin chỉ hiện trên máy, không gửi), *Khi bấm nút đóng cửa sổ*, *Khôi phục mặc định*. Socket key **không** nằm ở phần chính vì đã có mặc định chạy được; nó nằm trong mục **Nâng cao** (ẩn mặc định), chỉ cần đổi khi app gốc đổi key. Hiển thị máy chủ API/socket (cố định, xem [01 · Kiến trúc](01-kien-truc.md#file-dữ-liệu)) và thư mục dữ liệu. `settings.json` bản cũ có app version/Android version/key2 chung: lần mở đầu tiên chép các giá trị khác mặc định sang những nick chưa có giá trị riêng, rồi bỏ khỏi `settings.json`.
 
+### Tự động trả lời tin nhắn
+
+Trong Cài đặt: công tắc bật/tắt (có hiệu lực ngay), một câu trả lời cố định, và *Số lần trả lời tối đa cho mỗi người* (mặc định 1). Áp dụng cho mọi nick đang đăng nhập, bất kể đang mở màn nào; chỉ chạy khi app đang chạy.
+
+- Chỉ trả lời tin chữ 1-1 vừa tới, sau 5–15 giây. Không trả lời ảnh, sticker, quà, ghi âm; không trả lời các nick đã lưu trong app (kể cả nick đang đăng xuất); bỏ qua tin cũ hơn 10 phút.
+- Số lần đếm theo từng cặp nick và người nhắn, lưu trong `auto-reply.json`, không mất khi tắt app. Chỉ tính khi đã gửi được: gửi lỗi, *Chế độ thử* hay tắt app giữa lúc đang chờ đều không tính.
+- Giới hạn thêm: mỗi người cách nhau ít nhất 1 phút; mỗi nick tối đa 30 tin tự trả lời mỗi giờ (đếm trong lần chạy app hiện tại).
+- Tin tự trả lời được ghi vào `sent_messages` với nguồn `auto-reply` (nhãn *Tự trả lời* trong Lịch sử đã gửi).
+
 ## Tìm người & nhắn
 
 Nút gửi tin (máy bay giấy) ở cuối cột tài khoản. Màn giữ nguyên danh sách và phiên gửi khi chuyển màn khác. Cột trái lấy và chọn người, bên phải là **Auto gửi**.

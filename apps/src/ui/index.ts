@@ -10,5 +10,6 @@ export { IconButton } from './IconButton.tsx';
 export { Modal } from './Modal.tsx';
 export { Segmented, type SegmentOption } from './Segmented.tsx';
 export { Spinner } from './Spinner.tsx';
+export { Switch } from './Switch.tsx';
 export { ToastProvider, useToast, type ToastInput, type ToastTone } from './Toast.tsx';
 export { VirtualList } from './VirtualList.tsx';
