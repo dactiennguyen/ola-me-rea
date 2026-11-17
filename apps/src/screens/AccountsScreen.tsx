@@ -5,10 +5,11 @@ import { DEVICE_DEFAULTS, deviceOverride, deviceValue, newDeviceId, twinOf, type
 import { shortTime } from '../lib/format.ts';
 import { checkProxy, parseProxy, proxyLabel } from '../lib/proxy.ts';
 import { OFFLINE, useSession } from '../lib/session.tsx';
+import { GoogleImportPanel } from './GoogleImportPanel.tsx';
 import { RegisterPanel } from './RegisterPanel.tsx';
 
 interface Draft {
-  id?: string; label: string; email: string; password: string;
+  id?: string; label: string; email: string; password: string; authType?: 'google';
   /** This account's device profile; an empty field means the APK default. */
   deviceId: string; appVersion: string; androidVersion: string; publicKey: string;
   /** As typed; parseProxy() normalizes it on save. */
@@ -33,7 +34,7 @@ export function AccountsScreen({ request, onOpen }: {
 }) {
   const { accounts, live, connect, connectAll, disconnect, saveAccount, removeAccount, resendVerification } = useSession();
   const [draft, setDraft] = useState<Draft | null>(accounts.length ? null : emptyDraft());
-  const [panel, setPanel] = useState<'register' | null>(null);
+  const [panel, setPanel] = useState<'register' | 'google' | null>(null);
   const [proxyCheck, setProxyCheck] = useState<{ text: string; tone: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -54,7 +55,7 @@ export function AccountsScreen({ request, onOpen }: {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [resend, setResend] = useState<{ id: string; text: string; tone: string } | null>(null);
 
-  const openPanel = (next: 'register') => { setDraft(null); setPanel(next); setNotice(null); };
+  const openPanel = (next: 'register' | 'google') => { setDraft(null); setPanel(next); setNotice(null); };
 
   const draftProxy = draft ? parseProxy(draft.proxy) : null;
 
@@ -79,7 +80,7 @@ export function AccountsScreen({ request, onOpen }: {
 
   const edit = (a: StoredAccount) => {
     setDraft({
-      id: a.id, label: a.label, email: a.email, password: a.password, deviceId: a.deviceId,
+      id: a.id, label: a.label, email: a.email, password: a.password, authType: a.authType, deviceId: a.deviceId,
       appVersion: a.appVersion ?? '', androidVersion: a.androidVersion ?? '', publicKey: a.publicKey ?? '',
       proxy: a.proxy ?? '',
     });
@@ -93,11 +94,14 @@ export function AccountsScreen({ request, onOpen }: {
   const submit = async (event: { preventDefault(): void }, signIn: boolean) => {
     event.preventDefault();
     if (!draft) return;
+    const google = draft.authType === 'google';
     const email = draft.email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Email không hợp lệ.'); return; }
-    const twin = twinOf(accounts, { id: draft.id, email });
-    if (twin) { setFormError(`Email này đã có trong danh sách (nick "${twin.label || twin.email}"). Mỗi tài khoản Ola chỉ thêm một lần.`); return; }
-    if (!draft.password) { setFormError('Nhập mật khẩu.'); return; }
+    if (!google) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Email không hợp lệ.'); return; }
+      const twin = twinOf(accounts, { id: draft.id, email });
+      if (twin) { setFormError(`Email này đã có trong danh sách (nick "${twin.label || twin.email}"). Mỗi tài khoản Ola chỉ thêm một lần.`); return; }
+      if (!draft.password) { setFormError('Nhập mật khẩu.'); return; }
+    }
     if (!/^[A-Za-z0-9_.-]{4,64}$/.test(draft.deviceId)) { setFormError('Device ID chỉ gồm chữ, số, _ . - (4–64 ký tự).'); return; }
     const proxy = parseProxy(draft.proxy);
     if (proxy && 'error' in proxy) { setFormError(proxy.error); return; }
@@ -112,7 +116,7 @@ export function AccountsScreen({ request, onOpen }: {
     setDraft(null);
     setFormError(null);
     // The signed-in client keeps the device profile and password it signed in with.
-    const changed = before && (before.password !== draft.password || before.proxy !== proxy?.url
+    const changed = before && (before.password !== draft.password && !google || before.proxy !== proxy?.url
       || (Object.keys(device) as (keyof typeof device)[]).some(k => before[k] !== device[k]));
     setNotice(!signIn && changed && live[before.id]?.status === 'ready'
       ? 'Đã lưu. Mật khẩu / thiết bị / proxy mới áp dụng từ lần đăng nhập sau (bấm Lưu và đăng nhập, hoặc Đăng xuất rồi Đăng nhập).' : null);
@@ -144,11 +148,16 @@ export function AccountsScreen({ request, onOpen }: {
             <button type="button" className={`btn ${panel === 'register' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={panel === 'register'} onClick={() => openPanel('register')}>
               <Icon name="user" size={16} /> Đăng ký mới
             </button>
+            <button type="button" className={`btn ${panel === 'google' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={panel === 'google'} onClick={() => openPanel('google')}>
+              <Icon name="logIn" size={16} /> Đăng nhập Google
+            </button>
           </div>
         )}
       </header>
 
       {panel === 'register' && <RegisterPanel onClose={() => setPanel(null)} />}
+
+      {panel === 'google' && <GoogleImportPanel onClose={() => setPanel(null)} onImported={account => { setPanel(null); onOpen(account.id); void connect(account.id); }} />}
 
       {draft && !panel && (
         <form ref={formRef} className="panel form-grid" onSubmit={e => void submit(e, true)} aria-label={draft.id ? 'Sửa tài khoản' : 'Thêm tài khoản'}>
@@ -159,17 +168,24 @@ export function AccountsScreen({ request, onOpen }: {
           </label>
           <label className="field">
             <span>Email</span>
-            <input type="email" autoComplete="off" required value={draft.email} onChange={e => setDraft({ ...draft, email: e.target.value })} />
+            <input type="email" autoComplete="off" required={draft.authType !== 'google'} readOnly={draft.authType === 'google'} value={draft.email} placeholder={draft.authType === 'google' ? '(tài khoản Google)' : ''} onChange={e => setDraft({ ...draft, email: e.target.value })} />
           </label>
-          <label className="field">
-            <span>Mật khẩu</span>
-            <span className="input-with-action">
-              <input type={showPassword ? 'text' : 'password'} autoComplete="off" required value={draft.password} onChange={e => setDraft({ ...draft, password: e.target.value })} />
-              <button type="button" className="icon-btn" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword(v => !v)}>
-                <Icon name={showPassword ? 'eyeOff' : 'eye'} size={16} />
-              </button>
-            </span>
-          </label>
+          {draft.authType === 'google' ? (
+            <div className="field span-2">
+              <span>Đăng nhập</span>
+              <p className="notice small"><Icon name="info" size={15} /><span>Tài khoản Google: đăng nhập bằng phiên đã nhập (token nằm trong kho bảo mật hệ điều hành), không dùng mật khẩu. Hết hạn thì nhập lại phiên từ Ola trên điện thoại.</span></p>
+            </div>
+          ) : (
+            <label className="field">
+              <span>Mật khẩu</span>
+              <span className="input-with-action">
+                <input type={showPassword ? 'text' : 'password'} autoComplete="off" required value={draft.password} onChange={e => setDraft({ ...draft, password: e.target.value })} />
+                <button type="button" className="icon-btn" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword(v => !v)}>
+                  <Icon name={showPassword ? 'eyeOff' : 'eye'} size={16} />
+                </button>
+              </span>
+            </label>
+          )}
           <div className="span-2 form-subhead">
             <h3>Thiết bị của nick này</h3>
             <p className="muted small">Gửi trong header của mọi request và đăng ký với server qua <code>users/sync</code>. Để trống = giá trị của app Android {DEVICE_DEFAULTS.appVersion}. Đổi xong áp dụng từ lần đăng nhập sau.</p>

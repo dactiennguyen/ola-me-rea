@@ -11,7 +11,7 @@ import { ChatChannel, chatProfile, normalizeMessage, type ChannelState, type Cha
 import { OlaClient } from '@ola/core/client.ts';
 import { registerAccount, resendVerificationEmail, type RegisterInput } from '@ola/core/register.ts';
 import {
-  DEVICE_FIELDS, loadAccounts, newAccount, newDeviceId, olaConfigFor, saveAccounts, twinOf, type AccountsData, type StoredAccount,
+  DEVICE_FIELDS, deviceOverride, deviceValue, loadAccounts, newAccount, newDeviceId, olaConfigFor, saveAccounts, twinOf, type AccountsData, type StoredAccount,
 } from './accounts.ts';
 import { planImport, type ImportPlan, type TransferAccount } from './accountsTransfer.ts';
 import { appendThread } from './messageCache.ts';
@@ -19,6 +19,8 @@ import { apiFetch, isTauri } from './platform.ts';
 import { proxiedFetch, proxyUrl } from './proxy.ts';
 import { rustIo } from './rustSocket.ts';
 import { DEFAULT_SETTINGS, firebaseDefaults, loadSettings, saveSettings, SERVERS, type AppSettings } from './settings.ts';
+import { restoreGoogleSession, type GoogleSessionExport } from '@ola/core/firebase-session.ts';
+import { deleteGoogleToken, getGoogleToken, setGoogleToken } from './googleSession.ts';
 
 export type SessionStatus = 'signed-out' | 'signing-in' | 'ready' | 'error';
 export type RealtimeState = 'off' | 'missing-key' | ChannelState;
@@ -53,6 +55,8 @@ export interface Session {
   /** Signs the account out. */
   disconnect(id: string): Promise<void>;
   saveAccount(account: Omit<StoredAccount, 'id' | 'deviceId' | 'color'> & Partial<StoredAccount>): Promise<StoredAccount>;
+  /** Imports a Google session (JSON from the Android exporter): saves the account, its refresh token in the OS vault. */
+  importGoogleAccount(session: GoogleSessionExport): Promise<StoredAccount>;
   removeAccount(id: string): Promise<void>;
   /** Registers like the app (checkEmail, Firebase, verification email) and stores the account, not signed in. */
   register(input: RegisterInput & { label: string }): Promise<StoredAccount>;
@@ -91,6 +95,16 @@ type SignInResult = { profile: ChatProfile } | { error: string } | null;
 type OpenChannel = (roomNo: string, joinAs: string | undefined, proxy: string | undefined) => ChatChannel | null;
 
 /** One account's client and personal channel, outside React. */
+/** The session restoreGoogleSession() needs, rebuilt from a stored account + its vault token. */
+function googleSessionOf(account: StoredAccount, refreshToken: string): GoogleSessionExport {
+  return {
+    format: 'ola-google-session', version: 1, projectId: 'olaachat', provider: 'google.com',
+    uid: account.uid ?? '', email: account.email, refreshToken,
+    deviceId: account.deviceId, appVersion: deviceValue(account, 'appVersion'), androidVersion: deviceValue(account, 'androidVersion'),
+    ...(account.displayName ? { displayName: account.displayName } : {}),
+  };
+}
+
 class LiveAccount {
   readonly id: string;
   state: LiveState = OFFLINE;
@@ -101,6 +115,8 @@ class LiveAccount {
   #openChannel: OpenChannel;
   /** The proxy this sign-in uses (read at sign-in, like the device profile). */
   #proxy: string | undefined;
+  /** A Google account's refresh token, loaded from the OS vault for this sign-in. */
+  #googleToken: string | undefined;
 
   constructor(id: string, onChange: (id: string, state: LiveState) => void, openChannel: OpenChannel) {
     this.id = id;
@@ -134,6 +150,21 @@ class LiveAccount {
   async signIn(account: StoredAccount): Promise<SignInResult> {
     await this.signOut();
     const seq = ++this.#seq;
+    this.#googleToken = undefined;
+    if (account.authType === 'google') {
+      if (!account.uid) {
+        const error = 'Tài khoản Google thiếu UID; nhập lại phiên từ Ola trên điện thoại.';
+        this.#set({ status: 'error', error });
+        return { error };
+      }
+      try {
+        this.#googleToken = await getGoogleToken(account.id);
+      } catch (err) {
+        if (seq !== this.#seq) return null;
+        this.#set({ status: 'error', error: describeError(err) });
+        return { error: describeError(err) };
+      }
+    }
     // With a proxy, Firebase, the Ola API and the sockets all go out from the
     // Rust side through it; a browser tab (yarn dev) cannot use one.
     const proxy = isTauri ? proxyUrl(account.proxy) : undefined;
@@ -147,13 +178,23 @@ class LiveAccount {
     const viaProxy = proxy ? proxiedFetch(proxy) : undefined;
     this.#set({ status: 'signing-in' });
     try {
-      const client = await OlaClient.login({
-        account: { email: account.email, password: account.password },
-        config: olaConfigFor(account),
-        firebaseConfig: firebaseDefaults,
-        fetch: viaProxy ?? apiFetch,
-        firebaseFetch: viaProxy,
-      });
+      const apiCalls = viaProxy ?? apiFetch;
+      const client = account.authType === 'google'
+        ? await OlaClient.login({
+            config: olaConfigFor(account),
+            fetch: apiCalls,
+            firebaseSession: () => restoreGoogleSession(googleSessionOf(account, this.#googleToken!), apiCalls, async token => {
+              this.#googleToken = token;
+              await setGoogleToken(account.id, token);
+            }),
+          })
+        : await OlaClient.login({
+            account: { email: account.email, password: account.password },
+            config: olaConfigFor(account),
+            firebaseConfig: firebaseDefaults,
+            fetch: apiCalls,
+            firebaseFetch: viaProxy,
+          });
       if (seq !== this.#seq) {
         await client.close();
         return null;
@@ -332,6 +373,29 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return account;
   }, [persist]);
 
+  const importGoogleAccount: Session['importGoogleAccount'] = useCallback(async session => {
+    const current = dataRef.current;
+    const twin = twinOf(current.accounts, { email: session.email, uid: session.uid });
+    if (twin) throw new Error(`Tài khoản này đã có trong danh sách (nick "${twin.label || twin.email || twin.uid}").`);
+    const account = newAccount({
+      label: session.displayName?.trim() || session.email || 'Tài khoản Google',
+      email: session.email, password: '', authType: 'google', uid: session.uid,
+      displayName: session.displayName,
+      deviceId: /^[A-Za-z0-9_.-]{4,64}$/.test(session.deviceId) ? session.deviceId : newDeviceId(),
+      appVersion: deviceOverride('appVersion', session.appVersion),
+      androidVersion: deviceOverride('androidVersion', session.androidVersion),
+    }, current.accounts.length);
+    // Store the secret first; if the vault refuses, nothing is persisted.
+    await setGoogleToken(account.id, session.refreshToken);
+    try {
+      await persist({ ...current, accounts: [...current.accounts, account], activeId: current.activeId ?? account.id });
+    } catch (error) {
+      await deleteGoogleToken(account.id).catch(() => {});
+      throw error;
+    }
+    return account;
+  }, [persist]);
+
   const register: Session['register'] = useCallback(async ({ label, ...input }) => {
     // The new account's own device id signs checkEmail, as the app does on that phone.
     const deviceId = newDeviceId();
@@ -383,6 +447,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     sessions.current.delete(id);
     setLive(({ [id]: _, ...rest }) => rest);
     const current = dataRef.current;
+    if (current.accounts.find(a => a.id === id)?.authType === 'google') await deleteGoogleToken(id).catch(() => {});
     const accounts = current.accounts.filter(a => a.id !== id);
     await persist({ ...current, accounts, activeId: current.activeId === id ? accounts[0]?.id ?? null : current.activeId });
   }, [persist]);
@@ -436,10 +501,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Session>(() => ({
     loaded, accounts: data.accounts, selectedId: data.activeId, settings, live,
-    select, connect, connectAll, disconnect, saveAccount, removeAccount, register, resendVerification, importAccounts,
+    select, connect, connectAll, disconnect, saveAccount, importGoogleAccount, removeAccount, register, resendVerification, importAccounts,
     saveSettings: updateSettings, openChannel, onIncoming,
   }), [loaded, data, settings, live,
-    select, connect, connectAll, disconnect, saveAccount, removeAccount, register, resendVerification, importAccounts,
+    select, connect, connectAll, disconnect, saveAccount, importGoogleAccount, removeAccount, register, resendVerification, importAccounts,
     updateSettings, openChannel, onIncoming]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

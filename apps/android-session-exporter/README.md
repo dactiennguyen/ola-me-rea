@@ -15,8 +15,9 @@ Nếu Ola chưa đăng nhập, hãy đăng nhập rồi trở lại Exporter và
 kiểm tra Vector scope và khởi động lại Ola. JSON giữ trong bộ nhớ app/clipboard, không tự ghi file;
 người dùng đã chọn hiển thị nội dung trên màn hình.
 
-Định dạng `ola-google-session` là bản thử nghiệm. Ứng dụng Desktop trong repo chưa có tính năng nhập
-JSON này; email có thể rỗng tùy tài khoản. Chưa xác nhận tương thích Ola phiên bản khác 27.7.8.
+Định dạng `ola-google-session` là bản thử nghiệm. Ứng dụng Desktop nhập JSON này qua *Quản lý tài khoản →
+Đăng nhập Google*; email có thể rỗng tùy tài khoản (Desktop tự lấy email từ Firebase khi đăng nhập). Chưa
+xác nhận tương thích Ola phiên bản khác 27.7.8.
 
 Build bằng JDK 17+ và Android SDK 35, Gradle 8.10.2:
 

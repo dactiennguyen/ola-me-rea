@@ -10,7 +10,7 @@
 //   }
 
 import type { z } from 'zod';
-import { firebaseLogin, firebaseRestLogin } from './auth.ts';
+import { firebaseLogin, firebaseRestLogin, type FirebaseLogin } from './auth.ts';
 import { olaDefaults, type Account, type FirebaseConfig, type OlaConfig } from './defaults.ts';
 import {
   DRY_RUN_SESSION, type CallInput, type Endpoint, type InputArgs, type JsonObject, type OlaRequest, type SessionInfo,
@@ -38,7 +38,8 @@ export function sessionInfo(session: SessionInfo, config: OlaConfig = olaDefault
 export const dryRunSession = (config: OlaConfig = olaDefaults) => sessionInfo(DRY_RUN_SESSION, config);
 
 export interface LoginOptions {
-  account: Account;
+  /** Email/password sign-in. Omit only when `firebaseSession` supplies the login. */
+  account?: Account;
   /** Stop after Firebase sign-in; skip napi/users/sync. */
   firebaseOnly?: boolean;
   config?: OlaConfig;
@@ -49,6 +50,12 @@ export interface LoginOptions {
    * always uses the global fetch), e.g. to send it through a proxy.
    */
   firebaseFetch?: FetchLike;
+  /**
+   * Produce the Firebase login some other way than email/password — e.g.
+   * restoreGoogleSession() rebuilding a session from a saved refresh token.
+   * Given, it replaces `account`/`firebaseFetch`.
+   */
+  firebaseSession?: () => Promise<FirebaseLogin>;
 }
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
@@ -97,10 +104,11 @@ export class OlaClient {
   }
 
   /** Signs in with `account` and, unless firebaseOnly, syncs the Ola profile. */
-  static async login({ account, firebaseOnly = false, firebaseConfig, firebaseFetch, ...options }: LoginOptions): Promise<OlaClient> {
-    const { session, user, emailVerified, getIdToken, close } = firebaseFetch
-      ? await firebaseRestLogin(account, firebaseFetch, firebaseConfig)
-      : await firebaseLogin(account, firebaseConfig);
+  static async login({ account, firebaseOnly = false, firebaseConfig, firebaseFetch, firebaseSession, ...options }: LoginOptions): Promise<OlaClient> {
+    const signIn = firebaseSession
+      ?? (account ? () => (firebaseFetch ? firebaseRestLogin(account, firebaseFetch, firebaseConfig) : firebaseLogin(account, firebaseConfig)) : null);
+    if (!signIn) throw new Error('OlaClient.login needs either account or firebaseSession.');
+    const { session, user, emailVerified, getIdToken, close } = await signIn();
     const client = new OlaClient({ ...options, session, getToken: getIdToken, close });
     client.user = user;
     if (firebaseOnly) return client;

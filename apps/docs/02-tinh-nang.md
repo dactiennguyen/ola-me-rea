@@ -47,6 +47,18 @@ Trong Cài đặt: công tắc bật/tắt (có hiệu lực ngay), một câu t
 - Giới hạn thêm: mỗi người cách nhau ít nhất 1 phút; mỗi nick tối đa 30 tin tự trả lời mỗi giờ (đếm trong lần chạy app hiện tại).
 - Tin tự trả lời được ghi vào `sent_messages` với nguồn `auto-reply` (nhãn *Tự trả lời* trong Lịch sử đã gửi).
 
+### Đăng nhập bằng Google (thử nghiệm)
+
+Tài khoản đăng nhập Ola bằng Google không có mật khẩu, nên lấy phiên đã đăng nhập từ chính điện thoại của mình:
+
+1. Cài app trong `apps/android-session-exporter` (module Vector/LSPosed), bật cho `com.olaachat`, mở Ola và đăng nhập Google.
+2. Trong Exporter bấm **Lấy phiên Google** → **Copy JSON**.
+3. Trên Desktop: *Quản lý tài khoản* → **Đăng nhập Google**, dán JSON, bấm **Nhập và đăng nhập**.
+
+- Chỉ lưu **refresh token** vào kho bảo mật của hệ điều hành (macOS Keychain / Windows Credential Manager / Secret Service trên Linux), **không** ghi vào `accounts.json` hay bản xuất tài khoản. Phần còn lại (uid, email, device) nằm trong `accounts.json` như tài khoản thường.
+- Mỗi lần đăng nhập, app tự làm mới idToken từ refresh token, có đối chiếu uid + provider Google trên Firebase trước khi tin. Token xoay vòng được lưu lại ngay.
+- Chỉ chạy trên bản Desktop (cần kho bảo mật OS); bản chạy trong trình duyệt không nhập được. Phiên hết hạn thì nhập lại JSON mới.
+
 ## Tìm người & nhắn
 
 Nút gửi tin (máy bay giấy) ở cuối cột tài khoản. Màn giữ nguyên danh sách và phiên gửi khi chuyển màn khác. Cột trái lấy và chọn người, bên phải là **Auto gửi**.

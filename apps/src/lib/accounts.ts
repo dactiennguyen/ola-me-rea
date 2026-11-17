@@ -12,6 +12,8 @@ export interface StoredAccount {
   label: string;
   email: string;
   password: string;
+  /** Missing means the legacy email/password path. Google credentials live in the OS vault. */
+  authType?: 'google';
   /** Signed into every request as `deviceid` and registered by users/sync. One per account. */
   deviceId: string;
   /**

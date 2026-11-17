@@ -9,6 +9,7 @@
 //   - opens WebSockets through a proxy (socket.rs);
 //   - keeps the log of sent 1-1 messages in SQLite (sentlog.rs).
 
+mod google_session;
 mod sentlog;
 mod socket;
 mod tray;
@@ -148,6 +149,9 @@ pub fn run() {
         .on_window_event(tray::on_window_event)
         .invoke_handler(tauri::generate_handler![
             data_dir,
+            google_session::google_session_get,
+            google_session::google_session_set,
+            google_session::google_session_delete,
             restrict_data_file,
             export_accounts_file,
             tray::set_close_action,
