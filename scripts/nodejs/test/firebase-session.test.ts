@@ -70,6 +70,16 @@ describe('restoreGoogleSession', () => {
     await login.close();
   });
 
+  it('accepts a Google account that has no email on Firebase', async () => {
+    const fetchImpl = (async (url: string) => String(url).includes('securetoken')
+      ? new Response(JSON.stringify({ id_token: 'id-1', refresh_token: 'r-2', user_id: valid.uid, expires_in: 3600 }), { status: 200 })
+      : new Response(JSON.stringify({ users: [{ localId: valid.uid, providerUserInfo: [{ providerId: 'google.com' }] }] }), { status: 200 })) as unknown as typeof fetch;
+    const login = await restoreGoogleSession({ ...valid, email: '' }, fetchImpl, async () => {});
+    assert.equal(await login.getIdToken(), 'id-1');
+    assert.equal((login.user as { email: string }).email, '');
+    await login.close();
+  });
+
   it('reuses a fresh token instead of refreshing again', async () => {
     const stub = firebaseStub();
     const login = await restoreGoogleSession(valid, stub.fetchImpl, async () => {});

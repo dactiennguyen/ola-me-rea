@@ -27,7 +27,7 @@ final class SessionBridge {
                 if (reply == null) return;
                 Bundle out = new Bundle();
                 try { out.putString("data", read(c, loader).toString()); reply.send(0, out); }
-                catch (Throwable e) { android.util.Log.w("OlaSession", "Read failed: " + e.getClass().getSimpleName()); out.putString("error", "Không đọc được phiên Google. Mở Ola, đăng nhập Google rồi thử lại. Phiên bản hỗ trợ: 27.7.8."); reply.send(1, out); }
+                catch (Throwable e) { android.util.Log.w("OlaSession", "Read failed: " + e.getClass().getSimpleName()); out.putString("error", "Không đọc được phiên Google. Mở Ola, đăng nhập Google rồi thử lại. Phiên bản hỗ trợ: 27.8.0."); reply.send(1, out); }
             }
         };
         IntentFilter filter = new IntentFilter(ACTION);
@@ -39,7 +39,7 @@ final class SessionBridge {
     }
     static JSONObject read(Context c, ClassLoader loader) throws Exception {
         String version = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
-        if (!"27.7.8".equals(version)) throw new IllegalStateException();
+        if (!"27.8.0".equals(version)) throw new IllegalStateException();
         Class<?> authClass = Class.forName("com.google.firebase.auth.FirebaseAuth", false, loader);
         Object auth = authClass.getMethod("getInstance").invoke(null);
         Object user = field(auth, "f");

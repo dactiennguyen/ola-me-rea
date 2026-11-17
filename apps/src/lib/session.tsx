@@ -56,7 +56,7 @@ export interface Session {
   disconnect(id: string): Promise<void>;
   saveAccount(account: Omit<StoredAccount, 'id' | 'deviceId' | 'color'> & Partial<StoredAccount>): Promise<StoredAccount>;
   /** Imports a Google session (JSON from the Android exporter): saves the account, its refresh token in the OS vault. */
-  importGoogleAccount(session: GoogleSessionExport): Promise<StoredAccount>;
+  importGoogleAccount(session: GoogleSessionExport, options?: { proxy?: string }): Promise<StoredAccount>;
   removeAccount(id: string): Promise<void>;
   /** Registers like the app (checkEmail, Firebase, verification email) and stores the account, not signed in. */
   register(input: RegisterInput & { label: string }): Promise<StoredAccount>;
@@ -373,7 +373,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return account;
   }, [persist]);
 
-  const importGoogleAccount: Session['importGoogleAccount'] = useCallback(async session => {
+  const importGoogleAccount: Session['importGoogleAccount'] = useCallback(async (session, options) => {
     const current = dataRef.current;
     const twin = twinOf(current.accounts, { email: session.email, uid: session.uid });
     if (twin) throw new Error(`Tài khoản này đã có trong danh sách (nick "${twin.label || twin.email || twin.uid}").`);
@@ -384,6 +384,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       deviceId: /^[A-Za-z0-9_.-]{4,64}$/.test(session.deviceId) ? session.deviceId : newDeviceId(),
       appVersion: deviceOverride('appVersion', session.appVersion),
       androidVersion: deviceOverride('androidVersion', session.androidVersion),
+      ...(options?.proxy ? { proxy: options.proxy } : {}),
     }, current.accounts.length);
     // Store the secret first; if the vault refuses, nothing is persisted.
     await setGoogleToken(account.id, session.refreshToken);

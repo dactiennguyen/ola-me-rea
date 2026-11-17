@@ -77,13 +77,16 @@ export async function restoreGoogleSession(
       JSON.stringify({ idToken: token }), 'application/json');
     const user = (Array.isArray(lookup.users) ? lookup.users[0] : null) as Record<string, unknown> | null;
     const providers = user?.providerUserInfo as { providerId?: string }[] | undefined;
-    if (user?.localId !== saved.uid || typeof user.email !== 'string'
-      || (saved.email !== '' && user.email.toLowerCase() !== saved.email.toLowerCase())
+    // Some Google accounts carry no email on Firebase; identity rests on uid + the
+    // Google provider. When an email is present it must match the one exported (if any).
+    const confirmedEmail = typeof user?.email === 'string' ? user.email : '';
+    if (user?.localId !== saved.uid
+      || (saved.email !== '' && confirmedEmail.toLowerCase() !== saved.email.toLowerCase())
       || !Array.isArray(providers) || !providers.some(p => p.providerId === 'google.com')) {
       throw new Error('Danh tính Google trên Firebase không khớp file phiên.');
     }
     // Adopt the email Firebase confirms, so a session exported without one still has it.
-    session.email = user.email;
+    if (confirmedEmail) session.email = confirmedEmail;
     if (closed) throw new Error('Phiên đã đóng.');
     // Persist rotation before allowing API calls, so restarting can always restore.
     await persist(nextRefresh);

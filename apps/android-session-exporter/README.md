@@ -1,6 +1,6 @@
 # Ola Session Exporter (Vector)
 
-Ứng dụng Android Java thử nghiệm cho Ola `com.olaachat` 27.7.8 (user Android hiện tại).
+Ứng dụng Android Java thử nghiệm cho Ola `com.olaachat` 27.8.0 (user Android hiện tại).
 Module Vector/LSPosed đọc phiên Firebase đã đăng nhập trong tiến trình Ola; không cần
 mật khẩu Google và không đọc/giải mã trực tiếp file storage của Ola.
 
@@ -17,7 +17,7 @@ người dùng đã chọn hiển thị nội dung trên màn hình.
 
 Định dạng `ola-google-session` là bản thử nghiệm. Ứng dụng Desktop nhập JSON này qua *Quản lý tài khoản →
 Đăng nhập Google*; email có thể rỗng tùy tài khoản (Desktop tự lấy email từ Firebase khi đăng nhập). Chưa
-xác nhận tương thích Ola phiên bản khác 27.7.8.
+xác nhận tương thích Ola phiên bản khác 27.8.0.
 
 Build bằng JDK 17+ và Android SDK 35, Gradle 8.10.2:
 

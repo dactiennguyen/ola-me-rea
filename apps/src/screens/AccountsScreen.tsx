@@ -5,11 +5,16 @@ import { DEVICE_DEFAULTS, deviceOverride, deviceValue, newDeviceId, twinOf, type
 import { shortTime } from '../lib/format.ts';
 import { checkProxy, parseProxy, proxyLabel } from '../lib/proxy.ts';
 import { OFFLINE, useSession } from '../lib/session.tsx';
-import { GoogleImportPanel } from './GoogleImportPanel.tsx';
+import { decryptGoogleExport, isEncryptedSession, readGoogleSessionJson } from '../lib/googleSession.ts';
+import { isTauri } from '../lib/platform.ts';
 import { RegisterPanel } from './RegisterPanel.tsx';
 
 interface Draft {
-  id?: string; label: string; email: string; password: string; authType?: 'google';
+  id?: string; label: string; email: string; password: string;
+  /** How to sign in. 'google' uses a session JSON exported from the phone. */
+  method: 'password' | 'google';
+  /** Pasted session JSON (method 'google', add only) and its password if encrypted. */
+  googleJson: string; googlePassword: string;
   /** This account's device profile; an empty field means the APK default. */
   deviceId: string; appVersion: string; androidVersion: string; publicKey: string;
   /** As typed; parseProxy() normalizes it on save. */
@@ -17,7 +22,8 @@ interface Draft {
 }
 
 const emptyDraft = (): Draft => ({
-  label: '', email: '', password: '', deviceId: newDeviceId(), appVersion: '', androidVersion: '', publicKey: '', proxy: '',
+  label: '', email: '', password: '', method: 'password', googleJson: '', googlePassword: '',
+  deviceId: newDeviceId(), appVersion: '', androidVersion: '', publicKey: '', proxy: '',
 });
 
 export type AccountsPanel = 'add' | 'register' | 'edit';
@@ -32,9 +38,10 @@ export function AccountsScreen({ request, onOpen }: {
   /** Shows that account's screens. */
   onOpen: (id: string) => void;
 }) {
-  const { accounts, live, connect, connectAll, disconnect, saveAccount, removeAccount, resendVerification } = useSession();
+  const { accounts, live, connect, connectAll, disconnect, saveAccount, importGoogleAccount, removeAccount, resendVerification } = useSession();
   const [draft, setDraft] = useState<Draft | null>(accounts.length ? null : emptyDraft());
-  const [panel, setPanel] = useState<'register' | 'google' | null>(null);
+  const [panel, setPanel] = useState<'register' | null>(null);
+  const [showMore, setShowMore] = useState(false);
   const [proxyCheck, setProxyCheck] = useState<{ text: string; tone: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -47,7 +54,7 @@ export function AccountsScreen({ request, onOpen }: {
     if (request.panel === 'edit') {
       const account = accounts.find(a => a.id === request.id);
       if (account) edit(account);
-    } else if (request.panel === 'add') { setPanel(null); setDraft(emptyDraft()); } else { setDraft(null); setPanel(request.panel); }
+    } else if (request.panel === 'add') { setPanel(null); setShowMore(false); setDraft(emptyDraft()); } else { setDraft(null); setPanel(request.panel); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request]);
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +62,7 @@ export function AccountsScreen({ request, onOpen }: {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [resend, setResend] = useState<{ id: string; text: string; tone: string } | null>(null);
 
-  const openPanel = (next: 'register' | 'google') => { setDraft(null); setPanel(next); setNotice(null); };
+  const openPanel = (next: 'register') => { setDraft(null); setPanel(next); setNotice(null); };
 
   const draftProxy = draft ? parseProxy(draft.proxy) : null;
 
@@ -80,8 +87,9 @@ export function AccountsScreen({ request, onOpen }: {
 
   const edit = (a: StoredAccount) => {
     setDraft({
-      id: a.id, label: a.label, email: a.email, password: a.password, authType: a.authType, deviceId: a.deviceId,
-      appVersion: a.appVersion ?? '', androidVersion: a.androidVersion ?? '', publicKey: a.publicKey ?? '',
+      id: a.id, label: a.label, email: a.email, password: a.password,
+      method: a.authType === 'google' ? 'google' : 'password', googleJson: '', googlePassword: '',
+      deviceId: a.deviceId, appVersion: a.appVersion ?? '', androidVersion: a.androidVersion ?? '', publicKey: a.publicKey ?? '',
       proxy: a.proxy ?? '',
     });
     setProxyCheck(null);
@@ -94,7 +102,28 @@ export function AccountsScreen({ request, onOpen }: {
   const submit = async (event: { preventDefault(): void }, signIn: boolean) => {
     event.preventDefault();
     if (!draft) return;
-    const google = draft.authType === 'google';
+    const google = draft.method === 'google';
+    const proxyParsed = parseProxy(draft.proxy);
+    if (proxyParsed && 'error' in proxyParsed) { setFormError(proxyParsed.error); return; }
+    const proxyUrl = proxyParsed?.url;
+
+    // New account from a Google session JSON: the refresh token goes to the OS vault,
+    // never accounts.json; proxy and label from this form are applied too.
+    if (google && !draft.id) {
+      if (!draft.googleJson.trim()) { setFormError('Dán JSON phiên Google xuất từ Ola trên điện thoại.'); return; }
+      if (!isTauri) { setFormError('Đăng nhập Google cần bản Ola Desktop; bản chạy trong trình duyệt không lưu phiên.'); return; }
+      const encrypted = isEncryptedSession(draft.googleJson);
+      if (encrypted && !draft.googlePassword) { setFormError('Nhập mật khẩu file phiên.'); return; }
+      try {
+        const session = encrypted ? await decryptGoogleExport(draft.googleJson, draft.googlePassword) : readGoogleSessionJson(draft.googleJson);
+        const label = draft.label.trim();
+        const saved = await importGoogleAccount(label ? { ...session, displayName: label } : session, { proxy: proxyUrl });
+        setDraft(null); setFormError(null); setNotice(null);
+        if (signIn) { onOpen(saved.id); await connect(saved.id); }
+      } catch (err) { setFormError(err instanceof Error ? err.message : String(err)); }
+      return;
+    }
+
     const email = draft.email.trim();
     if (!google) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Email không hợp lệ.'); return; }
@@ -103,8 +132,6 @@ export function AccountsScreen({ request, onOpen }: {
       if (!draft.password) { setFormError('Nhập mật khẩu.'); return; }
     }
     if (!/^[A-Za-z0-9_.-]{4,64}$/.test(draft.deviceId)) { setFormError('Device ID chỉ gồm chữ, số, _ . - (4–64 ký tự).'); return; }
-    const proxy = parseProxy(draft.proxy);
-    if (proxy && 'error' in proxy) { setFormError(proxy.error); return; }
     const before = draft.id ? accounts.find(a => a.id === draft.id) : undefined;
     const device = {
       deviceId: draft.deviceId.trim(),
@@ -112,11 +139,16 @@ export function AccountsScreen({ request, onOpen }: {
       androidVersion: deviceOverride('androidVersion', draft.androidVersion),
       publicKey: deviceOverride('publicKey', draft.publicKey),
     };
-    const saved = await saveAccount({ ...draft, ...device, proxy: proxy?.url, email, label: draft.label.trim() });
+    const saved = await saveAccount({
+      ...(draft.id ? { id: draft.id } : {}),
+      label: draft.label.trim(), email, password: draft.password,
+      ...(google ? { authType: 'google' as const } : {}),
+      ...device, proxy: proxyUrl,
+    });
     setDraft(null);
     setFormError(null);
     // The signed-in client keeps the device profile and password it signed in with.
-    const changed = before && (before.password !== draft.password && !google || before.proxy !== proxy?.url
+    const changed = before && (before.password !== draft.password && !google || before.proxy !== proxyUrl
       || (Object.keys(device) as (keyof typeof device)[]).some(k => before[k] !== device[k]));
     setNotice(!signIn && changed && live[before.id]?.status === 'ready'
       ? 'Đã lưu. Mật khẩu / thiết bị / proxy mới áp dụng từ lần đăng nhập sau (bấm Lưu và đăng nhập, hoặc Đăng xuất rồi Đăng nhập).' : null);
@@ -136,8 +168,8 @@ export function AccountsScreen({ request, onOpen }: {
         {!draft?.id && (
           <div className="form-actions">
             {(!draft || panel) && (
-              <button type="button" className="btn btn-primary" onClick={() => { setPanel(null); setDraft(emptyDraft()); setFormError(null); setNotice(null); }}>
-                <Icon name="plus" size={16} /> Thêm tài khoản
+              <button type="button" className="btn btn-primary" onClick={() => { setPanel(null); setShowMore(false); setDraft(emptyDraft()); setFormError(null); setNotice(null); }}>
+                <Icon name="logIn" size={16} /> Đăng nhập
               </button>
             )}
             {accounts.some(a => !['ready', 'signing-in'].includes(live[a.id]?.status ?? 'signed-out')) && (
@@ -145,47 +177,82 @@ export function AccountsScreen({ request, onOpen }: {
                 <Icon name="logIn" size={16} /> Đăng nhập tất cả
               </button>
             )}
-            <button type="button" className={`btn ${panel === 'register' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={panel === 'register'} onClick={() => openPanel('register')}>
-              <Icon name="user" size={16} /> Đăng ký mới
-            </button>
-            <button type="button" className={`btn ${panel === 'google' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={panel === 'google'} onClick={() => openPanel('google')}>
-              <Icon name="logIn" size={16} /> Đăng nhập Google
-            </button>
           </div>
         )}
       </header>
 
       {panel === 'register' && <RegisterPanel onClose={() => setPanel(null)} />}
 
-      {panel === 'google' && <GoogleImportPanel onClose={() => setPanel(null)} onImported={account => { setPanel(null); onOpen(account.id); void connect(account.id); }} />}
-
       {draft && !panel && (
-        <form ref={formRef} className="panel form-grid" onSubmit={e => void submit(e, true)} aria-label={draft.id ? 'Sửa tài khoản' : 'Thêm tài khoản'}>
-          <h2 className="panel-title">{draft.id ? 'Sửa tài khoản' : 'Tài khoản mới'}</h2>
-          <label className="field">
+        <form ref={formRef} className="panel form-grid" onSubmit={e => void submit(e, true)} aria-label={draft.id ? 'Sửa tài khoản' : 'Đăng nhập tài khoản'}>
+          <h2 className="panel-title">{draft.id ? 'Sửa tài khoản' : 'Đăng nhập tài khoản'}</h2>
+
+          {!draft.id && (
+            <div className="segmented span-2" role="tablist" aria-label="Loại đăng nhập">
+              <button type="button" role="tab" aria-selected={draft.method === 'password'} className={draft.method === 'password' ? 'is-active' : ''} onClick={() => { setDraft({ ...draft, method: 'password' }); setFormError(null); }}>
+                Email &amp; mật khẩu
+              </button>
+              <button type="button" role="tab" aria-selected={draft.method === 'google'} className={draft.method === 'google' ? 'is-active' : ''} onClick={() => { setDraft({ ...draft, method: 'google' }); setFormError(null); }}>
+                Google (JSON)
+              </button>
+            </div>
+          )}
+
+          <label className="field span-2">
             <span>Tên hiển thị trong app</span>
             <input value={draft.label} placeholder="Để trống: dùng tên Ola sau khi đăng nhập" onChange={e => setDraft({ ...draft, label: e.target.value })} />
           </label>
-          <label className="field">
-            <span>Email</span>
-            <input type="email" autoComplete="off" required={draft.authType !== 'google'} readOnly={draft.authType === 'google'} value={draft.email} placeholder={draft.authType === 'google' ? '(tài khoản Google)' : ''} onChange={e => setDraft({ ...draft, email: e.target.value })} />
-          </label>
-          {draft.authType === 'google' ? (
+
+          {draft.method === 'google' ? (draft.id ? (
             <div className="field span-2">
               <span>Đăng nhập</span>
-              <p className="notice small"><Icon name="info" size={15} /><span>Tài khoản Google: đăng nhập bằng phiên đã nhập (token nằm trong kho bảo mật hệ điều hành), không dùng mật khẩu. Hết hạn thì nhập lại phiên từ Ola trên điện thoại.</span></p>
+              <p className="notice small"><Icon name="info" size={15} /><span>Tài khoản Google: đăng nhập bằng phiên đã nhập (token trong kho bảo mật hệ điều hành), không dùng mật khẩu. Hết hạn thì thêm lại và dán JSON mới.</span></p>
             </div>
           ) : (
-            <label className="field">
-              <span>Mật khẩu</span>
-              <span className="input-with-action">
-                <input type={showPassword ? 'text' : 'password'} autoComplete="off" required value={draft.password} onChange={e => setDraft({ ...draft, password: e.target.value })} />
-                <button type="button" className="icon-btn" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword(v => !v)}>
-                  <Icon name={showPassword ? 'eyeOff' : 'eye'} size={16} />
-                </button>
-              </span>
-            </label>
+            <>
+              <label className="field span-2">
+                <span>JSON phiên Google</span>
+                <textarea className="textarea" rows={6} autoComplete="off" spellCheck={false}
+                  placeholder={'Dán JSON xuất từ Ola Session Exporter, ví dụ {"format":"ola-google-session", …}'}
+                  value={draft.googleJson} onChange={e => { setDraft({ ...draft, googleJson: e.target.value }); setFormError(null); }} />
+              </label>
+              {isEncryptedSession(draft.googleJson) && (
+                <label className="field span-2">
+                  <span>Mật khẩu file phiên</span>
+                  <input type="password" autoComplete="off" value={draft.googlePassword} placeholder="Mật khẩu đặt khi xuất file" onChange={e => { setDraft({ ...draft, googlePassword: e.target.value }); setFormError(null); }} />
+                </label>
+              )}
+              <p className="notice small span-2"><Icon name="info" size={15} /><span>Mở <b>Ola Session Exporter</b> trên điện thoại (thư mục <code>apps/android-session-exporter</code>) → <b>Lấy phiên Google</b> → <b>Copy JSON</b>, rồi dán vào đây. Token cất trong kho bảo mật hệ điều hành, không lưu vào <code>accounts.json</code>.</span></p>
+            </>
+          )) : (
+            <>
+              <label className="field">
+                <span>Email</span>
+                <input type="email" autoComplete="off" required value={draft.email} onChange={e => setDraft({ ...draft, email: e.target.value })} />
+              </label>
+              <label className="field">
+                <span>Mật khẩu</span>
+                <span className="input-with-action">
+                  <input type={showPassword ? 'text' : 'password'} autoComplete="off" required value={draft.password} onChange={e => setDraft({ ...draft, password: e.target.value })} />
+                  <button type="button" className="icon-btn" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword(v => !v)}>
+                    <Icon name={showPassword ? 'eyeOff' : 'eye'} size={16} />
+                  </button>
+                </span>
+              </label>
+              {!draft.id && (
+                <p className="muted small span-2">Chưa có tài khoản Ola? <button type="button" className="link-btn" onClick={() => openPanel('register')}>Đăng ký mới</button></p>
+              )}
+            </>
           )}
+
+          {draft.method === 'password' && !draft.id && (
+            <div className="advanced-toggle span-2">
+              <button type="button" className="btn btn-ghost btn-sm" aria-expanded={showMore} onClick={() => setShowMore(v => !v)}>
+                <Icon name={showMore ? 'chevronDown' : 'chevronRight'} size={15} /> Nâng cao: thiết bị (Device ID, phiên bản, key2)
+              </button>
+            </div>
+          )}
+          {draft.method === 'password' && (draft.id || showMore) && (<>
           <div className="span-2 form-subhead">
             <h3>Thiết bị của nick này</h3>
             <p className="muted small">Gửi trong header của mọi request và đăng ký với server qua <code>users/sync</code>. Để trống = giá trị của app Android {DEVICE_DEFAULTS.appVersion}. Đổi xong áp dụng từ lần đăng nhập sau.</p>
@@ -211,6 +278,7 @@ export function AccountsScreen({ request, onOpen }: {
             <span>Key2 <span className="muted">(header key2)</span></span>
             <input autoComplete="off" value={draft.publicKey} placeholder={DEVICE_DEFAULTS.publicKey} onChange={e => setDraft({ ...draft, publicKey: e.target.value })} />
           </label>
+          </>)}
           <div className="span-2 form-subhead">
             <h3>Proxy của nick này</h3>
             <p className="muted small">
@@ -233,7 +301,7 @@ export function AccountsScreen({ request, onOpen }: {
           </label>
           {formError && <p className="notice notice-bad small span-2" role="alert">{formError}</p>}
           <div className="form-actions span-2">
-            <button type="submit" className="btn btn-primary"><Icon name="logIn" size={16} /> Lưu và đăng nhập</button>
+            <button type="submit" className="btn btn-primary"><Icon name="logIn" size={16} /> {draft.id ? 'Lưu và đăng nhập' : 'Đăng nhập'}</button>
             <button type="button" className="btn btn-ghost" onClick={e => void submit(e, false)}>Chỉ lưu</button>
             {accounts.length > 0 && <button type="button" className="btn btn-ghost" onClick={() => setDraft(null)}>Huỷ</button>}
           </div>
