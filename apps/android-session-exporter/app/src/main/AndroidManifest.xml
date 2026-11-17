@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <permission android:name="dev.olamerea.session.permission.EXPORT" android:protectionLevel="signature" />
+    <uses-permission android:name="dev.olamerea.session.permission.EXPORT" />
+    <queries><package android:name="com.olaachat" /></queries>
+    <application android:label="Ola Session Exporter" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+        <meta-data android:name="xposedmodule" android:value="true" />
+        <meta-data android:name="xposeddescription" android:value="Xuất phiên Ola của chính bạn" />
+        <meta-data android:name="xposedminversion" android:value="82" />
+    </application>
+</manifest>
