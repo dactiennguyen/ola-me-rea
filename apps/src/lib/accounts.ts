@@ -75,9 +75,11 @@ function randomHex(bytes: number): string {
  * chats under two names and sign it in from two device IDs at once.
  */
 export function twinOf(accounts: StoredAccount[], account: Pick<StoredAccount, 'email'> & Partial<Pick<StoredAccount, 'id' | 'uid'>>): StoredAccount | undefined {
+  // An empty email is not an identity: two Google accounts with no email on Firebase are told apart
+  // by uid, not matched to each other. Only a non-empty email, or a matching uid, marks a twin.
   const email = account.email.trim().toLowerCase();
   return accounts.find(a => a.id !== account.id
-    && (a.email.trim().toLowerCase() === email || (Boolean(account.uid) && a.uid === account.uid)));
+    && ((email !== '' && a.email.trim().toLowerCase() === email) || (Boolean(account.uid) && a.uid === account.uid)));
 }
 
 /** 16 hex chars, the shape of an Android ID. */
