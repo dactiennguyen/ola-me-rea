@@ -7,12 +7,14 @@
 //   - exposes two small commands for the JSON files that hold passwords;
 //   - owns the tray icon and the close button (tray.rs);
 //   - opens WebSockets through a proxy (socket.rs);
-//   - keeps the log of sent 1-1 messages in SQLite (sentlog.rs).
+//   - keeps the log of sent 1-1 messages in SQLite (sentlog.rs);
+//   - updates the installed app from the GitHub releases (update.rs).
 
 mod google_session;
 mod sentlog;
 mod socket;
 mod tray;
+mod update;
 
 use std::path::PathBuf;
 
@@ -132,9 +134,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(tray::CloseAction::default())
         .manage(std::sync::Arc::new(socket::Sockets::default()))
         .manage(sentlog::SentLog::default())
+        .manage(update::Updates::default())
         .setup(|app| {
             // tauri.dev.conf.json renames the dev app but cannot change the window
             // title without repeating the whole window, so the title is set here.
@@ -144,6 +148,7 @@ pub fn run() {
                 }
             }
             tray::setup(app.handle());
+            update::start(app.handle());
             Ok(())
         })
         .on_window_event(tray::on_window_event)
@@ -161,7 +166,10 @@ pub fn run() {
             socket::ws_close,
             sentlog::sent_log_add,
             sentlog::sent_log_recent,
-            sentlog::sent_log_contacts
+            sentlog::sent_log_contacts,
+            update::update_status,
+            update::check_update,
+            update::install_update
         ])
         .build(tauri::generate_context!())
         .expect("error while building Ola Desktop")

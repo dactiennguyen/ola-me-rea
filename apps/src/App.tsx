@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AccountRail, type AppView } from './components/AccountRail.tsx';
 import { CloseDialog } from './components/CloseDialog.tsx';
+import { UpdateBar } from './components/UpdateBar.tsx';
 import { onCloseAsked, setCloseAction } from './lib/platform.ts';
 import { AccountProvider, useSession } from './lib/session.tsx';
 import { AccountsScreen, type AccountsPanel, type AccountsRequest } from './screens/AccountsScreen.tsx';
@@ -50,28 +51,31 @@ export function App() {
   const current = view === 'account' && !accounts.some(a => a.id === selectedId) ? 'accounts' : view;
 
   return (
-    <div className="app">
-      <AccountRail
-        view={current}
-        unread={unread}
-        onAccount={showAccount}
-        onAdd={() => openAccounts('add')}
-        onOutreach={() => setView('outreach')}
-        onManage={() => setView('accounts')}
-        onSettings={() => setView('settings')}
-      />
-      {accounts.map(account => (
-        <AccountProvider key={account.id} id={account.id}>
-          <AccountView hidden={!(current === 'account' && account.id === selectedId)} onUnread={onUnread} onEdit={editAccount} />
-        </AccountProvider>
-      ))}
-      {/* Stays mounted so the collected list and the open chat survive view switches. */}
-      <OutreachScreen hidden={current !== 'outreach'} />
-      {current === 'accounts' && (
-        <div className="content content-page"><AccountsScreen request={accountsRequest} onOpen={showAccount} /></div>
-      )}
-      {current === 'settings' && <div className="content content-page"><SettingsScreen /></div>}
-      {closeAsked && <CloseDialog onDone={closeDialogDone} />}
+    <div className="app-shell">
+      <div className="app">
+        <AccountRail
+          view={current}
+          unread={unread}
+          onAccount={showAccount}
+          onAdd={() => openAccounts('add')}
+          onOutreach={() => setView('outreach')}
+          onManage={() => setView('accounts')}
+          onSettings={() => setView('settings')}
+        />
+        {accounts.map(account => (
+          <AccountProvider key={account.id} id={account.id}>
+            <AccountView hidden={!(current === 'account' && account.id === selectedId)} onUnread={onUnread} onEdit={editAccount} />
+          </AccountProvider>
+        ))}
+        {/* Stays mounted so the collected list and the open chat survive view switches. */}
+        <OutreachScreen hidden={current !== 'outreach'} />
+        {current === 'accounts' && (
+          <div className="content content-page"><AccountsScreen request={accountsRequest} onOpen={showAccount} /></div>
+        )}
+        {current === 'settings' && <div className="content content-page"><SettingsScreen /></div>}
+        {closeAsked && <CloseDialog onDone={closeDialogDone} />}
+      </div>
+      <UpdateBar />
     </div>
   );
 }

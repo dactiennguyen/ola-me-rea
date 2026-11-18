@@ -9,7 +9,7 @@
 | Fedora, RHEL | `ola-desktop_{{VERSION}}_linux_x64.rpm` |
 | Linux khác | `ola-desktop_{{VERSION}}_linux_x64.AppImage`: `chmod +x` rồi chạy |
 
-Bản `.app.zip` là app macOS dạng nén, dùng khi không muốn mở file `.dmg`. Kiểm tra file tải về bằng `SHA256SUMS.txt` (`shasum -a 256 -c SHA256SUMS.txt --ignore-missing`).
+Bản `.app.zip` là app macOS dạng nén, dùng khi không muốn mở file `.dmg`. Các file `.app.tar.gz`, `.sig` và `latest.json` dành cho tính năng tự cập nhật, không cần tải. Kiểm tra file tải về bằng `SHA256SUMS.txt` (`shasum -a 256 -c SHA256SUMS.txt --ignore-missing`).
 
 ## Bản này chưa ký số
 
@@ -19,6 +19,10 @@ Bản `.app.zip` là app macOS dạng nén, dùng khi không muốn mở file `.
   ```
   Hoặc mở *System Settings › Privacy & Security* và bấm **Open Anyway**.
 - **Windows** hiện "Windows protected your PC": bấm **More info** → **Run anyway**.
+
+## Tự cập nhật
+
+Từ bản 0.8.0, app tự kiểm tra bản mới khi mở và có nút **Kiểm tra cập nhật** ở góc phải dưới. Có bản mới thì bấm **Cập nhật ngay**: app tải, kiểm chữ ký, cài rồi tự mở lại. Không bắt buộc cập nhật. Bản `_portable.exe` không tự cập nhật.
 
 ## Lưu ý
 

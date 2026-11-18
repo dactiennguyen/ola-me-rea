@@ -180,13 +180,26 @@ jobs:
         working-directory: apps
         run: yarn install --frozen-lockfile
 
-      # beforeBuildCommand (yarn build) builds the frontend; --bundles overrides bundle.targets.
+      # beforeBuildCommand (yarn build) builds the frontend; --bundles overrides bundle.targets. With the updater key in
+      # the secrets, createUpdaterArtifacts makes the updater files and signs them (apps/docs/05-phat-hanh.md#tự-cập-nhật);
+      # without it the build is the same, unsigned, and release.yml refuses to publish. The setting goes in a file: a
+      # JSON string argument could lose its quotes on Windows.
       - name: tauri build
         working-directory: apps
         shell: bash
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
-        run: yarn tauri build --ci --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          updater=()
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo '{"bundle":{"createUpdaterArtifacts":true}}' > updater.conf.json
+            updater=(--config updater.conf.json)
+          else
+            echo "::warning::No TAURI_SIGNING_PRIVATE_KEY secret: built without the updater files."
+          fi
+          yarn tauri build --ci --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} "${updater[@]}"
 
       - name: Stage bundles
         run: node .github/scripts/stage-bundles.mjs ${{ matrix.target }} staged

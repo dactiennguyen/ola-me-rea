@@ -1,25 +1,25 @@
 # 05 · CI/CD và phát hành
 
-Build trên GitHub Actions và phát hành một bản mới. Làm theo cách của repo `co-lau-loan-the` (cùng ba workflow, cùng cách đặt tên file và phát hành), đổi npm sang yarn. Chưa có tự cập nhật, chưa ký số Apple hay Windows.
+Build trên GitHub Actions và phát hành một bản mới. Làm theo cách của repo `co-lau-loan-the` (cùng ba workflow, cùng cách đặt tên file và phát hành), đổi npm sang yarn. Có [tự cập nhật](#tự-cập-nhật) (không bắt buộc), chưa ký số Apple hay Windows.
 
 ## CI/CD
 
 | Workflow | Chạy khi | Làm gì |
 |---|---|---|
 | [build-matrix.yml](../../.github/workflows/build-matrix.yml) | push lên `main`, mở pull request vào `main`, hoặc bấm tay (Run workflow) | `scripts/nodejs`: `yarn typecheck`, `yarn test`. `apps`: `yarn typecheck`, `yarn build`, rồi `cargo fmt`, `cargo clippy -D warnings`, `cargo test` trên Ubuntu 22.04. Push và pull request chỉ chạy chừng đó. Khi phát hành (tag `v*`) hoặc bấm tay, test qua hết mới build app trên 4 máy song song (repo private tính phút macOS gấp 10). File build nằm trong mục Artifacts của lần chạy: khi phát hành, release.yml xoá chúng ngay sau khi đăng lên Releases; bấm tay hoặc publish lỗi thì giữ 3 ngày (GitHub không cho ít hơn 1 ngày) |
-| [release.yml](../../.github/workflows/release.yml) | đẩy tag `v*` | Kiểm tra tag khớp version, gọi build-matrix.yml, rồi tạo GitHub Release gồm mọi file, `SHA256SUMS.txt` và [ghi chú cài đặt](../../.github/release-notes.md) (`{{VERSION}}` được thay bằng số phiên bản), kèm danh sách commit do GitHub sinh |
+| [release.yml](../../.github/workflows/release.yml) | đẩy tag `v*` | Kiểm tra tag khớp version, gọi build-matrix.yml, rồi tạo GitHub Release gồm mọi file, `SHA256SUMS.txt`, `latest.json` cho updater ([Tự cập nhật](#tự-cập-nhật)) và [ghi chú cài đặt](../../.github/release-notes.md) (`{{VERSION}}` được thay bằng số phiên bản), kèm danh sách commit do GitHub sinh |
 | [release-retry.yml](../../.github/workflows/release-retry.yml) | một lần chạy release.yml kết thúc | Nếu lần đó hỏng chỉ vì GitHub huỷ một job không cấp được máy, thì chạy lại các job bị huỷ, tối đa tới lần thứ 3 ([Chạy lại khi thiếu máy](#chạy-lại-khi-thiếu-máy)) |
 
 Không workflow nào gọi tới server Ola: test của client dùng fetch/socket giả.
 
 | Máy build | Target | File |
 |---|---|---|
-| `macos-latest` | `aarch64-apple-darwin` | `ola-desktop_<version>_macos_aarch64.dmg`, `.app.zip` |
-| `macos-latest` (build chéo) | `x86_64-apple-darwin` | `ola-desktop_<version>_macos_x64.dmg`, `.app.zip` |
+| `macos-latest` | `aarch64-apple-darwin` | `ola-desktop_<version>_macos_aarch64.dmg`, `.app.zip`, `.app.tar.gz` (file updater tải) |
+| `macos-latest` (build chéo) | `x86_64-apple-darwin` | `ola-desktop_<version>_macos_x64.dmg`, `.app.zip`, `.app.tar.gz` |
 | `windows-latest` | `x86_64-pc-windows-msvc` | `ola-desktop_<version>_windows_x64-setup.exe`, `.msi`, `_portable.exe` (chạy không cần cài) |
 | `ubuntu-22.04` | `x86_64-unknown-linux-gnu` | `ola-desktop_<version>_linux_x64.deb`, `.rpm`, `.AppImage` |
 
-[stage-bundles.mjs](../../.github/scripts/stage-bundles.mjs) đổi tên file Tauri sinh ra theo một mẫu chung, vì tên gốc lẫn lộn `x64`, `amd64`, `x86_64`, `en-US` và có dấu cách của "Ola Desktop". Thiếu file nào thì job build lỗi.
+[stage-bundles.mjs](../../.github/scripts/stage-bundles.mjs) đổi tên file Tauri sinh ra theo một mẫu chung, vì tên gốc lẫn lộn `x64`, `amd64`, `x86_64`, `en-US` và có dấu cách của "Ola Desktop". Thiếu file nào thì job build lỗi. Có khoá updater thì mỗi bộ cài có thêm file `.sig` cùng tên; [latest-json.mjs](../../.github/scripts/latest-json.mjs) đọc chúng để viết `latest.json`.
 
 ## Phát hành một bản mới
 
@@ -29,7 +29,7 @@ Ví dụ 0.2.0:
    ```bash
    cd apps && yarn version --new-version 0.2.0 --no-git-tag-version
    ```
-2. Commit với tiêu đề "Release 0.2.0", phần thân ghi những gì đã đổi. Rồi chạy:
+2. Commit với tiêu đề "Release 0.2.0", phần thân ghi những gì đã đổi: phần thân này thành mục **Có gì mới** trong app (`notes` của `latest.json`; đoạn cuối chỉ gồm các dòng `Co-Authored-By:`, `Signed-off-by:` thì bị bỏ). Rồi chạy:
    ```bash
    git tag v0.2.0 && git push origin main v0.2.0
    ```
@@ -45,6 +45,31 @@ Bấm tay **Run workflow** của build-matrix.yml để build thử cả 4 bản
   - Có job bị huỷ (`cancelled`): `gh run rerun --failed`, chạy lại các job bị huỷ và các job sau nó.
 - Lần chạy bị huỷ bằng tay kết thúc là `cancelled` chứ không phải `failure`, nên không bị chạy lại.
 - Nếu GitHub thiếu máy lâu hơn 3 lần chờ, mở lần chạy Release trong tab Actions và bấm **Re-run failed jobs**.
+
+## Tự cập nhật
+
+Bản cài tự tìm bản mới trên GitHub Releases của repo này, giống `co-lau-loan-the` nhưng **không bắt buộc**. Code ở [update.rs](../src-tauri/src/update.rs) ([`tauri-plugin-updater`](https://v2.tauri.app/plugin/updater/) 2.14) và [UpdateBar.tsx](../src/components/UpdateBar.tsx). Giao diện chỉ gọi 3 lệnh của app (`update_status`, `check_update`, `install_update`) và nghe sự kiện `update`; không mở quyền của plugin cho giao diện.
+
+**Cách chạy:**
+1. Một lần ngay khi mở app, hoặc khi bấm **Kiểm tra cập nhật** ở góc phải dưới (thanh trạng thái), app tải `https://github.com/dactiennguyen/ola-me-rea/releases/latest/download/latest.json` (`plugins.updater.endpoints` trong `tauri.conf.json`). Repo công khai nên không cần token. App đang chạy thì không tự kiểm tra lại.
+2. Có `version` mới hơn thì góc phải dưới hiện nút tím **Có bản X · Cập nhật**; bấm vào mở thẻ có **Có gì mới**, **Để sau** và **Cập nhật ngay**. Không bấm thì không có gì xảy ra.
+3. **Cập nhật ngay:** app tải file của đúng máy và đúng loại bộ cài (có thanh tiến độ), kiểm chữ ký minisign với khoá công khai trong `tauri.conf.json` (`plugins.updater.pubkey`), cài rồi tự mở lại. Sai chữ ký thì không cài. `requireSignedVersion` bật: chữ ký phải ghi đúng phiên bản `latest.json` công bố, nên sửa được `latest.json` cũng không ép cài lùi được. Windows chạy bộ cài ở chế độ `passive`. Mở lại xong các nick cần bấm Đăng nhập (app không tự đăng nhập); việc đang chạy (tự gửi, tự trả lời) dừng.
+4. Không kiểm tra được (mất mạng, GitHub lỗi) thì chỉ hiện "Không kiểm tra được" màu vàng, app dùng bình thường. `accounts.json` và các file dữ liệu nằm trong thư mục dữ liệu của app nên cập nhật không đụng tới.
+
+**Bản nào không tự cập nhật:** `yarn app:dev` và `_portable.exe` không có loại bộ cài (`tauri::utils::platform::bundle_type()`), nên thanh trạng thái ghi "bản dev, không tự cập nhật". Bản đầu có tính năng này (0.8.0) phải cài tay; từ bản sau app mới tự cập nhật.
+
+**Khoá ký:**
+- Tạo ngày 18/11/2026 bằng `yarn tauri signer generate`. Khoá riêng ở `~/.tauri/ola-desktop.key`, mật khẩu ở `~/.tauri/ola-desktop.key.password` trên máy phát triển (quyền 600, không bao giờ đưa vào repo). Khoá công khai nằm trong `tauri.conf.json`.
+- CI cần hai secret của repo (GitHub → Settings → Secrets and variables → Actions):
+  - `TAURI_SIGNING_PRIVATE_KEY`: toàn bộ nội dung `ola-desktop.key`.
+  - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: nội dung `ola-desktop.key.password`.
+  ```bash
+  gh secret set TAURI_SIGNING_PRIVATE_KEY -R dactiennguyen/ola-me-rea < ~/.tauri/ola-desktop.key
+  gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD -R dactiennguyen/ola-me-rea < ~/.tauri/ola-desktop.key.password
+  ```
+- Có hai secret đó, build-matrix.yml bật `createUpdaterArtifacts` bằng `--config`, nên Tauri sinh và ký file cập nhật. `tauri.conf.json` không bật sẵn, để build trên máy không có khoá vẫn chạy. Thiếu chữ ký của một nền tảng thì `latest.json` không viết được và release không phát hành.
+- **Mất khoá riêng thì các bản đã cài không tự cập nhật được nữa:** người dùng phải cài tay một bản có khoá công khai mới. Giữ bản sao hai file ở chỗ an toàn (trình quản lý mật khẩu).
+- Bản phát hành không được đánh dấu pre-release, vì `releases/latest` bỏ qua bản pre-release.
 
 ## Lưu ý
 
@@ -64,6 +89,7 @@ Bản phát hành có thể nằm ở một repo public khác, để repo code c
   - Variable `RELEASE_REPO` = `<owner>/<repo phát hành>` (repo đó cần có ít nhất một commit, ví dụ README, để tạo được tag).
   - Secret `RELEASE_TOKEN`: fine-grained token chỉ có quyền `Contents: Read and write` trên repo phát hành. `github.token` của workflow không ghi được sang repo khác.
 - **Chưa có `RELEASE_REPO`:** release.yml phát hành vào chính repo code. Có `RELEASE_REPO` mà thiếu `RELEASE_TOKEN` thì bước phát hành dừng và báo lỗi.
+- **Tự cập nhật:** `endpoints` trong `tauri.conf.json` đang trỏ về repo này. Chuyển sang repo phát hành riêng thì phát hành một bản cuối vào repo này có endpoint mới, rồi mới đặt `RELEASE_REPO`.
 - **Ở repo phát hành:** tag `v*` chưa có, nên `gh release create` tạo tag trên nhánh mặc định của repo đó, không dùng `--verify-tag` (tag đã được kiểm ở repo code) và `--generate-notes`.
 
 ## Chạy kiểm tra CI trên máy

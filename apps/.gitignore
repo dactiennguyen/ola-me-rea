@@ -3,3 +3,5 @@ dist/
 src-tauri/target/
 src-tauri/gen/schemas/
 *.log
+# Written by a signed build (build-matrix.yml, apps/docs/05-phat-hanh.md#tự-cập-nhật); never committed.
+updater.conf.json

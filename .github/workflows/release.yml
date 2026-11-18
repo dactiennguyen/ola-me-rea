@@ -1,8 +1,11 @@
 name: Release
 
 # On a v* tag: checks the tag against the app version, runs build-matrix.yml (tests and the four builds), then publishes a
-# GitHub release with every bundle, SHA256SUMS.txt and .github/release-notes.md (apps/docs/05-phat-hanh.md). No Apple or
-# Windows code signing. To release 0.1.1:
+# GitHub release with every bundle, SHA256SUMS.txt, latest.json for the updater of the installed apps, and
+# .github/release-notes.md (apps/docs/05-phat-hanh.md). Needs the secrets TAURI_SIGNING_PRIVATE_KEY and
+# TAURI_SIGNING_PRIVATE_KEY_PASSWORD (the updater key): without them latest.json cannot be written and nothing is
+# published. No Apple or Windows code signing. The body of the release commit is the "Có gì mới" of the app. To release
+# 0.1.1:
 #   set "version" to 0.1.1 in apps/package.json (tauri.conf.json reads it from there), commit ("Release 0.1.1", then what
 #   changed), git tag v0.1.1 && git push origin main v0.1.1
 # With the repository variable RELEASE_REPO (owner/name) and the secret RELEASE_TOKEN (a fine-grained token with Contents
@@ -94,6 +97,17 @@ jobs:
           mv ../SHA256SUMS.txt .
           ls -l
           cat SHA256SUMS.txt
+
+      # What the updater of the installed apps reads (apps/docs/05-phat-hanh.md#tự-cập-nhật): every platform's signed
+      # bundle and its .sig. Fails, so nothing is published, when a build was not signed (TAURI_SIGNING_* secrets
+      # missing). The body of the release commit is the "Có gì mới" shown in the app.
+      - name: latest.json
+        run: |
+          set -euo pipefail
+          git log -1 --format=%b HEAD > commit-body.txt
+          node .github/scripts/latest-json.mjs assets "$VERSION" "$GH_REPO" "$TAG" commit-body.txt > latest.json
+          mv latest.json assets/
+          cat assets/latest.json | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const j=JSON.parse(d);console.log(j.version, Object.keys(j.platforms).join(" "))})'
 
       - name: Release notes
         run: sed "s/{{VERSION}}/${VERSION}/g" .github/release-notes.md > notes.md

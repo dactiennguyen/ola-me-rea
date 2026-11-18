@@ -1,6 +1,8 @@
 // Copies what `tauri build --target <triple>` left in apps/src-tauri/target/<triple>/release/bundle into one folder,
 // named ola-desktop_<version>_<os>_<arch><ext> for every platform (Tauri's own names mix x64, amd64, x86_64 and en-US,
 // and contain the space of "Ola Desktop"). Used by .github/workflows/build-matrix.yml; fails when a bundle is missing.
+// A build with the signing key also left the updater files: each bundle's .sig, and on macOS the .app.tar.gz with its
+// .sig; they go along under the same names (latest-json.mjs reads them; apps/docs/05-phat-hanh.md#tự-cập-nhật).
 //   node .github/scripts/stage-bundles.mjs <target triple> <out dir>
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
@@ -52,6 +54,16 @@ for (const [dir, suffix, assetSuffix] of BUNDLES[os]) {
   if (suffix === '.app') execFileSync('ditto', ['-c', '-k', '--sequesterRsrc', '--keepParent', join(folder, found[0]), dest]);
   else copyFileSync(join(folder, found[0]), dest);
   staged.push(dest);
+  // The updater installs the .app from its .tar.gz, and every other bundle as it is.
+  const signed = suffix === '.app' ? [`${found[0]}.tar.gz`, `${base}.app.tar.gz`] : [found[0], base + assetSuffix];
+  if (existsSync(join(folder, `${signed[0]}.sig`))) {
+    if (suffix === '.app') {
+      copyFileSync(join(folder, signed[0]), join(out, signed[1]));
+      staged.push(join(out, signed[1]));
+    }
+    copyFileSync(join(folder, `${signed[0]}.sig`), join(out, `${signed[1]}.sig`));
+    staged.push(join(out, `${signed[1]}.sig`));
+  }
 }
 // Windows: the executable alone also runs without installing (WebView2 ships with Windows 10/11).
 if (os === 'windows') {

@@ -1,7 +1,24 @@
 /* App shell: account rail · account sidebar · list column · main area. */
 
 @layer components {
-.app { display: flex; height: 100vh; overflow: hidden; }
+/* The window: the app above the status bar (UpdateBar.tsx). */
+.app-shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.app { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+
+/* Status bar: version and Kiểm tra cập nhật at its right end; the update card opens above that corner. */
+.statusbar { position: relative; flex: none; display: flex; align-items: center; justify-content: flex-end; height: 24px; padding: 0 var(--sp-2) 0 var(--sp-3); background: var(--sidebar); border-top: 1px solid var(--border); color: var(--muted); font-size: var(--fs-xs); }
+.statusbar-right { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.statusbar-text { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.statusbar-version { font-variant-numeric: tabular-nums; }
+.statusbar-btn { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 var(--sp-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-soft); font: inherit; cursor: pointer; }
+.statusbar-btn:hover:not(:disabled) { background: var(--raised); color: var(--text-strong); }
+.statusbar-btn:disabled { opacity: 0.55; cursor: default; }
+.statusbar-new { margin-left: var(--sp-1); background: var(--accent); color: #fff; font-weight: 600; }
+.statusbar-new:hover:not(:disabled) { background: var(--accent); color: #fff; filter: brightness(1.12); }
+.update-card { position: absolute; right: var(--sp-2); bottom: calc(100% + 6px); z-index: 250; display: flex; flex-direction: column; gap: var(--sp-3); width: min(340px, calc(100vw - 24px)); padding: var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--radius-lg, 12px); background: var(--raised); box-shadow: var(--shadow-pop); color: var(--text); font-size: var(--fs-sm); animation: pop-in 160ms var(--ease); }
+.update-notes { max-height: 180px; overflow-y: auto; padding: var(--sp-2) var(--sp-3); border-radius: var(--radius); background: var(--surface); color: var(--text-soft); line-height: 1.5; user-select: text; white-space: pre-line; }
+.update-notes b { display: block; margin-bottom: 2px; color: var(--text); }
+.update-notes p { margin: 0 0 4px; }
 .content { flex: 1; min-width: 0; display: flex; }
 .content-page { overflow: hidden; }
 .screen { flex: 1; min-width: 0; display: flex; }

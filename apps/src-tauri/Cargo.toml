@@ -34,6 +34,8 @@ percent-encoding = "2"
 base64 = "0.22"
 # Sent-message log (sentlog.rs); bundled: no system SQLite needed.
 rusqlite = { version = "0.35", features = ["bundled"] }
+# update.rs: Tự cập nhật from the GitHub releases (latest.json, minisign-signed bundles).
+tauri-plugin-updater = "2.14"
 
 [dev-dependencies]
 # socket.rs live test builds its own runtime.

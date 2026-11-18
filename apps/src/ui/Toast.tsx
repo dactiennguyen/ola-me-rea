@@ -47,7 +47,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={show}>
       {children}
       {createPortal(
-        <div role="region" aria-label="Thông báo" className="pointer-events-none fixed bottom-4 right-4 z-[300] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2">
+        <div role="region" aria-label="Thông báo" className="pointer-events-none fixed bottom-10 right-4 z-[300] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2">
           {items.map(t => {
             const s = STYLE[t.tone];
             return (
